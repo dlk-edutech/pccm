@@ -81,6 +81,10 @@
         td[contenteditable="true"] { background-color: #fef9c3; outline: 2px dashed var(--warning); outline-offset: -2px; color: #000; }
         .mask-pwd { filter: blur(4px); user-select: none; pointer-events: none; }
 
+        /* CSS tùy chỉnh cho Ma trận PCCM */
+        #table-admin-matrix th { background-color: #00e5ff; color: #000; text-align: center; font-weight: 700; font-size: 14px; border: 1px solid #ccc; }
+        #table-admin-matrix td { border: 1px solid #ccc; text-align: center; }
+
         /* Overlay */
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
@@ -134,6 +138,7 @@
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu PCCM</div>
                 
                 <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">Giáo viên trong Tổ</div>
@@ -211,6 +216,20 @@
                         </div>
                     </div>
 
+                    <!-- TAB ADMIN MATRIX -->
+                    <div id="tab-admin-matrix" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3 style="margin:0;">Bảng tổng hợp Phân công chuyên môn Toàn trường</h3>
+                            <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="table-admin-matrix">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <!-- TABS TTCM / GV -->
                     <div id="tab-ttcm-gv" class="tab-content">
                         <h3>Danh sách Giáo viên (Tổ <span class="lbl-tcm"></span>)</h3>
@@ -218,7 +237,6 @@
                         <div class="action-bar"><button class="btn btn-warning" onclick="saveTtcmGvTab()">💾 Lưu thông tin thay đổi</button></div>
                         <div class="table-container">
                             <table id="table-ttcm-gv">
-                                <!-- Chú ý: Bỏ qua Mã đăng nhập trong HTML rendering để bảo mật -->
                                 <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
@@ -326,7 +344,6 @@
                     let foundIndex = -1;
                     if(dbTeachers.length > 1) {
                         for(let i = 1; i < dbTeachers.length; i++) {
-                            // Cột 1 là Mã đăng nhập
                             if(dbTeachers[i][1] === input) {
                                 foundUser = dbTeachers[i];
                                 foundIndex = i;
@@ -360,7 +377,18 @@
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
             
-            // Auto click first item
+            // Lấy tất cả dữ liệu hệ thống cho Admin
+            const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
+                getDoc(doc(db, "pccm_data", "tab-lop")),
+                getDoc(doc(db, "pccm_data", "tab-monhoc")),
+                getDoc(doc(db, "pccm_data", "tab-tohop")),
+                getDoc(doc(db, "pccm_data", "tab-phancong"))
+            ]);
+            if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
+            if(snapMon.exists()) dbSubjects = JSON.parse(snapMon.data().excelData);
+            if(snapToHop.exists()) dbCombos = JSON.parse(snapToHop.data().excelData);
+            if(snapPc.exists()) dbAssignments = JSON.parse(snapPc.data().assignmentData || "[]");
+
             document.querySelector('.admin-item').click();
         }
 
@@ -369,7 +397,6 @@
             let roleName = role === 'ttcm' ? 'Tổ trưởng CM' : 'Giáo viên';
             document.getElementById('sidebar-user-role').innerText = `${roleName} | ${currentUser.ten}`;
             
-            // Gắn tên tổ vào tiêu đề
             document.querySelectorAll('.lbl-tcm').forEach(el => el.innerText = currentUser.tcm);
 
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
@@ -380,7 +407,6 @@
                 document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
             }
             
-            // Tải dữ liệu chung cần thiết
             const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
                 getDoc(doc(db, "pccm_data", "tab-lop")),
                 getDoc(doc(db, "pccm_data", "tab-monhoc")),
@@ -424,17 +450,15 @@
                 alert("Đổi mã Admin thành công!");
                 document.getElementById('pw-modal').style.display = 'none';
             } else {
-                // Đổi mã cho GV/TTCM trên Firebase
                 document.getElementById('loading-overlay').style.display = 'flex';
                 try {
-                    // Lấy dữ liệu mới nhất phòng trường hợp Admin vừa sửa
                     const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
                     if (docSnap.exists()) {
                         let latestDb = JSON.parse(docSnap.data().excelData);
-                        latestDb[currentUser.rowIndex][1] = newPw; // Cột 1 là mật khẩu
+                        latestDb[currentUser.rowIndex][1] = newPw; 
                         await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
                         
-                        dbTeachers = latestDb; // Sync memory
+                        dbTeachers = latestDb; 
                         alert("Đổi mã đăng nhập thành công!");
                         document.getElementById('pw-modal').style.display = 'none';
                     }
@@ -448,17 +472,19 @@
         window.switchTab = async function(element, tabId) {
             currentTabId = tabId;
             
-            // UI Sidebar menu
             document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
             element.classList.add("active");
             document.getElementById("topbar-title").innerText = element.innerText;
 
-            // Content
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.getElementById(tabId).classList.add("active");
 
             if (currentUser.role === 'admin') {
-                await loadAdminTabData(tabId);
+                if(tabId === 'tab-admin-matrix') {
+                    renderAdminMatrix();
+                } else {
+                    await loadAdminTabData(tabId);
+                }
             } else {
                 if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
@@ -474,7 +500,6 @@
                 let data = [];
                 if (docSnap.exists()) {
                     data = JSON.parse(docSnap.data().excelData);
-                    if(tabId === 'tab-giaovien') dbTeachers = data; // Sync state
                 }
                 renderAdminTable(tabId, data);
             } catch (e) { console.error(e); }
@@ -508,7 +533,7 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
                 await setDoc(doc(db, "pccm_data", currentTabId), { excelData: JSON.stringify(cleanData) });
-                if(currentTabId === 'tab-giaovien') dbTeachers = cleanData;
+                syncMemoryState(currentTabId, cleanData);
                 renderAdminTable(currentTabId, cleanData);
                 alert("Đã cập nhật dữ liệu từ Excel!");
             } catch (e) { alert("Lỗi Firebase: " + e.message); }
@@ -559,12 +584,19 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
                 await setDoc(doc(db, "pccm_data", tabId), { excelData: JSON.stringify(dataToSave) });
-                if(tabId === 'tab-giaovien') dbTeachers = dataToSave;
+                syncMemoryState(tabId, dataToSave);
                 alert("Đã lưu dữ liệu bảng!");
                 document.getElementById(tableId).querySelectorAll(".btn-edit").forEach(b => { if(b.innerText==="Xong") window.editRow(b); });
             } catch (e) { alert("Lỗi: " + e.message); }
             document.getElementById('loading-overlay').style.display = 'none';
         };
+
+        function syncMemoryState(tabId, data) {
+            if(tabId === 'tab-giaovien') dbTeachers = data;
+            if(tabId === 'tab-lop') dbClasses = data;
+            if(tabId === 'tab-monhoc') dbSubjects = data;
+            if(tabId === 'tab-tohop') dbCombos = data;
+        }
 
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
@@ -590,6 +622,85 @@
             }
         }
 
+        // --- XUẤT MA TRẬN PCCM ADMIN ---
+        window.renderAdminMatrix = function() {
+            const thead = document.getElementById("table-admin-matrix").querySelector("thead");
+            const tbody = document.getElementById("table-admin-matrix").querySelector("tbody");
+            thead.innerHTML = "";
+            tbody.innerHTML = "";
+
+            if (dbClasses.length <= 1 || dbSubjects.length <= 1) {
+                tbody.innerHTML = '<tr><td style="text-align:center; padding:20px;">Vui lòng nạp đủ dữ liệu Lớp và Môn học.</td></tr>';
+                return;
+            }
+
+            let trHead = document.createElement("tr");
+            let thLop = document.createElement("th");
+            thLop.innerText = "Lớp";
+            trHead.appendChild(thLop);
+
+            let subjects = [];
+            for(let i=1; i<dbSubjects.length; i++) {
+                if(!dbSubjects[i][0]) continue;
+                subjects.push({
+                    maMon: dbSubjects[i][0].trim(),
+                    tenMon: dbSubjects[i][1].trim(),
+                    baseHours: parseInt(dbSubjects[i][2]) || 0
+                });
+                let th = document.createElement("th");
+                th.innerText = dbSubjects[i][0].trim(); // Dùng mã môn học làm tiêu đề
+                trHead.appendChild(th);
+            }
+            thead.appendChild(trHead);
+
+            let hasData = false;
+            for(let i=1; i<dbClasses.length; i++) {
+                if(!dbClasses[i][0]) continue;
+                hasData = true;
+                let tenLop = dbClasses[i][0].trim();
+                let gvcn = dbClasses[i][2] ? dbClasses[i][2].trim() : "";
+                
+                let tr = document.createElement("tr");
+                let tdLop = document.createElement("td");
+                tdLop.innerText = tenLop;
+                tdLop.style.fontWeight = "700";
+                tdLop.style.backgroundColor = "#ccfbf1"; // Màu highlight tương tự ảnh mẫu
+                tr.appendChild(tdLop);
+
+                subjects.forEach(sub => {
+                    let td = document.createElement("td");
+                    
+                    let teacher = "";
+                    let hasCD = checkChuyenDe(tenLop, sub.tenMon);
+                    let hours = sub.baseHours + (hasCD ? 1 : 0);
+
+                    // Đặc quyền cho Sinh hoạt -> GVCN
+                    if (sub.maMon.toUpperCase() === 'SH' || sub.tenMon.toLowerCase().includes('sinh hoạt')) {
+                        teacher = gvcn;
+                    } else {
+                        let assignment = dbAssignments.find(a => a.lop === tenLop && a.maMon === sub.maMon);
+                        if (assignment) teacher = assignment.maGv;
+                    }
+
+                    if (teacher) {
+                        td.innerText = `${teacher}(${hours})`;
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            }
+
+            if(!hasData) {
+                tbody.innerHTML = `<tr><td colspan="${subjects.length + 1}" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
+            }
+        }
+
+        window.exportMatrixToExcel = function() {
+            let table = document.getElementById("table-admin-matrix");
+            let wb = XLSX.utils.table_to_book(table, {sheet: "PCCM"});
+            XLSX.writeFile(wb, "Mau_PCCM.xlsx");
+        };
+
         // --- CÁC HÀM CHO TTCM ---
         function renderTtcmGvTable() {
             const tbody = document.getElementById("table-ttcm-gv").querySelector("tbody");
@@ -601,7 +712,6 @@
                     count++;
                     const tr = document.createElement("tr");
                     tr.dataset.index = i; 
-                    // Render UI TRỪ Cột index 1 (Mã đăng nhập)
                     const showCols = [0, 2, 3, 4, 5, 6, 7, 8];
                     showCols.forEach(colIdx => {
                         let td = document.createElement("td"); 
@@ -619,7 +729,7 @@
 
         window.saveTtcmGvTab = async function() {
             const rows = document.getElementById("table-ttcm-gv").querySelectorAll("tbody tr");
-            const mappedIndices = [0, 2, 3, 4, 5, 6, 7, 8]; // Map lại vào db gốc (Bỏ qua 1)
+            const mappedIndices = [0, 2, 3, 4, 5, 6, 7, 8]; 
             
             rows.forEach(tr => {
                 if(!tr.dataset.index) return;
@@ -634,7 +744,6 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                // Tải bản mới nhất để tránh đè mật khẩu Admin vừa đổi (nếu có)
                 const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
                 if (docSnap.exists()) {
                     let latestDb = JSON.parse(docSnap.data().excelData);
