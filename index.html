@@ -166,7 +166,7 @@
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
         </div>
-        <!-- Bản quyền trên màn hình Đăng nhập -->
+        
         <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; color: var(--text-muted); font-size: 13px;">
             Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn
         </div>
@@ -307,6 +307,10 @@
                                 <div id="ttcm-classes-container" class="class-grid">
                                     <span style="color: var(--text-muted); font-size: 13px;">Vui lòng chọn Giáo viên và Môn dạy...</span>
                                 </div>
+                                <!-- Vùng hiển thị tổng số tiết thời gian thực -->
+                                <div id="ttcm-current-total" style="margin-top: 15px; font-size: 15px; font-weight: 600; color: var(--primary); display: none; background: #e0e7ff; padding: 12px 15px; border-radius: 6px; border: 1px solid #c7d2fe;">
+                                    Tổng số tiết phân công (gồm kiêm nhiệm): <span id="ttcm-total-val" style="font-size: 18px;">0</span> tiết
+                                </div>
                             </div>
                             <div style="text-align: right;">
                                 <button class="btn btn-warning" onclick="savePhanCong()">💾 Lưu phân công</button>
@@ -327,7 +331,6 @@
                 </div>
             </div>
             
-            <!-- Chân trang -->
             <div class="footer">Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn</div>
         </div>
     </div>
@@ -927,6 +930,7 @@
             const selMon = document.getElementById("ttcm-select-mon");
             document.getElementById("ttcm-classes-container").innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn Môn dạy...</span>";
             selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
+            document.getElementById("ttcm-current-total").style.display = 'none';
             
             if(!maGv) { selMon.disabled = true; return; }
             selMon.disabled = false;
@@ -936,6 +940,7 @@
                 if(teacher[7]) selMon.innerHTML += `<option value="${teacher[7]}">${teacher[7]}</option>`;
                 if(teacher[8]) selMon.innerHTML += `<option value="${teacher[8]}">${teacher[8]}</option>`;
             }
+            updateUnsavedTotal();
         };
 
         window.ttcmMonChanged = function() {
@@ -943,7 +948,11 @@
             const maMon = document.getElementById("ttcm-select-mon").value;
             const container = document.getElementById("ttcm-classes-container");
             
-            if(!maGv || !maMon) { container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Giáo viên và Môn...</span>"; return; }
+            if(!maGv || !maMon) { 
+                container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Giáo viên và Môn...</span>"; 
+                updateUnsavedTotal();
+                return; 
+            }
             
             let tenMonFull = getTenMonByMa(maMon);
             let validClasses = [];
@@ -961,10 +970,13 @@
 
             if(validClasses.length === 0) {
                 container.innerHTML = `<span style="color:var(--danger); font-size:13px;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp.</span>`;
+                updateUnsavedTotal();
                 return;
             }
 
             container.innerHTML = "";
+            let baseHours = getBaseHours(maMon);
+
             validClasses.forEach(tenLop => {
                 let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
                 let isChecked = false;
@@ -985,17 +997,66 @@
                 let isHomeroom = dbClasses.some(c => c[0] === tenLop && c[2] === maGv);
                 let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : '';
 
+                let hasCD = checkChuyenDe(tenLop, tenMonFull);
+                let displayLop = hasCD ? `${tenLop} (${baseHours + 1})` : tenLop;
+
                 container.innerHTML += `
                     <label class="class-item" style="${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
-                        <input type="checkbox" value="${tenLop}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+                        <input type="checkbox" value="${tenLop}" onchange="updateUnsavedTotal()" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                         <div style="display: flex; flex-direction: column;">
-                            <span style="${nameStyle}">${tenLop}</span>
+                            <span style="${nameStyle}">${displayLop}</span>
                             ${noteStr}
                         </div>
                     </label>
                 `;
             });
+
+            updateUnsavedTotal();
         };
+
+        window.updateUnsavedTotal = function() {
+            const maGv = document.getElementById("ttcm-select-gv").value;
+            const maMon = document.getElementById("ttcm-select-mon").value;
+            const totalContainer = document.getElementById("ttcm-current-total");
+            
+            if(!maGv) {
+                totalContainer.style.display = 'none';
+                return;
+            }
+            
+            let kiemNhiem = 0;
+            let t = dbTeachers.find(x => x[0] === maGv);
+            if(t) kiemNhiem = parseInt(t[5]) || 0;
+            
+            let tongTietDay = 0;
+
+            if (maMon) {
+                let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
+                otherAssignments.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+
+                let currentSubBase = getBaseHours(maMon);
+                let currentTenMonF = getTenMonByMa(maMon);
+                let checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked");
+                
+                checkboxes.forEach(cb => {
+                    tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
+                });
+            } else {
+                let allAss = dbAssignments.filter(a => a.maGv === maGv);
+                allAss.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+            }
+
+            document.getElementById("ttcm-total-val").innerText = tongTietDay + kiemNhiem;
+            totalContainer.style.display = 'block';
+        }
 
         window.savePhanCong = async function() {
             const maGv = document.getElementById("ttcm-select-gv").value;
