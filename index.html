@@ -283,7 +283,7 @@
 
     <!-- Footer Bản quyền -->
     <div class="footer">
-        &copy; 2026 Bản quyền thuộc về Phó Hiệu trưởng Trần Hồng Dân - Trường THPT Số 1 Trần Phú. 
+        &copy; 2026 Bản quyền thuộc về Phó Hiệu trưởng Trần Hồng Dân - Trường THPT Số 1 Trần Phú.
     </div>
 
     <!-- TÍCH HỢP FIREBASE -->
@@ -398,19 +398,17 @@
                 return;
             }
 
-            // Làm sạch dữ liệu, xử lý triệt để lỗi undefined của Firebase
             const cleanData = JSON.parse(JSON.stringify(jsonData));
-
             document.getElementById('loading-overlay').style.display = 'flex';
 
             try {
                 const docRef = doc(db, COLLECTION_NAME, currentTabId);
-                await setDoc(docRef, { excelData: cleanData });
+                // BẢN VÁ LỖI: Chuyển dữ liệu mảng lồng nhau thành chuỗi văn bản để Firebase chấp nhận
+                await setDoc(docRef, { excelData: JSON.stringify(cleanData) });
                 
                 renderTable(currentTabId, cleanData);
                 alert("Đã lưu dữ liệu lên Firebase thành công!");
             } catch (error) {
-                // Hiển thị lỗi chi tiết để bắt bệnh
                 alert("Firebase báo lỗi: " + error.message);
                 console.error("Lỗi chi tiết: ", error);
             } finally {
@@ -425,7 +423,16 @@
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
-                    const data = docSnap.data().excelData;
+                    let rawData = docSnap.data().excelData;
+                    let data = [];
+                    
+                    // BẢN VÁ LỖI: Dịch ngược từ chuỗi văn bản về lại dạng mảng 
+                    if (typeof rawData === 'string') {
+                        data = JSON.parse(rawData);
+                    } else {
+                        data = rawData; // Đề phòng trường hợp đọc dữ liệu cũ
+                    }
+                    
                     renderTable(tabId, data);
                 } else {
                     renderTable(tabId, []); 
