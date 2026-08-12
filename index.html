@@ -75,9 +75,9 @@
         .assign-container { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
         .assign-row { display: flex; gap: 20px; align-items: center; }
         .assign-row select { padding: 10px; border-radius: 6px; border: 1px solid var(--border); flex-grow: 1; font-size: 15px; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
-        .class-item { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
-        .class-item input { width: 18px; height: 18px; cursor: pointer; }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
+        .class-item { display: flex; align-items: flex-start; gap: 8px; font-weight: 500; cursor: pointer; transition: opacity 0.2s; }
+        .class-item input { width: 18px; height: 18px; cursor: pointer; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -229,6 +229,7 @@
         </div>
     </div>
 
+    <!-- Footer Bản quyền theo yêu cầu -->
     <div class="footer">
         Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn
     </div>
@@ -549,6 +550,7 @@
             }
         };
 
+        // BẢN VÁ: Tích hợp logic Kiểm soát không cho phân công trùng môn học ở 1 lớp
         window.ttcmMonChanged = function() {
             const maGv = document.getElementById("ttcm-select-gv").value;
             const maMon = document.getElementById("ttcm-select-mon").value;
@@ -577,11 +579,31 @@
 
             container.innerHTML = "";
             validClasses.forEach(tenLop => {
-                let isChecked = dbAssignments.some(a => a.maGv === maGv && a.maMon === maMon && a.lop === tenLop);
+                // Kiểm tra xem môn này ở lớp này đã được phân cho ai chưa
+                let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
+                
+                let isChecked = false;
+                let isDisabled = false;
+                let noteStr = "";
+
+                if (assigned) {
+                    if (assigned.maGv === maGv) {
+                        isChecked = true; // Đang phân cho GV hiện tại
+                    } else {
+                        isDisabled = true; // Đã phân cho người khác (Khóa)
+                        let t = dbTeachers.find(x => x[0] === assigned.maGv);
+                        let tName = t ? t[2] : assigned.maGv;
+                        noteStr = `<span style="display:block; color:var(--danger); font-size:11px; font-weight:normal; margin-top:2px;">(Đã giao: ${tName})</span>`;
+                    }
+                }
+
                 container.innerHTML += `
-                    <label class="class-item">
-                        <input type="checkbox" value="${tenLop}" ${isChecked ? 'checked' : ''}>
-                        ${tenLop}
+                    <label class="class-item" style="${isDisabled ? 'opacity:0.6; cursor:not-allowed;' : ''}">
+                        <input type="checkbox" value="${tenLop}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+                        <div style="display: flex; flex-direction: column;">
+                            <span>${tenLop}</span>
+                            ${noteStr}
+                        </div>
                     </label>
                 `;
             });
@@ -594,7 +616,8 @@
             
             dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
             
-            const checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked");
+            // Chỉ lấy các checkbox được check và Không bị Disable
+            const checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked:not(:disabled)");
             checkboxes.forEach(cb => {
                 dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
             });
@@ -628,7 +651,7 @@
             return cdSubjects.includes(tenMonFull.toLowerCase());
         }
 
-        // BẢN VÁ: Gộp các lớp theo môn học 
+        // Gộp các lớp theo môn học 
         function renderTtcmTongHop() {
             const tbody = document.getElementById("table-ttcm-tonghop").querySelector("tbody");
             tbody.innerHTML = "";
@@ -656,7 +679,6 @@
                             groupedByMon[tenMonFull] = [];
                         }
                         
-                        // Nếu có chuyên đề thì gắn số tiết, nếu không thì chỉ hiện tên lớp
                         let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
                         groupedByMon[tenMonFull].push(classText);
                     });
