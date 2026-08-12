@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý PCCM - THPT Số 1 Trần Phú</title>
+    <!-- Thư viện SheetJS để đọc file Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #0056b3;
+            --bg-color: #f4f7f6;
+            --text-color: #333;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        /* Style cho trang Đăng nhập */
+        #login-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 300px;
+        }
+        .login-box h2 { margin-top: 0; color: var(--primary-color); }
+        .login-box input {
+            width: 90%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .btn:hover { background-color: #004494; }
+        .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        /* Style cho Dashboard */
+        #main-section { display: none; padding: 20px; }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .header h1 { margin: 0; font-size: 24px; color: var(--primary-color); }
+        
+        .control-panel {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn {
+            background: #e9ecef;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .tab-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            overflow-x: auto;
+        }
+        .tab-content.active { display: block; }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th { background-color: #f8f9fa; color: var(--primary-color); }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        #change-pw-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+        
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay Đang tải -->
+    <div id="loading-overlay">Đang tải dữ liệu từ Firebase...</div>
+
+    <!-- PHẦN ĐĂNG NHẬP -->
+    <div id="login-section">
+        <div class="login-box">
+            <h2>Đăng nhập Hệ thống</h2>
+            <input type="password" id="admin-password" placeholder="Nhập mã Admin...">
+            <button class="btn" onclick="login()">Đăng nhập</button>
+            <p id="login-error" style="color:red; display:none; font-size:14px;">Sai mã đăng nhập!</p>
+        </div>
+    </div>
+
+    <!-- PHẦN QUẢN LÝ -->
+    <div id="main-section">
+        <div class="header">
+            <h1>Hệ thống Quản lý PCCM - THPT Số 1 Trần Phú</h1>
+            <div>
+                <button class="btn" onclick="showChangePassword()">Đổi mã Admin</button>
+                <button class="btn" style="background:#dc3545;" onclick="logout()">Đăng xuất</button>
+            </div>
+        </div>
+
+        <div class="control-panel">
+            <label for="excel-upload"><strong>1. Tải lên file Excel:</strong></label>
+            <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+            
+            <label for="sheet-select" style="margin-left: 20px;"><strong>2. Chọn Sheet nạp vào Tab:</strong></label>
+            <select id="sheet-select" disabled>
+                <option value="">-- Chưa tải file --</option>
+            </select>
+            <button class="btn" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>Nạp & Lưu lên Firebase</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(event, 'tab-giaovien')">Thông tin giáo viên</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-lop')">Thông tin lớp</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-monhoc')">Thông tin môn học</button>
+            <button class="tab-btn" onclick="switchTab(event, 'tab-tohop')">Thông tin TH môn</button>
+        </div>
+
+        <!-- TAB 1: Thông tin giáo viên -->
+        <div id="tab-giaovien" class="tab-content active">
+            <h3 style="margin-top:0;">Danh sách Giáo viên</h3>
+            <table id="table-giaovien">
+                <thead>
+                    <tr>
+                        <th>Mã GV</th>
+                        <th>Mã đăng nhập</th>
+                        <th>Tên giáo viên</th>
+                        <th>TCM</th>
+                        <th>Chức vụ</th>
+                        <th>Môn 1</th>
+                        <th>Môn 2</th>
+                        <th>Môn 3</th>
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="8" style="text-align:center;">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- TAB 2: Thông tin lớp -->
+        <div id="tab-lop" class="tab-content">
+            <h3 style="margin-top:0;">Danh sách Lớp</h3>
+            <table id="table-lop">
+                <thead>
+                    <tr>
+                        <th>Lớp</th>
+                        <th>Mã TH môn</th>
+                        <th>Mã GVCN</th>
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- TAB 3: Thông tin môn học -->
+        <div id="tab-monhoc" class="tab-content">
+            <h3 style="margin-top:0;">Danh mục Môn học</h3>
+            <table id="table-monhoc">
+                <thead>
+                    <tr>
+                        <th>Mã môn</th>
+                        <th>Tên môn</th>
+                        <th>Số tiết/tuần</th>
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- TAB 4: Thông tin tổ hợp môn -->
+        <div id="tab-tohop" class="tab-content">
+            <h3 style="margin-top:0;">Danh sách Tổ hợp môn</h3>
+            <table id="table-tohop">
+                <thead>
+                    <tr>
+                        <th>Mã TH môn</th>
+                        <th>Các môn trong tổ hợp</th>
+                        <th>Các môn có chuyên đề</th>
+                    </tr>
+                </thead>
+                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Đổi mật khẩu -->
+    <div id="change-pw-modal">
+        <div class="modal-content">
+            <h3>Đổi mã Admin</h3>
+            <input type="password" id="new-password" placeholder="Mã mới..." style="width: 90%; padding: 8px; margin-bottom: 15px;">
+            <br>
+            <button class="btn" onclick="changePassword()">Xác nhận</button>
+            <button class="btn" style="background:#6c757d;" onclick="closeChangePassword()">Hủy</button>
+        </div>
+    </div>
+
+    <!-- TÍCH HỢP FIREBASE (Sử dụng Module) -->
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        // Cấu hình Firebase từ ảnh cung cấp
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnV-T3tUt_2eJ5JLIpHO3S-nQfS7oDTVE",
+            authDomain: "pccm-s1trp.firebaseapp.com",
+            projectId: "pccm-s1trp",
+            storageBucket: "pccm-s1trp.firebasestorage.app",
+            messagingSenderId: "1074542861397",
+            appId: "1:1074542861397:web:357f16713ef58d7b8c08dc"
+        };
+
+        // Khởi tạo Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- CÁC BIẾN TOÀN CỤC ---
+        const defaultPassword = "11043006";
+        let currentTabId = 'tab-giaovien';
+        let workbook = null; 
+        const COLLECTION_NAME = "pccm_data";
+
+        // --- GÁN CÁC HÀM VÀO WINDOW ĐỂ HTML GỌI ĐƯỢC KHI DÙNG TYPE="MODULE" ---
+        
+        window.login = function() {
+            const inputPw = document.getElementById("admin-password").value;
+            let savedPw = localStorage.getItem("adminPassword");
+            if (!savedPw) {
+                localStorage.setItem("adminPassword", defaultPassword);
+                savedPw = defaultPassword;
+            }
+            
+            if (inputPw === savedPw) {
+                document.getElementById("login-section").style.display = "none";
+                document.getElementById("main-section").style.display = "block";
+                // Tải dữ liệu từ Firebase cho tab mặc định
+                window.loadDataFromFirebase(currentTabId);
+            } else {
+                document.getElementById("login-error").style.display = "block";
+            }
+        };
+
+        window.logout = function() {
+            document.getElementById("login-section").style.display = "flex";
+            document.getElementById("main-section").style.display = "none";
+            document.getElementById("admin-password").value = "";
+            document.getElementById("login-error").style.display = "none";
+        };
+
+        window.showChangePassword = () => { document.getElementById("change-pw-modal").style.display = "flex"; };
+        window.closeChangePassword = () => { document.getElementById("change-pw-modal").style.display = "none"; document.getElementById("new-password").value = ""; };
+
+        window.changePassword = function() {
+            const newPw = document.getElementById("new-password").value;
+            if (newPw.trim() !== "") {
+                localStorage.setItem("adminPassword", newPw);
+                alert("Đổi mã thành công!");
+                window.closeChangePassword();
+            } else {
+                alert("Mã không được để trống!");
+            }
+        };
+
+        window.switchTab = function(evt, tabId) {
+            currentTabId = tabId;
+            const tabContents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabContents.length; i++) tabContents[i].classList.remove("active");
+            
+            const tabBtns = document.getElementsByClassName("tab-btn");
+            for (let i = 0; i < tabBtns.length; i++) tabBtns[i].classList.remove("active");
+            
+            document.getElementById(tabId).classList.add("active");
+            evt.currentTarget.classList.add("active");
+
+            // Mỗi khi chuyển tab, lấy dữ liệu tab đó từ Firebase
+            window.loadDataFromFirebase(tabId);
+        };
+
+        // --- XỬ LÝ ĐỌC FILE EXCEL ---
+        document.getElementById('excel-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                workbook = XLSX.read(data, {type: 'array'});
+                
+                const sheetSelect = document.getElementById('sheet-select');
+                sheetSelect.innerHTML = "";
+                workbook.SheetNames.forEach(sheetName => {
+                    let option = document.createElement("option");
+                    option.text = sheetName;
+                    option.value = sheetName;
+                    sheetSelect.add(option);
+                });
+                
+                sheetSelect.disabled = false;
+                document.getElementById('load-sheet-btn').disabled = false;
+                alert("Đã đọc file Excel! Hãy chọn Sheet và bấm Nạp để lưu lên hệ thống.");
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // --- NẠP DỮ LIỆU & LƯU LÊN FIREBASE ---
+        window.loadSheetToTab = async function() {
+            if (!workbook) return;
+            const sheetName = document.getElementById('sheet-select').value;
+            const worksheet = workbook.Sheets[sheetName];
+            
+            // Lấy dữ liệu excel dưới dạng mảng các mảng
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+            
+            if (jsonData.length <= 1) {
+                alert("Sheet trống hoặc không có dữ liệu hợp lệ!");
+                return;
+            }
+
+            // Hiện màn hình loading
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // Lưu dữ liệu lên Firestore (Dùng Tab ID làm tên Document)
+                const docRef = doc(db, COLLECTION_NAME, currentTabId);
+                await setDoc(docRef, { excelData: jsonData });
+                
+                // Hiển thị ra bảng
+                renderTable(currentTabId, jsonData);
+                alert("Đã lưu dữ liệu lên Firebase thành công!");
+            } catch (error) {
+                console.error("Lỗi khi lưu Firebase: ", error);
+                alert("Lỗi khi lưu dữ liệu lên hệ thống!");
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        };
+
+        // --- LẤY DỮ LIỆU TỪ FIREBASE ---
+        window.loadDataFromFirebase = async function(tabId) {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const docRef = doc(db, COLLECTION_NAME, tabId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data().excelData;
+                    renderTable(tabId, data);
+                } else {
+                    renderTable(tabId, []); // Xóa bảng nếu chưa có dữ liệu trên Firebase
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải dữ liệu: ", error);
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        };
+
+        // --- HÀM VẼ BẢNG HTML ---
+        function renderTable(tabId, data) {
+            let tableId = "";
+            let expectedHeaders = [];
+
+            if (tabId === 'tab-giaovien') {
+                tableId = "table-giaovien";
+                expectedHeaders = ["Mã GV", "Mã đăng nhập", "Tên giáo viên", "TCM", "Chức vụ", "Môn 1", "Môn 2", "Môn 3"];
+            } else if (tabId === 'tab-lop') {
+                tableId = "table-lop";
+                expectedHeaders = ["Lớp", "Mã TH môn", "Mã GVCN"];
+            } else if (tabId === 'tab-monhoc') {
+                tableId = "table-monhoc";
+                expectedHeaders = ["Mã môn", "Tên môn", "Số tiết/tuần"];
+            } else if (tabId === 'tab-tohop') {
+                tableId = "table-tohop";
+                expectedHeaders = ["Mã TH môn", "Các môn trong tổ hợp", "Các môn có chuyên đề"];
+            }
+
+            const table = document.getElementById(tableId);
+            const tbody = table.querySelector("tbody");
+            tbody.innerHTML = ""; 
+
+            // Nếu mảng data rỗng hoặc ít hơn 2 dòng (chỉ có header)
+            if (!data || data.length <= 1) {
+                tbody.innerHTML = `<tr><td colspan="${expectedHeaders.length}" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
+                return;
+            }
+
+            // Bỏ qua header ở dòng index 0, bắt đầu từ 1
+            for (let i = 1; i < data.length; i++) {
+                const row = data[i];
+                if (row.length === 0 || row.every(cell => cell === "")) continue;
+
+                const tr = document.createElement("tr");
+                for (let j = 0; j < expectedHeaders.length; j++) {
+                    const td = document.createElement("td");
+                    td.innerText = row[j] !== undefined ? row[j] : "";
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+        }
+    </script>
+</body>
+</html>
