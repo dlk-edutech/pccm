@@ -4,307 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản lý PCCM - THPT Số 1 Trần Phú</title>
-    <!-- Thư viện SheetJS để đọc file Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Google Fonts: Inter -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --success: #10b981;
-            --success-hover: #059669;
-            --warning: #f59e0b;
-            --warning-hover: #d97706;
-            --danger: #ef4444;
-            --danger-hover: #dc2626;
-            --info: #0ea5e9;
-            --info-hover: #0284c7;
-            --bg-color: #f3f4f6;
-            --surface: #ffffff;
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
+            --primary: #4f46e5; --primary-hover: #4338ca;
+            --success: #10b981; --success-hover: #059669;
+            --warning: #f59e0b; --warning-hover: #d97706;
+            --danger: #ef4444; --danger-hover: #dc2626;
+            --info: #0ea5e9; --info-hover: #0284c7;
+            --bg-color: #f3f4f6; --surface: #ffffff;
+            --text-main: #1f2937; --text-muted: #6b7280;
             --border: #e5e7eb;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
             --radius: 10px;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        /* --- ĐĂNG NHẬP --- */
-        #login-section {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-grow: 1;
-            background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
-        }
-        .login-box {
-            background: var(--surface);
-            padding: 40px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-lg);
-            text-align: center;
-            width: 320px;
-        }
-        .login-box h2 { 
-            margin-top: 0; 
-            color: var(--primary);
-            font-weight: 700;
-            margin-bottom: 25px;
-        }
-        .login-box input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 12px 15px;
-            margin: 10px 0 20px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        #login-section { display: flex; justify-content: center; align-items: center; flex-grow: 1; background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%); }
+        .login-box { background: var(--surface); padding: 40px; border-radius: var(--radius); box-shadow: var(--shadow-lg); text-align: center; width: 320px; }
+        .login-box h2 { margin-top: 0; color: var(--primary); font-weight: 700; margin-bottom: 25px; }
+        .login-box input { width: 100%; box-sizing: border-box; padding: 12px 15px; margin: 10px 0 20px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: border-color 0.2s; }
         .login-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
-        /* --- NÚT BẤM --- */
-        .btn {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-        }
+        .btn { background-color: var(--primary); color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
         .btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); }
         .btn:disabled { background-color: #9ca3af; cursor: not-allowed; transform: none; }
         .btn-full { width: 100%; padding: 12px; font-size: 15px; }
-        
-        .btn-success { background-color: var(--success); color: white; }
-        .btn-success:hover { background-color: var(--success-hover); }
-        .btn-warning { background-color: var(--warning); color: #fff; }
-        .btn-warning:hover { background-color: var(--warning-hover); }
-        .btn-danger { background-color: var(--danger); }
-        .btn-danger:hover { background-color: var(--danger-hover); }
-        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); }
-        .btn-outline:hover { background-color: var(--bg-color); }
+        .btn-success { background-color: var(--success); color: white; } .btn-success:hover { background-color: var(--success-hover); }
+        .btn-warning { background-color: var(--warning); color: #fff; } .btn-warning:hover { background-color: var(--warning-hover); }
+        .btn-danger { background-color: var(--danger); } .btn-danger:hover { background-color: var(--danger-hover); }
+        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); } .btn-outline:hover { background-color: var(--bg-color); }
+        .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 12px; font-weight: 500; margin: 2px; }
+        .btn-small:hover { opacity: 0.85; } .btn-edit { background-color: var(--info); } .btn-del { background-color: var(--danger); }
 
-        /* Nút nhỏ trong bảng */
-        .btn-small {
-            padding: 6px 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-            margin: 2px;
-            transition: opacity 0.2s;
-        }
-        .btn-small:hover { opacity: 0.85; }
-        .btn-edit { background-color: var(--info); }
-        .btn-del { background-color: var(--danger); }
-
-        /* --- DASHBOARD --- */
         #main-section { display: none; padding: 25px; flex-grow: 1; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--surface);
-            padding: 20px 25px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-sm);
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-        }
+        .header { display: flex; justify-content: space-between; align-items: center; background: var(--surface); padding: 20px 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); margin-bottom: 20px; border: 1px solid var(--border); }
         .header h1 { margin: 0; font-size: 22px; color: var(--primary); font-weight: 700; }
-        
-        .control-panel {
-            background: var(--surface);
-            padding: 20px 25px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-sm);
-            border: 1px solid var(--border);
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .control-panel { background: var(--surface); padding: 20px 25px; border-radius: var(--radius); margin-bottom: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .control-panel label { font-size: 14px; font-weight: 600; color: var(--text-main); }
-        .control-panel select, .control-panel input[type="file"] {
-            padding: 8px 12px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 14px;
-            outline: none;
-        }
+        .control-panel select, .control-panel input[type="file"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 14px; outline: none; }
 
-        /* --- TABS --- */
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px; }
-        .tab-btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            padding: 12px 20px;
-            cursor: pointer;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text-muted);
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            box-shadow: var(--shadow-sm);
-        }
+        .tab-btn { background: var(--surface); border: 1px solid var(--border); padding: 12px 20px; cursor: pointer; border-radius: 6px; font-weight: 600; font-size: 14px; color: var(--text-muted); transition: all 0.2s ease; white-space: nowrap; box-shadow: var(--shadow-sm); display: none; }
         .tab-btn:hover { color: var(--primary); border-color: var(--primary); }
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.25);
-        }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 6px rgba(79, 70, 229, 0.25); }
 
-        .tab-content {
-            display: none;
-            background: var(--surface);
-            padding: 25px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border);
-            animation: fadeIn 0.3s ease-in-out;
-        }
+        .tab-content { display: none; background: var(--surface); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-md); border: 1px solid var(--border); animation: fadeIn 0.3s ease-in-out; }
         .tab-content.active { display: block; }
-        
-        .action-bar {
-            margin-bottom: 15px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .action-bar { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
 
-        /* --- BẢNG DỮ LIỆU --- */
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 800px;
-        }
-        th, td {
-            padding: 12px 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--border);
-            font-size: 14px;
-        }
-        th { 
-            background-color: #f8fafc; 
-            color: var(--text-muted); 
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 12px;
-            letter-spacing: 0.5px;
-        }
-        tr:last-child td { border-bottom: none; }
-        tr:hover td { background-color: #f8fafc; }
-        
-        td[contenteditable="true"] {
-            background-color: #fffbeb;
-            outline: 2px dashed var(--warning);
-            outline-offset: -2px;
-            color: #000;
-        }
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        tr:last-child td { border-bottom: none; } tr:hover td { background-color: #f8fafc; }
+        td[contenteditable="true"] { background-color: #fffbeb; outline: 2px dashed var(--warning); outline-offset: -2px; color: #000; }
 
-        /* --- MODAL LỚP PHỦ --- */
-        #change-pw-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(17, 24, 39, 0.7);
-            backdrop-filter: blur(4px);
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .modal-content {
-            background: var(--surface);
-            padding: 30px;
-            border-radius: var(--radius);
-            width: 320px;
-            text-align: center;
-            box-shadow: var(--shadow-lg);
-            animation: slideUp 0.2s ease-out;
-        }
-        .modal-content h3 { margin-top: 0; margin-bottom: 20px; color: var(--text-main); }
-        .modal-content input {
-            width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 20px;
-            border: 1px solid var(--border); border-radius: 6px; outline: none;
-        }
-        
-        #loading-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 255, 255, 0.9);
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            z-index: 9999;
-            color: var(--primary);
-            font-weight: 600;
-            font-size: 16px;
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 4px solid rgba(79, 70, 229, 0.2);
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
 
-        /* Footer Bản quyền */
-        .footer {
-            text-align: center;
-            padding: 20px;
-            background-color: var(--surface);
-            color: var(--text-muted);
-            font-size: 13px;
-            border-top: 1px solid var(--border);
-            margin-top: auto;
-        }
-
-        /* Animations */
+        .footer { text-align: center; padding: 20px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); margin-top: auto; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        /* Giao diện riêng cho việc phân công */
+        .assign-container { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
+        .assign-row { display: flex; gap: 20px; align-items: center; }
+        .assign-row select { padding: 10px; border-radius: 6px; border: 1px solid var(--border); flex-grow: 1; font-size: 15px; }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
+        .class-item { display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; }
+        .class-item input { width: 18px; height: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <!-- Overlay Đang tải -->
     <div id="loading-overlay">
         <div class="spinner"></div>
         <div>Đang xử lý dữ liệu với Firebase...</div>
@@ -313,158 +90,153 @@
     <!-- PHẦN ĐĂNG NHẬP -->
     <div id="login-section">
         <div class="login-box">
-            <h2>Hệ thống Quản lý PCCM</h2>
-            <input type="password" id="admin-password" placeholder="Nhập mã Admin để tiếp tục...">
-            <button class="btn btn-full" onclick="login()">Đăng nhập vào hệ thống</button>
-            <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;">Sai mã đăng nhập, vui lòng thử lại!</p>
+            <h2>Đăng nhập Hệ thống</h2>
+            <input type="password" id="admin-password" placeholder="Nhập Mã TTCM hoặc Mã Admin...">
+            <button class="btn btn-full" onclick="login()">Đăng nhập</button>
+            <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
         </div>
     </div>
 
     <!-- PHẦN QUẢN LÝ -->
     <div id="main-section">
         <div class="header">
-            <h1>Hệ thống Quản lý Phân Công Chuyên Môn</h1>
+            <h1 id="main-title">Hệ thống Quản lý Phân Công Chuyên Môn</h1>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-outline" onclick="showChangePassword()">🔑 Đổi mã Admin</button>
+                <button id="btn-change-pw" class="btn btn-outline" onclick="showChangePassword()">🔑 Đổi mã Admin</button>
                 <button class="btn btn-danger" onclick="logout()">🚪 Đăng xuất</button>
             </div>
         </div>
 
-        <div class="control-panel">
+        <!-- BẢNG ĐIỀU KHIỂN CỦA ADMIN (Upload Excel) -->
+        <div class="control-panel" id="admin-panel" style="display: none;">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label for="excel-upload">1. Tải lên file Excel:</label>
+                <label>1. Tải lên file Excel:</label>
                 <input type="file" id="excel-upload" accept=".xls,.xlsx" />
             </div>
-            
             <div style="display: flex; align-items: center; gap: 10px;">
-                <label for="sheet-select">2. Chọn Sheet để nạp:</label>
-                <select id="sheet-select" disabled>
-                    <option value="">-- Chưa tải file --</option>
-                </select>
-                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Nạp & Lưu Firebase</button>
+                <label>2. Chọn Sheet để nạp (Sẽ xóa dữ liệu cũ):</label>
+                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
+                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Nạp đè & Lưu Firebase</button>
             </div>
         </div>
 
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab(event, 'tab-giaovien')">Thông tin giáo viên</button>
-            <button class="tab-btn" onclick="switchTab(event, 'tab-lop')">Thông tin lớp</button>
-            <button class="tab-btn" onclick="switchTab(event, 'tab-monhoc')">Danh mục môn học</button>
-            <button class="tab-btn" onclick="switchTab(event, 'tab-tohop')">Tổ hợp môn</button>
+        <!-- TABS -->
+        <div class="tabs" id="tabs-container">
+            <!-- Tabs cho Admin -->
+            <button class="tab-btn admin-tab" onclick="switchTab(event, 'tab-giaovien')">Thông tin giáo viên</button>
+            <button class="tab-btn admin-tab" onclick="switchTab(event, 'tab-lop')">Thông tin lớp</button>
+            <button class="tab-btn admin-tab" onclick="switchTab(event, 'tab-monhoc')">Danh mục môn học</button>
+            <button class="tab-btn admin-tab" onclick="switchTab(event, 'tab-tohop')">Tổ hợp môn</button>
+
+            <!-- Tabs cho TTCM -->
+            <button class="tab-btn ttcm-tab" onclick="switchTab(event, 'tab-ttcm-gv')">Danh sách Tổ</button>
+            <button class="tab-btn ttcm-tab" onclick="switchTab(event, 'tab-ttcm-phancong')">Phân công giảng dạy</button>
+            <button class="tab-btn ttcm-tab" onclick="switchTab(event, 'tab-ttcm-tonghop')">Tổng hợp số tiết</button>
         </div>
 
-        <!-- TAB 1: Thông tin giáo viên -->
-        <div id="tab-giaovien" class="tab-content active">
-            <div class="action-bar">
-                <button class="btn btn-success" onclick="addNewRow()">+ Thêm dòng mới</button>
-                <button class="btn btn-warning" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
-            </div>
+        <!-- CÁC NỘI DUNG TAB DÀNH CHO ADMIN -->
+        <div id="tab-giaovien" class="tab-content admin-tab-content">
+            <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button><button class="btn btn-warning" onclick="saveCurrentTab('tab-giaovien')">💾 Lưu lên Firebase</button></div>
             <div class="table-container">
                 <table id="table-giaovien">
-                    <thead>
-                        <tr>
-                            <th>Mã GV</th>
-                            <th>Mã đăng nhập</th>
-                            <th>Tên giáo viên</th>
-                            <th>TCM</th>
-                            <th>Chức vụ</th>
-                            <th>Môn 1</th>
-                            <th>Môn 2</th>
-                            <th>Môn 3</th>
-                            <th style="width: 120px; text-align: center;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="9" style="text-align:center; padding: 30px;">Đang tải dữ liệu...</td></tr></tbody>
+                    <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:100px;text-align:center;">Thao tác</th></tr></thead>
+                    <tbody><tr><td colspan="10" style="text-align:center;">Đang tải...</td></tr></tbody>
                 </table>
             </div>
         </div>
-
-        <!-- TAB 2: Thông tin lớp -->
-        <div id="tab-lop" class="tab-content">
-            <div class="action-bar">
-                <button class="btn btn-success" onclick="addNewRow()">+ Thêm dòng mới</button>
-                <button class="btn btn-warning" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
-            </div>
+        <div id="tab-lop" class="tab-content admin-tab-content">
+            <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button><button class="btn btn-warning" onclick="saveCurrentTab('tab-lop')">💾 Lưu lên Firebase</button></div>
             <div class="table-container">
                 <table id="table-lop">
-                    <thead>
-                        <tr>
-                            <th>Lớp</th>
-                            <th>Mã TH môn</th>
-                            <th>Mã GVCN</th>
-                            <th style="width: 120px; text-align: center;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="4" style="text-align:center; padding: 30px;">Đang tải dữ liệu...</td></tr></tbody>
+                    <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:100px;text-align:center;">Thao tác</th></tr></thead>
+                    <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
                 </table>
             </div>
         </div>
-
-        <!-- TAB 3: Thông tin môn học -->
-        <div id="tab-monhoc" class="tab-content">
-            <div class="action-bar">
-                <button class="btn btn-success" onclick="addNewRow()">+ Thêm dòng mới</button>
-                <button class="btn btn-warning" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
-            </div>
+        <div id="tab-monhoc" class="tab-content admin-tab-content">
+            <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button><button class="btn btn-warning" onclick="saveCurrentTab('tab-monhoc')">💾 Lưu lên Firebase</button></div>
             <div class="table-container">
                 <table id="table-monhoc">
-                    <thead>
-                        <tr>
-                            <th>Mã môn</th>
-                            <th>Tên môn</th>
-                            <th>Số tiết/tuần</th>
-                            <th style="width: 120px; text-align: center;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="4" style="text-align:center; padding: 30px;">Đang tải dữ liệu...</td></tr></tbody>
+                    <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:100px;text-align:center;">Thao tác</th></tr></thead>
+                    <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
                 </table>
             </div>
         </div>
-
-        <!-- TAB 4: Thông tin tổ hợp môn -->
-        <div id="tab-tohop" class="tab-content">
-            <div class="action-bar">
-                <button class="btn btn-success" onclick="addNewRow()">+ Thêm dòng mới</button>
-                <button class="btn btn-warning" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
-            </div>
+        <div id="tab-tohop" class="tab-content admin-tab-content">
+            <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button><button class="btn btn-warning" onclick="saveCurrentTab('tab-tohop')">💾 Lưu lên Firebase</button></div>
             <div class="table-container">
                 <table id="table-tohop">
-                    <thead>
-                        <tr>
-                            <th>Mã TH môn</th>
-                            <th>Các môn trong tổ hợp</th>
-                            <th>Các môn có chuyên đề</th>
-                            <th style="width: 120px; text-align: center;">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody><tr><td colspan="4" style="text-align:center; padding: 30px;">Đang tải dữ liệu...</td></tr></tbody>
+                    <thead><tr><th>Mã TH môn</th><th>Các môn trong tổ hợp</th><th>Các môn có chuyên đề</th><th style="width:100px;text-align:center;">Thao tác</th></tr></thead>
+                    <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
                 </table>
             </div>
         </div>
+
+        <!-- CÁC NỘI DUNG TAB DÀNH CHO TTCM -->
+        <div id="tab-ttcm-gv" class="tab-content ttcm-tab-content">
+            <h3>Danh sách Giáo viên trong Tổ</h3>
+            <div class="action-bar"><button class="btn btn-warning" onclick="saveTtcmGvTab()">💾 Lưu thông tin thay đổi</button></div>
+            <div class="table-container">
+                <table id="table-ttcm-gv">
+                    <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;">Thao tác</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tab-ttcm-phancong" class="tab-content ttcm-tab-content">
+            <h3>Phân công giảng dạy</h3>
+            <div class="assign-container">
+                <div class="assign-row">
+                    <label style="width: 120px; font-weight: 600;">Giáo viên:</label>
+                    <select id="ttcm-select-gv" onchange="ttcmGvChanged()"><option value="">-- Chọn Giáo viên --</option></select>
+                </div>
+                <div class="assign-row">
+                    <label style="width: 120px; font-weight: 600;">Môn dạy:</label>
+                    <select id="ttcm-select-mon" onchange="ttcmMonChanged()" disabled><option value="">-- Chọn Môn --</option></select>
+                </div>
+                <div>
+                    <label style="font-weight: 600; display: block; margin-bottom: 10px;">Chọn lớp phân công (Chỉ hiện lớp có học môn này):</label>
+                    <div id="ttcm-classes-container" class="class-grid">
+                        <span style="color: #6b7280; font-size: 14px;">Vui lòng chọn Giáo viên và Môn dạy để xem danh sách lớp...</span>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <button class="btn btn-warning" onclick="savePhanCong()">💾 Lưu phân công lên Firebase</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-ttcm-tonghop" class="tab-content ttcm-tab-content">
+            <h3>Tổng hợp số tiết của Tổ</h3>
+            <div class="table-container">
+                <table id="table-ttcm-tonghop">
+                    <thead><tr><th>Giáo viên</th><th>Phân công dạy (Lớp - Môn (Số tiết))</th><th>Tiết kiêm nhiệm</th><th>Tổng số tiết</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Modal Đổi mật khẩu -->
-    <div id="change-pw-modal">
-        <div class="modal-content">
-            <h3>Thay đổi mã Admin</h3>
-            <input type="password" id="new-password" placeholder="Nhập mã bí mật mới...">
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button class="btn btn-outline" style="width: 50%" onclick="closeChangePassword()">Hủy</button>
-                <button class="btn" style="width: 50%" onclick="changePassword()">Xác nhận</button>
-            </div>
+    <!-- Modal Admin -->
+    <div id="change-pw-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:10px; text-align:center;">
+            <h3>Đổi mã Admin</h3>
+            <input type="password" id="new-password" placeholder="Mã mới..." style="padding:10px; width:200px; margin-bottom:15px;"><br>
+            <button class="btn btn-outline" onclick="document.getElementById('change-pw-modal').style.display='none'">Hủy</button>
+            <button class="btn btn-primary" onclick="changePassword()">Lưu</button>
         </div>
     </div>
 
-    <!-- Footer Bản quyền (Đã được cập nhật) -->
     <div class="footer">
         Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn
     </div>
 
-    <!-- TÍCH HỢP FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // Cấu hình Firebase 
         const firebaseConfig = {
             apiKey: "AIzaSyDnV-T3tUt_2eJ5JLIpHO3S-nQfS7oDTVE",
             authDomain: "pccm-s1trp.firebaseapp.com",
@@ -473,290 +245,452 @@
             messagingSenderId: "1074542861397",
             appId: "1:1074542861397:web:357f16713ef58d7b8c08dc"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const defaultPassword = "11043006";
-        let currentTabId = 'tab-giaovien';
+        // State Database Memory
+        let dbTeachers = []; 
+        let dbClasses = [];
+        let dbSubjects = [];
+        let dbCombos = [];
+        let dbAssignments = []; 
+        let currentUser = null; // { role: 'admin' } or { role: 'ttcm', maGv, ten, tcm }
+        let currentTabId = '';
         let workbook = null; 
-        const COLLECTION_NAME = "pccm_data";
-        
-        window.login = function() {
-            const inputPw = document.getElementById("admin-password").value;
-            let savedPw = localStorage.getItem("adminPassword");
-            if (!savedPw) {
-                localStorage.setItem("adminPassword", defaultPassword);
-                savedPw = defaultPassword;
-            }
+
+        window.login = async function() {
+            const input = document.getElementById("admin-password").value.trim();
+            if (!input) return;
+
+            let adminPw = localStorage.getItem("adminPassword") || "11043006";
             
-            if (inputPw === savedPw) {
+            // Xóa lỗi cũ
+            document.getElementById("login-error").style.display = "none";
+            document.getElementById('loading-overlay').style.display = 'flex';
+
+            try {
+                // Tải trước dữ liệu giáo viên để check login TTCM
+                const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
+                if (docSnap.exists()) {
+                    let rawData = docSnap.data().excelData;
+                    dbTeachers = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                }
+
+                if (input === adminPw) {
+                    currentUser = { role: 'admin' };
+                    initAdminUI();
+                } else {
+                    // Kiểm tra TTCM
+                    let foundTtcm = null;
+                    if(dbTeachers.length > 1) {
+                        for(let i = 1; i < dbTeachers.length; i++) {
+                            // Cột 1: Mã đăng nhập, Cột 4: Chức vụ
+                            if(dbTeachers[i][1] === input && dbTeachers[i][4] === "TTCM") {
+                                foundTtcm = dbTeachers[i];
+                                break;
+                            }
+                        }
+                    }
+                    if (foundTtcm) {
+                        currentUser = { role: 'ttcm', maGv: foundTtcm[0], ten: foundTtcm[2], tcm: foundTtcm[3] };
+                        await initTtcmUI();
+                    } else {
+                        throw new Error("Sai mã đăng nhập hoặc bạn không phải Tổ trưởng!");
+                    }
+                }
+                
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("main-section").style.display = "block";
-                window.loadDataFromFirebase(currentTabId);
-            } else {
+            } catch (err) {
+                document.getElementById("login-error").innerText = err.message;
                 document.getElementById("login-error").style.display = "block";
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
             }
         };
+
+        function initAdminUI() {
+            document.getElementById('admin-panel').style.display = 'flex';
+            document.getElementById('btn-change-pw').style.display = 'inline-flex';
+            document.getElementById('main-title').innerText = "Hệ thống Quản lý PCCM (Quyền Admin)";
+            
+            document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.ttcm-tab').forEach(el => el.style.display = 'none');
+            
+            // Auto click tab đầu
+            document.querySelector('.admin-tab').click();
+        }
+
+        async function initTtcmUI() {
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('btn-change-pw').style.display = 'none';
+            document.getElementById('main-title').innerText = `Quản lý Tổ ${currentUser.tcm} (TTCM: ${currentUser.ten})`;
+            
+            document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.ttcm-tab').forEach(el => el.style.display = 'block');
+            
+            // Load full data needed for calculations
+            const snapLop = await getDoc(doc(db, "pccm_data", "tab-lop"));
+            if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
+            
+            const snapMon = await getDoc(doc(db, "pccm_data", "tab-monhoc"));
+            if(snapMon.exists()) dbSubjects = JSON.parse(snapMon.data().excelData);
+            
+            const snapToHop = await getDoc(doc(db, "pccm_data", "tab-tohop"));
+            if(snapToHop.exists()) dbCombos = JSON.parse(snapToHop.data().excelData);
+
+            const snapPc = await getDoc(doc(db, "pccm_data", "tab-phancong"));
+            if(snapPc.exists()) dbAssignments = JSON.parse(snapPc.data().assignmentData || "[]");
+
+            // Build Gv Dropdown
+            let selectGv = document.getElementById('ttcm-select-gv');
+            selectGv.innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i][3] === currentUser.tcm) {
+                    selectGv.innerHTML += `<option value="${dbTeachers[i][0]}">${dbTeachers[i][2]} (${dbTeachers[i][0]})</option>`;
+                }
+            }
+
+            document.querySelector('.ttcm-tab').click();
+        }
 
         window.logout = function() {
-            document.getElementById("login-section").style.display = "flex";
-            document.getElementById("main-section").style.display = "none";
-            document.getElementById("admin-password").value = "";
-            document.getElementById("login-error").style.display = "none";
+            location.reload();
         };
 
-        window.showChangePassword = () => { document.getElementById("change-pw-modal").style.display = "flex"; };
-        window.closeChangePassword = () => { document.getElementById("change-pw-modal").style.display = "none"; document.getElementById("new-password").value = ""; };
-
+        window.showChangePassword = () => document.getElementById('change-pw-modal').style.display = 'flex';
         window.changePassword = function() {
             const newPw = document.getElementById("new-password").value;
-            if (newPw.trim() !== "") {
+            if (newPw.trim()) {
                 localStorage.setItem("adminPassword", newPw);
                 alert("Đổi mã thành công!");
-                window.closeChangePassword();
-            } else {
-                alert("Mã không được để trống!");
+                document.getElementById('change-pw-modal').style.display = 'none';
             }
         };
 
-        window.switchTab = function(evt, tabId) {
+        window.switchTab = async function(evt, tabId) {
             currentTabId = tabId;
-            const tabContents = document.getElementsByClassName("tab-content");
-            for (let i = 0; i < tabContents.length; i++) tabContents[i].classList.remove("active");
-            
-            const tabBtns = document.getElementsByClassName("tab-btn");
-            for (let i = 0; i < tabBtns.length; i++) tabBtns[i].classList.remove("active");
-            
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+            document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
             document.getElementById(tabId).classList.add("active");
             evt.currentTarget.classList.add("active");
 
-            window.loadDataFromFirebase(tabId);
+            if (currentUser.role === 'admin') {
+                await loadAdminTabData(tabId);
+            } else {
+                if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
+                if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
+                // tab-ttcm-phancong uses state directly.
+            }
         };
+
+        // --- CÁC HÀM CHO ADMIN ---
+        async function loadAdminTabData(tabId) {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const docRef = doc(db, "pccm_data", tabId);
+                const docSnap = await getDoc(docRef);
+                let data = [];
+                if (docSnap.exists()) {
+                    let rawData = docSnap.data().excelData;
+                    data = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                }
+                renderAdminTable(tabId, data);
+            } catch (e) {
+                console.error(e);
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
 
         document.getElementById('excel-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                const data = new Uint8Array(e.target.result);
-                workbook = XLSX.read(data, {type: 'array'});
-                
+                workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
                 const sheetSelect = document.getElementById('sheet-select');
                 sheetSelect.innerHTML = "";
-                workbook.SheetNames.forEach(sheetName => {
-                    let option = document.createElement("option");
-                    option.text = sheetName;
-                    option.value = sheetName;
-                    sheetSelect.add(option);
-                });
-                
+                workbook.SheetNames.forEach(name => sheetSelect.add(new Option(name, name)));
                 sheetSelect.disabled = false;
                 document.getElementById('load-sheet-btn').disabled = false;
-                alert("Đã đọc file Excel! Hãy chọn Sheet và bấm Nạp để lưu lên hệ thống.");
             };
             reader.readAsArrayBuffer(file);
         });
 
         window.loadSheetToTab = async function() {
             if (!workbook) return;
+            if (!confirm("CẢNH BÁO: Thao tác này sẽ XÓA SẠCH toàn bộ dữ liệu hiện tại của Tab đang mở và thay bằng dữ liệu Excel. Bấm OK để tiếp tục!")) return;
+
             const sheetName = document.getElementById('sheet-select').value;
-            const worksheet = workbook.Sheets[sheetName];
-            
-            let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
-            
-            if (jsonData.length <= 1) {
-                alert("Sheet trống hoặc không có dữ liệu hợp lệ!");
-                return;
-            }
+            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1, defval: ""});
+            if (jsonData.length <= 1) return alert("Sheet trống hoặc không hợp lệ!");
 
             const cleanData = JSON.parse(JSON.stringify(jsonData));
             document.getElementById('loading-overlay').style.display = 'flex';
-
             try {
-                const docRef = doc(db, COLLECTION_NAME, currentTabId);
-                await setDoc(docRef, { excelData: JSON.stringify(cleanData) });
-                
-                renderTable(currentTabId, cleanData);
-                alert("Đã nạp và lưu dữ liệu từ file Excel lên Firebase thành công!");
-            } catch (error) {
-                alert("Firebase báo lỗi: " + error.message);
-                console.error("Lỗi chi tiết: ", error);
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
+                await setDoc(doc(db, "pccm_data", currentTabId), { excelData: JSON.stringify(cleanData) });
+                renderAdminTable(currentTabId, cleanData);
+                alert("Đã cập nhật dữ liệu từ Excel lên Firebase thành công!");
+            } catch (e) {
+                alert("Lỗi Firebase: " + e.message);
             }
+            document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        window.loadDataFromFirebase = async function(tabId) {
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                const docRef = doc(db, COLLECTION_NAME, tabId);
-                const docSnap = await getDoc(docRef);
-
-                if (docSnap.exists()) {
-                    let rawData = docSnap.data().excelData;
-                    let data = [];
-                    if (typeof rawData === 'string') {
-                        data = JSON.parse(rawData);
-                    } else {
-                        data = rawData; 
-                    }
-                    renderTable(tabId, data);
-                } else {
-                    renderTable(tabId, []); 
-                }
-            } catch (error) {
-                console.error("Lỗi khi tải dữ liệu: ", error);
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
-        };
-
-        // --- CÁC HÀM THAO TÁC TRỰC TIẾP TRÊN BẢNG ---
-
-        window.addNewRow = function() {
-            const tableId = "table-" + currentTabId.split('-')[1];
+        window.addNewRow = function(tableId) {
             const tbody = document.getElementById(tableId).querySelector("tbody");
-            
-            if(tbody.querySelector("td[colspan]")) {
-                tbody.innerHTML = "";
-            }
-            
+            if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
             const tr = document.createElement("tr");
             const colCount = document.getElementById(tableId).querySelectorAll("th").length - 1;
-            
-            for(let i = 0; i < colCount; i++) {
-                const td = document.createElement("td");
-                td.contentEditable = "true"; 
-                tr.appendChild(td);
+            for(let i=0; i<colCount; i++) {
+                let td = document.createElement("td"); td.contentEditable = "true"; tr.appendChild(td);
             }
-            
-            const tdAction = document.createElement("td");
-            tdAction.style.textAlign = "center";
-            tdAction.innerHTML = `
-                <button class="btn-small btn-edit" onclick="editRow(this)">Xong</button>
-                <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
-            `;
+            let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
+            tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Xong</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
             tr.appendChild(tdAction);
-            
             tbody.insertBefore(tr, tbody.firstChild);
         };
 
         window.editRow = function(btn) {
             const tr = btn.closest("tr");
             const tds = tr.querySelectorAll("td:not(:last-child)"); 
-            const isEditing = btn.innerText === "Xong";
-            
-            if(isEditing) {
-                tds.forEach(td => td.contentEditable = "false");
-                btn.innerText = "Sửa";
-            } else {
-                tds.forEach(td => td.contentEditable = "true");
-                btn.innerText = "Xong";
-                tds[0].focus(); 
-            }
+            if(btn.innerText === "Xong") { tds.forEach(td => td.contentEditable = "false"); btn.innerText = "Sửa"; } 
+            else { tds.forEach(td => td.contentEditable = "true"); btn.innerText = "Xong"; tds[0].focus(); }
         };
 
-        window.deleteRow = function(btn) {
-            if(confirm("Bạn có chắc chắn muốn xóa dòng này không? (Lưu ý: Bạn phải bấm 'Lưu thay đổi lên Firebase' thì hệ thống mới cập nhật)")) {
-                btn.closest("tr").remove();
-            }
-        };
+        window.deleteRow = function(btn) { if(confirm("Chắc chắn xóa? Bạn cần bấm Lưu sau khi xóa.")) btn.closest("tr").remove(); };
 
-        window.saveCurrentTab = async function() {
-            const tableId = "table-" + currentTabId.split('-')[1];
-            const table = document.getElementById(tableId);
-            const rows = table.querySelectorAll("tr");
-            
+        window.saveCurrentTab = async function(tabId) {
+            const tableId = "table-" + tabId.split('-')[1];
+            const rows = document.getElementById(tableId).querySelectorAll("tr");
             let dataToSave = [];
             
             let headers = [];
             const headerCells = rows[0].querySelectorAll("th");
-            for(let i = 0; i < headerCells.length - 1; i++) {
-                headers.push(headerCells[i].innerText.trim());
-            }
+            for(let i=0; i<headerCells.length-1; i++) headers.push(headerCells[i].innerText.trim());
             dataToSave.push(headers);
             
-            for(let i = 1; i < rows.length; i++) {
+            for(let i=1; i<rows.length; i++) {
                 const cells = rows[i].querySelectorAll("td");
                 if (cells.length <= 1) continue; 
-                
                 let rowData = [];
-                for(let j = 0; j < cells.length - 1; j++) {
-                    rowData.push(cells[j].innerText.trim());
-                }
+                for(let j=0; j<cells.length-1; j++) rowData.push(cells[j].innerText.trim());
                 dataToSave.push(rowData);
             }
             
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const docRef = doc(db, COLLECTION_NAME, currentTabId);
-                await setDoc(docRef, { excelData: JSON.stringify(dataToSave) });
-                alert("Đã lưu các thay đổi của bảng lên Firebase thành công!");
-                
-                const editBtns = table.querySelectorAll(".btn-edit");
-                editBtns.forEach(btn => {
-                    if (btn.innerText === "Xong") window.editRow(btn);
-                });
-                
-            } catch (error) {
-                alert("Firebase báo lỗi: " + error.message);
-                console.error(error);
-            } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
-            }
+                await setDoc(doc(db, "pccm_data", tabId), { excelData: JSON.stringify(dataToSave) });
+                alert("Đã lưu dữ liệu bảng lên Firebase!");
+                document.getElementById(tableId).querySelectorAll(".btn-edit").forEach(b => { if(b.innerText==="Xong") window.editRow(b); });
+            } catch (e) { alert("Lỗi: " + e.message); }
+            document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        function renderTable(tabId, data) {
-            let tableId = "";
-            let expectedHeadersCount = 0;
-
-            if (tabId === 'tab-giaovien') {
-                tableId = "table-giaovien";
-                expectedHeadersCount = 8;
-            } else if (tabId === 'tab-lop') {
-                tableId = "table-lop";
-                expectedHeadersCount = 3;
-            } else if (tabId === 'tab-monhoc') {
-                tableId = "table-monhoc";
-                expectedHeadersCount = 3;
-            } else if (tabId === 'tab-tohop') {
-                tableId = "table-tohop";
-                expectedHeadersCount = 3;
-            }
-
-            const table = document.getElementById(tableId);
-            const tbody = table.querySelector("tbody");
+        function renderAdminTable(tabId, data) {
+            let tableId = "table-" + tabId.split('-')[1];
+            let expCols = tabId==='tab-giaovien' ? 9 : 3;
+            const tbody = document.getElementById(tableId).querySelector("tbody");
             tbody.innerHTML = ""; 
 
             if (!data || data.length <= 1) {
-                tbody.innerHTML = `<tr><td colspan="${expectedHeadersCount + 1}" style="text-align:center; padding: 30px; color: #6b7280;">Chưa có dữ liệu</td></tr>`;
-                return;
+                tbody.innerHTML = `<tr><td colspan="${expCols + 1}" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`; return;
             }
 
             for (let i = 1; i < data.length; i++) {
-                const row = data[i];
-                if (row.length === 0 || row.every(cell => cell === "")) continue;
-
+                if (data[i].length === 0 || data[i].every(c => c === "")) continue;
                 const tr = document.createElement("tr");
-                for (let j = 0; j < expectedHeadersCount; j++) {
-                    const td = document.createElement("td");
-                    td.innerText = row[j] !== undefined ? row[j] : "";
-                    tr.appendChild(td);
+                for (let j = 0; j < expCols; j++) {
+                    let td = document.createElement("td"); td.innerText = data[i][j] !== undefined ? data[i][j] : ""; tr.appendChild(td);
                 }
-                
-                const tdAction = document.createElement("td");
-                tdAction.style.textAlign = "center";
-                tdAction.innerHTML = `
-                    <button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button>
-                    <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
-                `;
-                tr.appendChild(tdAction);
-                
-                tbody.appendChild(tr);
+                let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
+                tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
+                tr.appendChild(tdAction); tbody.appendChild(tr);
             }
         }
+
+        // --- CÁC HÀM CHO TTCM ---
+        function renderTtcmGvTable() {
+            const tbody = document.getElementById("table-ttcm-gv").querySelector("tbody");
+            tbody.innerHTML = "";
+            let count = 0;
+            for (let i = 1; i < dbTeachers.length; i++) {
+                if (dbTeachers[i][3] === currentUser.tcm) {
+                    count++;
+                    const tr = document.createElement("tr");
+                    tr.dataset.index = i; // Lưu vị trí gốc trong dbTeachers
+                    for (let j = 0; j < 9; j++) {
+                        let td = document.createElement("td"); td.innerText = dbTeachers[i][j] || ""; tr.appendChild(td);
+                    }
+                    let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
+                    tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button>`;
+                    tr.appendChild(tdAction); tbody.appendChild(tr);
+                }
+            }
+            if(count===0) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;">Không có giáo viên thuộc tổ này</td></tr>`;
+        }
+
+        window.saveTtcmGvTab = async function() {
+            const rows = document.getElementById("table-ttcm-gv").querySelectorAll("tbody tr");
+            rows.forEach(tr => {
+                if(!tr.dataset.index) return;
+                const index = parseInt(tr.dataset.index);
+                const cells = tr.querySelectorAll("td");
+                for(let j=0; j<9; j++) dbTeachers[index][j] = cells[j].innerText.trim();
+                let editBtn = tr.querySelector(".btn-edit");
+                if(editBtn && editBtn.innerText === "Xong") window.editRow(editBtn);
+            });
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(dbTeachers) });
+                alert("Đã lưu thông tin Giáo viên lên hệ thống!");
+            } catch(e) { alert("Lỗi: " + e.message); }
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        // Phân công
+        window.ttcmGvChanged = function() {
+            const maGv = document.getElementById("ttcm-select-gv").value;
+            const selMon = document.getElementById("ttcm-select-mon");
+            document.getElementById("ttcm-classes-container").innerHTML = "<span style='color:gray;'>Vui lòng chọn Môn dạy...</span>";
+            selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
+            
+            if(!maGv) { selMon.disabled = true; return; }
+            selMon.disabled = false;
+            let teacher = dbTeachers.find(t => t[0] === maGv);
+            if(teacher) {
+                // Môn 1(6), Môn 2(7), Môn 3(8)
+                if(teacher[6]) selMon.innerHTML += `<option value="${teacher[6]}">${teacher[6]}</option>`;
+                if(teacher[7]) selMon.innerHTML += `<option value="${teacher[7]}">${teacher[7]}</option>`;
+                if(teacher[8]) selMon.innerHTML += `<option value="${teacher[8]}">${teacher[8]}</option>`;
+            }
+        };
+
+        window.ttcmMonChanged = function() {
+            const maGv = document.getElementById("ttcm-select-gv").value;
+            const maMon = document.getElementById("ttcm-select-mon").value;
+            const container = document.getElementById("ttcm-classes-container");
+            
+            if(!maGv || !maMon) { container.innerHTML = "<span style='color:gray;'>Vui lòng chọn đầy đủ Giáo viên và Môn...</span>"; return; }
+            
+            let tenMonFull = getTenMonByMa(maMon);
+            let validClasses = [];
+
+            // Tìm lớp có học môn này
+            for(let i=1; i<dbClasses.length; i++) {
+                if(dbClasses[i].length < 2) continue;
+                let tenLop = dbClasses[i][0];
+                let maTh = dbClasses[i][1];
+                let combo = dbCombos.find(c => c[0] === maTh);
+                if(combo && combo.length >= 2) {
+                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
+                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
+                }
+            }
+
+            if(validClasses.length === 0) {
+                container.innerHTML = `<span style="color:var(--danger);">Không có lớp nào học môn "${tenMonFull}" theo thiết lập Tổ hợp.</span>`;
+                return;
+            }
+
+            container.innerHTML = "";
+            validClasses.forEach(tenLop => {
+                // Check xem DB đã lưu phân công chưa
+                let isChecked = dbAssignments.some(a => a.maGv === maGv && a.maMon === maMon && a.lop === tenLop);
+                container.innerHTML += `
+                    <label class="class-item">
+                        <input type="checkbox" value="${tenLop}" ${isChecked ? 'checked' : ''}>
+                        ${tenLop}
+                    </label>
+                `;
+            });
+        };
+
+        window.savePhanCong = async function() {
+            const maGv = document.getElementById("ttcm-select-gv").value;
+            const maMon = document.getElementById("ttcm-select-mon").value;
+            if(!maGv || !maMon) return alert("Vui lòng chọn Giáo viên và Môn dạy!");
+            
+            // Xóa phân công cũ của GV-Môn này
+            dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
+            
+            // Thêm check mới
+            const checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked");
+            checkboxes.forEach(cb => {
+                dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
+            });
+
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, "pccm_data", "tab-phancong"), { assignmentData: JSON.stringify(dbAssignments) });
+                alert("Đã lưu Phân công chuyên môn thành công!");
+            } catch(e) { alert("Lỗi: " + e.message); }
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        // Tính tổng hợp
+        function getTenMonByMa(maMon) {
+            for(let i=1; i<dbSubjects.length; i++) {
+                if(dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return dbSubjects[i][1].trim();
+            }
+            return maMon.trim();
+        }
+        function getBaseHours(maMon) {
+            for(let i=1; i<dbSubjects.length; i++) {
+                if(dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return parseInt(dbSubjects[i][2]) || 0;
+            }
+            return 0;
+        }
+        function checkChuyenDe(lop, tenMonFull) {
+            let cl = dbClasses.find(c => c[0] === lop);
+            if(!cl) return false;
+            let combo = dbCombos.find(c => c[0] === cl[1]);
+            if(!combo || combo.length < 3) return false;
+            let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
+            return cdSubjects.includes(tenMonFull.toLowerCase());
+        }
+
+        function renderTtcmTongHop() {
+            const tbody = document.getElementById("table-ttcm-tonghop").querySelector("tbody");
+            tbody.innerHTML = "";
+            let hasData = false;
+
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i][3] === currentUser.tcm) {
+                    hasData = true;
+                    let maGv = dbTeachers[i][0];
+                    let kiemNhiem = parseInt(dbTeachers[i][5]) || 0;
+                    
+                    let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
+                    let resultStrings = [];
+                    let tongTietDay = 0;
+
+                    teacherAssignments.forEach(a => {
+                        let tenMonFull = getTenMonByMa(a.maMon);
+                        let base = getBaseHours(a.maMon);
+                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
+                        let classHours = base + (hasCD ? 1 : 0);
+                        tongTietDay += classHours;
+                        // Format yêu cầu: Lớp (Số tiết) - Gom môn nếu cần
+                        resultStrings.push(`${a.lop} - ${tenMonFull} (${classHours})`);
+                    });
+
+                    let tongTiet = tongTietDay + kiemNhiem;
+                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join(", ") : "<i>Chưa phân công</i>";
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${dbTeachers[i][2]}</b><br><small>${maGv}</small></td>
+                            <td>${textPhanCong}</td>
+                            <td style="text-align:center;">${kiemNhiem}</td>
+                            <td style="text-align:center; font-weight:bold; color:var(--primary);">${tongTiet}</td>
+                        </tr>
+                    `;
+                }
+            }
+            if(!hasData) tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Không có giáo viên</td></tr>`;
+        }
+
     </script>
 </body>
 </html>
