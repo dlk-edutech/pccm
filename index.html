@@ -53,9 +53,25 @@
             cursor: pointer;
             border-radius: 4px;
             transition: background 0.3s;
+            font-size: 14px;
         }
         .btn:hover { background-color: #004494; }
         .btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Nút nhỏ trong bảng */
+        .btn-small {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            color: white;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+        .btn-edit { background-color: #17a2b8; }
+        .btn-edit:hover { background-color: #117a8b; }
+        .btn-del { background-color: #dc3545; }
+        .btn-del:hover { background-color: #c82333; }
 
         /* Style cho Dashboard */
         #main-section { display: none; padding: 20px; flex-grow: 1; }
@@ -105,6 +121,12 @@
             overflow-x: auto;
         }
         .tab-content.active { display: block; }
+        
+        .action-bar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
 
         /* Table */
         table {
@@ -119,6 +141,13 @@
         }
         th { background-color: #f8f9fa; color: var(--primary-color); }
         tr:nth-child(even) { background-color: #f9f9f9; }
+        
+        /* Hiệu ứng khi đang sửa ô */
+        td[contenteditable="true"] {
+            background-color: #fffbcc;
+            outline: 2px dashed var(--primary-color);
+            outline-offset: -2px;
+        }
         
         #change-pw-modal {
             display: none;
@@ -206,7 +235,10 @@
 
         <!-- TAB 1: Thông tin giáo viên -->
         <div id="tab-giaovien" class="tab-content active">
-            <h3 style="margin-top:0;">Danh sách Giáo viên</h3>
+            <div class="action-bar">
+                <button class="btn" style="background:#28a745;" onclick="addNewRow()">+ Thêm dòng mới</button>
+                <button class="btn" style="background:#ffc107; color: #000;" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
+            </div>
             <table id="table-giaovien">
                 <thead>
                     <tr>
@@ -218,54 +250,67 @@
                         <th>Môn 1</th>
                         <th>Môn 2</th>
                         <th>Môn 3</th>
+                        <th style="width: 100px; text-align: center;">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody><tr><td colspan="8" style="text-align:center;">Đang tải...</td></tr></tbody>
+                <tbody><tr><td colspan="9" style="text-align:center;">Đang tải...</td></tr></tbody>
             </table>
         </div>
 
         <!-- TAB 2: Thông tin lớp -->
         <div id="tab-lop" class="tab-content">
-            <h3 style="margin-top:0;">Danh sách Lớp</h3>
+            <div class="action-bar">
+                <button class="btn" style="background:#28a745;" onclick="addNewRow()">+ Thêm dòng mới</button>
+                <button class="btn" style="background:#ffc107; color: #000;" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
+            </div>
             <table id="table-lop">
                 <thead>
                     <tr>
                         <th>Lớp</th>
                         <th>Mã TH môn</th>
                         <th>Mã GVCN</th>
+                        <th style="width: 100px; text-align: center;">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+                <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
             </table>
         </div>
 
         <!-- TAB 3: Thông tin môn học -->
         <div id="tab-monhoc" class="tab-content">
-            <h3 style="margin-top:0;">Danh mục Môn học</h3>
+            <div class="action-bar">
+                <button class="btn" style="background:#28a745;" onclick="addNewRow()">+ Thêm dòng mới</button>
+                <button class="btn" style="background:#ffc107; color: #000;" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
+            </div>
             <table id="table-monhoc">
                 <thead>
                     <tr>
                         <th>Mã môn</th>
                         <th>Tên môn</th>
                         <th>Số tiết/tuần</th>
+                        <th style="width: 100px; text-align: center;">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+                <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
             </table>
         </div>
 
         <!-- TAB 4: Thông tin tổ hợp môn -->
         <div id="tab-tohop" class="tab-content">
-            <h3 style="margin-top:0;">Danh sách Tổ hợp môn</h3>
+            <div class="action-bar">
+                <button class="btn" style="background:#28a745;" onclick="addNewRow()">+ Thêm dòng mới</button>
+                <button class="btn" style="background:#ffc107; color: #000;" onclick="saveCurrentTab()">💾 Lưu thay đổi lên Firebase</button>
+            </div>
             <table id="table-tohop">
                 <thead>
                     <tr>
                         <th>Mã TH môn</th>
                         <th>Các môn trong tổ hợp</th>
                         <th>Các môn có chuyên đề</th>
+                        <th style="width: 100px; text-align: center;">Thao tác</th>
                     </tr>
                 </thead>
-                <tbody><tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr></tbody>
+                <tbody><tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr></tbody>
             </table>
         </div>
     </div>
@@ -403,11 +448,10 @@
 
             try {
                 const docRef = doc(db, COLLECTION_NAME, currentTabId);
-                // BẢN VÁ LỖI: Chuyển dữ liệu mảng lồng nhau thành chuỗi văn bản để Firebase chấp nhận
                 await setDoc(docRef, { excelData: JSON.stringify(cleanData) });
                 
                 renderTable(currentTabId, cleanData);
-                alert("Đã lưu dữ liệu lên Firebase thành công!");
+                alert("Đã nạp và lưu dữ liệu từ file Excel lên Firebase thành công!");
             } catch (error) {
                 alert("Firebase báo lỗi: " + error.message);
                 console.error("Lỗi chi tiết: ", error);
@@ -425,14 +469,11 @@
                 if (docSnap.exists()) {
                     let rawData = docSnap.data().excelData;
                     let data = [];
-                    
-                    // BẢN VÁ LỖI: Dịch ngược từ chuỗi văn bản về lại dạng mảng 
                     if (typeof rawData === 'string') {
                         data = JSON.parse(rawData);
                     } else {
-                        data = rawData; // Đề phòng trường hợp đọc dữ liệu cũ
+                        data = rawData; 
                     }
-                    
                     renderTable(tabId, data);
                 } else {
                     renderTable(tabId, []); 
@@ -444,43 +485,163 @@
             }
         };
 
+        // --- CÁC HÀM THAO TÁC TRỰC TIẾP TRÊN BẢNG ---
+
+        window.addNewRow = function() {
+            const tableId = "table-" + currentTabId.split('-')[1];
+            const tbody = document.getElementById(tableId).querySelector("tbody");
+            
+            // Nếu bảng đang trống, xóa dòng thông báo "Chưa có dữ liệu"
+            if(tbody.querySelector("td[colspan]")) {
+                tbody.innerHTML = "";
+            }
+            
+            const tr = document.createElement("tr");
+            // Lấy số lượng cột dựa trên header (trừ cột thao tác cuối cùng)
+            const colCount = document.getElementById(tableId).querySelectorAll("th").length - 1;
+            
+            for(let i = 0; i < colCount; i++) {
+                const td = document.createElement("td");
+                td.contentEditable = "true"; // Cho phép nhập liệu ngay
+                tr.appendChild(td);
+            }
+            
+            // Cột Thao tác
+            const tdAction = document.createElement("td");
+            tdAction.style.textAlign = "center";
+            tdAction.innerHTML = `
+                <button class="btn-small btn-edit" onclick="editRow(this)">Xong</button>
+                <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
+            `;
+            tr.appendChild(tdAction);
+            
+            // Chèn dòng mới lên đầu bảng
+            tbody.insertBefore(tr, tbody.firstChild);
+        };
+
+        window.editRow = function(btn) {
+            const tr = btn.closest("tr");
+            const tds = tr.querySelectorAll("td:not(:last-child)"); // Lấy các ô trừ ô thao tác
+            const isEditing = btn.innerText === "Xong";
+            
+            if(isEditing) {
+                // Đóng chế độ sửa
+                tds.forEach(td => td.contentEditable = "false");
+                btn.innerText = "Sửa";
+            } else {
+                // Bật chế độ sửa
+                tds.forEach(td => td.contentEditable = "true");
+                btn.innerText = "Xong";
+                tds[0].focus(); // Tự động focus vào ô đầu tiên
+            }
+        };
+
+        window.deleteRow = function(btn) {
+            if(confirm("Bạn có chắc chắn muốn xóa dòng này không? (Lưu ý: Bạn phải bấm 'Lưu thay đổi lên Firebase' thì hệ thống mới cập nhật)")) {
+                btn.closest("tr").remove();
+            }
+        };
+
+        window.saveCurrentTab = async function() {
+            const tableId = "table-" + currentTabId.split('-')[1];
+            const table = document.getElementById(tableId);
+            const rows = table.querySelectorAll("tr");
+            
+            let dataToSave = [];
+            
+            // 1. Lấy dữ liệu dòng tiêu đề (Header)
+            let headers = [];
+            const headerCells = rows[0].querySelectorAll("th");
+            // Bỏ qua cột 'Thao tác' cuối cùng
+            for(let i = 0; i < headerCells.length - 1; i++) {
+                headers.push(headerCells[i].innerText.trim());
+            }
+            dataToSave.push(headers);
+            
+            // 2. Lấy dữ liệu các dòng nội dung (Body)
+            for(let i = 1; i < rows.length; i++) {
+                const cells = rows[i].querySelectorAll("td");
+                
+                // Bỏ qua dòng báo trống
+                if (cells.length <= 1) continue; 
+                
+                let rowData = [];
+                for(let j = 0; j < cells.length - 1; j++) {
+                    rowData.push(cells[j].innerText.trim());
+                }
+                dataToSave.push(rowData);
+            }
+            
+            // 3. Đẩy lên Firebase
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                const docRef = doc(db, COLLECTION_NAME, currentTabId);
+                await setDoc(docRef, { excelData: JSON.stringify(dataToSave) });
+                alert("Đã lưu các thay đổi của bảng lên Firebase thành công!");
+                
+                // Tắt trạng thái "Đang sửa" của tất cả các dòng nếu có
+                const editBtns = table.querySelectorAll(".btn-edit");
+                editBtns.forEach(btn => {
+                    if (btn.innerText === "Xong") window.editRow(btn);
+                });
+                
+            } catch (error) {
+                alert("Firebase báo lỗi: " + error.message);
+                console.error(error);
+            } finally {
+                document.getElementById('loading-overlay').style.display = 'none';
+            }
+        };
+
         function renderTable(tabId, data) {
             let tableId = "";
-            let expectedHeaders = [];
+            let expectedHeadersCount = 0;
 
             if (tabId === 'tab-giaovien') {
                 tableId = "table-giaovien";
-                expectedHeaders = ["Mã GV", "Mã đăng nhập", "Tên giáo viên", "TCM", "Chức vụ", "Môn 1", "Môn 2", "Môn 3"];
+                expectedHeadersCount = 8;
             } else if (tabId === 'tab-lop') {
                 tableId = "table-lop";
-                expectedHeaders = ["Lớp", "Mã TH môn", "Mã GVCN"];
+                expectedHeadersCount = 3;
             } else if (tabId === 'tab-monhoc') {
                 tableId = "table-monhoc";
-                expectedHeaders = ["Mã môn", "Tên môn", "Số tiết/tuần"];
+                expectedHeadersCount = 3;
             } else if (tabId === 'tab-tohop') {
                 tableId = "table-tohop";
-                expectedHeaders = ["Mã TH môn", "Các môn trong tổ hợp", "Các môn có chuyên đề"];
+                expectedHeadersCount = 3;
             }
 
             const table = document.getElementById(tableId);
             const tbody = table.querySelector("tbody");
             tbody.innerHTML = ""; 
 
+            // Cột trống = Cột nội dung + 1 cột Thao tác
             if (!data || data.length <= 1) {
-                tbody.innerHTML = `<tr><td colspan="${expectedHeaders.length}" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${expectedHeadersCount + 1}" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
                 return;
             }
 
+            // Bỏ qua dòng Header ở index 0
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 if (row.length === 0 || row.every(cell => cell === "")) continue;
 
                 const tr = document.createElement("tr");
-                for (let j = 0; j < expectedHeaders.length; j++) {
+                for (let j = 0; j < expectedHeadersCount; j++) {
                     const td = document.createElement("td");
                     td.innerText = row[j] !== undefined ? row[j] : "";
                     tr.appendChild(td);
                 }
+                
+                // Thêm cột Thao tác
+                const tdAction = document.createElement("td");
+                tdAction.style.textAlign = "center";
+                tdAction.innerHTML = `
+                    <button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button>
+                    <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
+                `;
+                tr.appendChild(tdAction);
+                
                 tbody.appendChild(tr);
             }
         }
