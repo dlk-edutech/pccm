@@ -18,13 +18,16 @@
             padding: 0;
             background-color: var(--bg-color);
             color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         /* Style cho trang Đăng nhập */
         #login-section {
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            flex-grow: 1;
         }
         .login-box {
             background: white;
@@ -55,7 +58,7 @@
         .btn:disabled { background-color: #ccc; cursor: not-allowed; }
 
         /* Style cho Dashboard */
-        #main-section { display: none; padding: 20px; }
+        #main-section { display: none; padding: 20px; flex-grow: 1; }
         .header {
             display: flex;
             justify-content: space-between;
@@ -145,12 +148,23 @@
             font-weight: bold;
             color: var(--primary-color);
         }
+
+        /* Footer Bản quyền */
+        .footer {
+            text-align: center;
+            padding: 15px;
+            background-color: white;
+            color: #666;
+            font-size: 14px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
 
     <!-- Overlay Đang tải -->
-    <div id="loading-overlay">Đang tải dữ liệu từ Firebase...</div>
+    <div id="loading-overlay">Đang xử lý dữ liệu với Firebase...</div>
 
     <!-- PHẦN ĐĂNG NHẬP -->
     <div id="login-section">
@@ -267,13 +281,17 @@
         </div>
     </div>
 
-    <!-- TÍCH HỢP FIREBASE (Sử dụng Module) -->
+    <!-- Footer Bản quyền -->
+    <div class="footer">
+        &copy; 2026 Bản quyền thuộc về Phó Hiệu trưởng Trần Hồng Dân - Trường THPT Số 1 Trần Phú. 
+    </div>
+
+    <!-- TÍCH HỢP FIREBASE -->
     <script type="module">
-        // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
-        // Cấu hình Firebase từ ảnh cung cấp
+        // Cấu hình Firebase 
         const firebaseConfig = {
             apiKey: "AIzaSyDnV-T3tUt_2eJ5JLIpHO3S-nQfS7oDTVE",
             authDomain: "pccm-s1trp.firebaseapp.com",
@@ -283,17 +301,13 @@
             appId: "1:1074542861397:web:357f16713ef58d7b8c08dc"
         };
 
-        // Khởi tạo Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- CÁC BIẾN TOÀN CỤC ---
         const defaultPassword = "11043006";
         let currentTabId = 'tab-giaovien';
         let workbook = null; 
         const COLLECTION_NAME = "pccm_data";
-
-        // --- GÁN CÁC HÀM VÀO WINDOW ĐỂ HTML GỌI ĐƯỢC KHI DÙNG TYPE="MODULE" ---
         
         window.login = function() {
             const inputPw = document.getElementById("admin-password").value;
@@ -306,7 +320,6 @@
             if (inputPw === savedPw) {
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("main-section").style.display = "block";
-                // Tải dữ liệu từ Firebase cho tab mặc định
                 window.loadDataFromFirebase(currentTabId);
             } else {
                 document.getElementById("login-error").style.display = "block";
@@ -345,11 +358,9 @@
             document.getElementById(tabId).classList.add("active");
             evt.currentTarget.classList.add("active");
 
-            // Mỗi khi chuyển tab, lấy dữ liệu tab đó từ Firebase
             window.loadDataFromFirebase(tabId);
         };
 
-        // --- XỬ LÝ ĐỌC FILE EXCEL ---
         document.getElementById('excel-upload').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -375,40 +386,38 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // --- NẠP DỮ LIỆU & LƯU LÊN FIREBASE ---
         window.loadSheetToTab = async function() {
             if (!workbook) return;
             const sheetName = document.getElementById('sheet-select').value;
             const worksheet = workbook.Sheets[sheetName];
             
-            // Lấy dữ liệu excel dưới dạng mảng các mảng
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
+            let jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
             
             if (jsonData.length <= 1) {
                 alert("Sheet trống hoặc không có dữ liệu hợp lệ!");
                 return;
             }
 
-            // Hiện màn hình loading
+            // Làm sạch dữ liệu, xử lý triệt để lỗi undefined của Firebase
+            const cleanData = JSON.parse(JSON.stringify(jsonData));
+
             document.getElementById('loading-overlay').style.display = 'flex';
 
             try {
-                // Lưu dữ liệu lên Firestore (Dùng Tab ID làm tên Document)
                 const docRef = doc(db, COLLECTION_NAME, currentTabId);
-                await setDoc(docRef, { excelData: jsonData });
+                await setDoc(docRef, { excelData: cleanData });
                 
-                // Hiển thị ra bảng
-                renderTable(currentTabId, jsonData);
+                renderTable(currentTabId, cleanData);
                 alert("Đã lưu dữ liệu lên Firebase thành công!");
             } catch (error) {
-                console.error("Lỗi khi lưu Firebase: ", error);
-                alert("Lỗi khi lưu dữ liệu lên hệ thống!");
+                // Hiển thị lỗi chi tiết để bắt bệnh
+                alert("Firebase báo lỗi: " + error.message);
+                console.error("Lỗi chi tiết: ", error);
             } finally {
                 document.getElementById('loading-overlay').style.display = 'none';
             }
         };
 
-        // --- LẤY DỮ LIỆU TỪ FIREBASE ---
         window.loadDataFromFirebase = async function(tabId) {
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
@@ -419,7 +428,7 @@
                     const data = docSnap.data().excelData;
                     renderTable(tabId, data);
                 } else {
-                    renderTable(tabId, []); // Xóa bảng nếu chưa có dữ liệu trên Firebase
+                    renderTable(tabId, []); 
                 }
             } catch (error) {
                 console.error("Lỗi khi tải dữ liệu: ", error);
@@ -428,7 +437,6 @@
             }
         };
 
-        // --- HÀM VẼ BẢNG HTML ---
         function renderTable(tabId, data) {
             let tableId = "";
             let expectedHeaders = [];
@@ -451,13 +459,11 @@
             const tbody = table.querySelector("tbody");
             tbody.innerHTML = ""; 
 
-            // Nếu mảng data rỗng hoặc ít hơn 2 dòng (chỉ có header)
             if (!data || data.length <= 1) {
                 tbody.innerHTML = `<tr><td colspan="${expectedHeaders.length}" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
                 return;
             }
 
-            // Bỏ qua header ở dòng index 0, bắt đầu từ 1
             for (let i = 1; i < data.length; i++) {
                 const row = data[i];
                 if (row.length === 0 || row.every(cell => cell === "")) continue;
