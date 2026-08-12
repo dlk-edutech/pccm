@@ -26,8 +26,16 @@
         
         /* Đăng nhập */
         #login-section { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%); position: fixed; top: 0; left: 0; width: 100%; z-index: 50; }
-        .login-box { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-md); text-align: center; width: 340px; }
-        .login-box h2 { margin-top: 0; color: var(--primary); font-weight: 700; margin-bottom: 25px; }
+        .login-box { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-md); text-align: center; width: 380px; max-width: 90%; }
+        .login-box h2 { margin-top: 0; color: var(--primary); font-weight: 700; margin-bottom: 20px; }
+        
+        /* Lựa chọn Role */
+        .role-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; text-align: left; }
+        .role-card { border: 1px solid var(--border); padding: 12px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; background: var(--bg-color); display: flex; flex-direction: column; gap: 4px; }
+        .role-card.active { border-color: var(--primary); background: #e0e7ff; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
+        .role-card h4 { margin: 0; font-size: 14px; color: var(--primary); }
+        .role-card p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
+
         .login-box input { width: 100%; box-sizing: border-box; padding: 12px 15px; margin: 10px 0 20px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; }
         .login-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
 
@@ -79,6 +87,8 @@
         th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 13px; white-space: nowrap; }
         tr:last-child td { border-bottom: none; } tr:hover td { background-color: #f1f5f9; }
         td[contenteditable="true"] { background-color: #fef9c3; outline: 2px dashed var(--warning); outline-offset: -2px; color: #000; }
+        
+        .edit-select { width: 100%; padding: 6px; border: 1px solid var(--primary); border-radius: 4px; font-family: inherit; font-size: 13px; background-color: #fef9c3; outline: none; }
         .mask-pwd { filter: blur(4px); user-select: none; pointer-events: none; }
 
         /* CSS tùy chỉnh cho Ma trận PCCM */
@@ -118,7 +128,23 @@
     <div id="login-section">
         <div class="login-box">
             <h2>Hệ thống PCCM</h2>
-            <input type="password" id="login-input" placeholder="Nhập mã đăng nhập cá nhân...">
+            
+            <div class="role-grid">
+                <div class="role-card active" id="role-admin" onclick="selectRole('admin')">
+                    <h4>Quản trị viên (Admin)</h4>
+                    <p>Quản lý toàn bộ hệ thống, nạp dữ liệu, xuất bảng ma trận phân công.</p>
+                </div>
+                <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
+                    <h4>Tổ trưởng chuyên môn (TTCM)</h4>
+                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp.</p>
+                </div>
+                <div class="role-card" id="role-gv" onclick="selectRole('gv')">
+                    <h4>Giáo viên</h4>
+                    <p>Xem bảng phân công chuyên môn, cập nhật mã đăng nhập cá nhân.</p>
+                </div>
+            </div>
+
+            <input type="password" id="login-input" placeholder="Nhập mã Admin...">
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
         </div>
@@ -279,6 +305,7 @@
                 </div>
             </div>
             
+            <!-- Chân trang đã được giữ nguyên nội dung bản quyền theo yêu cầu -->
             <div class="footer">Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn</div>
         </div>
     </div>
@@ -319,6 +346,18 @@
         let currentUser = null; 
         let currentTabId = '';
         let workbook = null; 
+        
+        // Quản lý trạng thái màn hình Login
+        let selectedLoginRole = 'admin';
+        window.selectRole = function(role) {
+            selectedLoginRole = role;
+            document.querySelectorAll('.role-card').forEach(el => el.classList.remove('active'));
+            document.getElementById('role-' + role).classList.add('active');
+            let input = document.getElementById("login-input");
+            if (role === 'admin') input.placeholder = "Nhập mã Admin...";
+            else if (role === 'ttcm') input.placeholder = "Nhập mã đăng nhập TTCM...";
+            else input.placeholder = "Nhập mã đăng nhập cá nhân Giáo viên...";
+        };
 
         window.login = async function() {
             const input = document.getElementById("login-input").value.trim();
@@ -330,15 +369,18 @@
             document.getElementById('loading-overlay').style.display = 'flex';
 
             try {
+                // Tải dữ liệu trước
                 const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
                 if (docSnap.exists()) {
                     let rawData = docSnap.data().excelData;
                     dbTeachers = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
                 }
 
-                if (input === adminPw) {
-                    currentUser = { role: 'admin', ten: 'Quản trị viên' };
-                    await initAdminUI();
+                if (selectedLoginRole === 'admin') {
+                    if (input === adminPw) {
+                        currentUser = { role: 'admin', ten: 'Quản trị viên' };
+                        await initAdminUI();
+                    } else { throw new Error("Mã Admin không chính xác!"); }
                 } else {
                     let foundUser = null;
                     let foundIndex = -1;
@@ -352,7 +394,10 @@
                         }
                     }
                     if (foundUser) {
-                        let role = foundUser[4] === "TTCM" ? "ttcm" : "gv";
+                        let isTtcm = foundUser[4] === "TTCM";
+                        if (selectedLoginRole === 'ttcm' && !isTtcm) throw new Error("Bạn không có quyền truy cập của Tổ trưởng CM!");
+                        
+                        let role = isTtcm && selectedLoginRole === 'ttcm' ? "ttcm" : "gv";
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
                         await initTeacherUI(role);
                     } else {
@@ -377,7 +422,6 @@
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
             
-            // Lấy tất cả dữ liệu hệ thống cho Admin
             const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
                 getDoc(doc(db, "pccm_data", "tab-lop")),
                 getDoc(doc(db, "pccm_data", "tab-monhoc")),
@@ -500,6 +544,8 @@
                 let data = [];
                 if (docSnap.exists()) {
                     data = JSON.parse(docSnap.data().excelData);
+                    if(tabId === 'tab-giaovien') dbTeachers = data; 
+                    if(tabId === 'tab-monhoc') dbSubjects = data;
                 }
                 renderAdminTable(tabId, data);
             } catch (e) { console.error(e); }
@@ -546,19 +592,67 @@
             const tr = document.createElement("tr");
             const colCount = document.getElementById(tableId).querySelectorAll("th").length - 1;
             for(let i=0; i<colCount; i++) {
-                let td = document.createElement("td"); td.contentEditable = "true"; tr.appendChild(td);
+                let td = document.createElement("td");
+                tr.appendChild(td);
             }
             let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
-            tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Xong</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
+            tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, '${tableId}')">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
             tr.appendChild(tdAction);
             tbody.insertBefore(tr, tbody.firstChild);
+            
+            // Kích hoạt sửa ngay sau khi thêm dòng
+            editRow(tdAction.querySelector('.btn-edit'), tableId);
         };
 
-        window.editRow = function(btn) {
+        function getSubjectOptionsHtml(currentVal) {
+            let optionsHtml = `<option value="">-- Trống --</option>`;
+            if (dbSubjects && dbSubjects.length > 1) {
+                for(let i=1; i<dbSubjects.length; i++) {
+                    if(!dbSubjects[i][0]) continue;
+                    let maMon = dbSubjects[i][0].trim();
+                    let selected = (maMon === currentVal) ? "selected" : "";
+                    optionsHtml += `<option value="${maMon}" ${selected}>${maMon}</option>`;
+                }
+            }
+            return optionsHtml;
+        }
+
+        window.editRow = function(btn, explicitTableId = null) {
             const tr = btn.closest("tr");
+            const tableId = explicitTableId || tr.closest("table").id;
             const tds = tr.querySelectorAll("td:not(:last-child)"); 
-            if(btn.innerText === "Xong") { tds.forEach(td => td.contentEditable = "false"); btn.innerText = "Sửa"; } 
-            else { tds.forEach(td => td.contentEditable = "true"); btn.innerText = "Xong"; tds[0].focus(); }
+            const isEditing = btn.innerText === "Xong";
+            
+            if(isEditing) {
+                // Thoát chế độ sửa
+                tds.forEach(td => {
+                    if (td.dataset.editingSelect === "true") {
+                        let select = td.querySelector('select');
+                        td.innerText = select ? select.value : "";
+                        delete td.dataset.editingSelect;
+                    } else {
+                        td.contentEditable = "false";
+                    }
+                });
+                btn.innerText = "Sửa";
+            } else {
+                // Vào chế độ sửa
+                tds.forEach((td, index) => {
+                    let isSubjectCol = false;
+                    if (tableId === 'table-giaovien' && (index === 6 || index === 7 || index === 8)) isSubjectCol = true;
+                    if (tableId === 'table-ttcm-gv' && (index === 5 || index === 6 || index === 7)) isSubjectCol = true;
+
+                    if (isSubjectCol) {
+                        let currentVal = td.innerText.trim();
+                        td.innerHTML = `<select class="edit-select">${getSubjectOptionsHtml(currentVal)}</select>`;
+                        td.dataset.editingSelect = "true";
+                    } else {
+                        td.contentEditable = "true";
+                    }
+                });
+                btn.innerText = "Xong";
+                if (!tds[0].dataset.editingSelect) tds[0].focus(); 
+            }
         };
 
         window.deleteRow = function(btn) { if(confirm("Chắc chắn xóa dòng này?")) btn.closest("tr").remove(); };
@@ -586,7 +680,7 @@
                 await setDoc(doc(db, "pccm_data", tabId), { excelData: JSON.stringify(dataToSave) });
                 syncMemoryState(tabId, dataToSave);
                 alert("Đã lưu dữ liệu bảng!");
-                document.getElementById(tableId).querySelectorAll(".btn-edit").forEach(b => { if(b.innerText==="Xong") window.editRow(b); });
+                document.getElementById(tableId).querySelectorAll(".btn-edit").forEach(b => { if(b.innerText==="Xong") window.editRow(b, tableId); });
             } catch (e) { alert("Lỗi: " + e.message); }
             document.getElementById('loading-overlay').style.display = 'none';
         };
@@ -617,7 +711,7 @@
                     tr.appendChild(td);
                 }
                 let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
-                tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
+                tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, '${tableId}')">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
                 tr.appendChild(tdAction); tbody.appendChild(tr);
             }
         }
@@ -648,7 +742,7 @@
                     baseHours: parseInt(dbSubjects[i][2]) || 0
                 });
                 let th = document.createElement("th");
-                th.innerText = dbSubjects[i][0].trim(); // Dùng mã môn học làm tiêu đề
+                th.innerText = dbSubjects[i][0].trim(); 
                 trHead.appendChild(th);
             }
             thead.appendChild(trHead);
@@ -664,7 +758,7 @@
                 let tdLop = document.createElement("td");
                 tdLop.innerText = tenLop;
                 tdLop.style.fontWeight = "700";
-                tdLop.style.backgroundColor = "#ccfbf1"; // Màu highlight tương tự ảnh mẫu
+                tdLop.style.backgroundColor = "#ccfbf1"; 
                 tr.appendChild(tdLop);
 
                 subjects.forEach(sub => {
@@ -674,7 +768,6 @@
                     let hasCD = checkChuyenDe(tenLop, sub.tenMon);
                     let hours = sub.baseHours + (hasCD ? 1 : 0);
 
-                    // Đặc quyền cho Sinh hoạt -> GVCN
                     if (sub.maMon.toUpperCase() === 'SH' || sub.tenMon.toLowerCase().includes('sinh hoạt')) {
                         teacher = gvcn;
                     } else {
@@ -720,7 +813,7 @@
                     });
                     
                     let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
-                    tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this)">Sửa</button>`;
+                    tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, 'table-ttcm-gv')">Sửa</button>`;
                     tr.appendChild(tdAction); tbody.appendChild(tr);
                 }
             }
@@ -739,7 +832,7 @@
                     dbTeachers[index][mappedIndices[j]] = cells[j].innerText.trim();
                 }
                 let editBtn = tr.querySelector(".btn-edit");
-                if(editBtn && editBtn.innerText === "Xong") window.editRow(editBtn);
+                if(editBtn && editBtn.innerText === "Xong") window.editRow(editBtn, 'table-ttcm-gv');
             });
 
             document.getElementById('loading-overlay').style.display = 'flex';
