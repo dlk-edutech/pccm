@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -108,8 +109,6 @@
             box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
         }
 
-        .mask-pwd { filter: blur(4px); user-select: none; pointer-events: none; }
-
         /* CSS tùy chỉnh cho Ma trận PCCM */
         #table-admin-matrix th { background-color: #00e5ff; color: #000; text-align: center; font-weight: 700; font-size: 14px; border: 1px solid #ccc; }
         #table-admin-matrix td { border: 1px solid #ccc; text-align: center; }
@@ -163,9 +162,13 @@
                 </div>
             </div>
 
-            <input type="password" id="login-input" placeholder="Nhập mã Admin...">
+            <input type="text" id="login-input" placeholder="Nhập mã Admin..." style="-webkit-text-security: disc;" autocomplete="off">
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
+        </div>
+        <!-- Bản quyền trên màn hình Đăng nhập -->
+        <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; color: var(--text-muted); font-size: 13px;">
+            Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn
         </div>
     </div>
 
@@ -324,6 +327,7 @@
                 </div>
             </div>
             
+            <!-- Chân trang -->
             <div class="footer">Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn</div>
         </div>
     </div>
@@ -333,7 +337,7 @@
         <div class="modal-box">
             <h3 id="pw-modal-title">Đổi mã cá nhân</h3>
             <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Mã mới dùng cho những lần đăng nhập sau.</p>
-            <input type="password" id="new-pwd-input" placeholder="Nhập mã mới..." style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:20px; border:1px solid var(--border); border-radius:6px;">
+            <input type="text" id="new-pwd-input" placeholder="Nhập mã mới..." style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:20px; border:1px solid var(--border); border-radius:6px; -webkit-text-security: disc;" autocomplete="off">
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('pw-modal').style.display='none'">Hủy</button>
                 <button class="btn btn-primary" style="flex:1;" onclick="submitChangePassword()">Xác nhận</button>
@@ -365,7 +369,6 @@
         let currentTabId = '';
         let workbook = null; 
         
-        // Quản lý trạng thái màn hình Login
         let selectedLoginRole = 'admin';
         window.selectRole = function(role) {
             selectedLoginRole = role;
@@ -387,7 +390,6 @@
             document.getElementById('loading-overlay').style.display = 'flex';
 
             try {
-                // Tải dữ liệu trước
                 const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
                 if (docSnap.exists()) {
                     let rawData = docSnap.data().excelData;
@@ -611,6 +613,7 @@
             const colCount = document.getElementById(tableId).querySelectorAll("th").length - 1;
             for(let i=0; i<colCount; i++) {
                 let td = document.createElement("td");
+                td.dataset.val = "";
                 tr.appendChild(td);
             }
             let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
@@ -618,7 +621,6 @@
             tr.appendChild(tdAction);
             tbody.insertBefore(tr, tbody.firstChild);
             
-            // Kích hoạt sửa ngay 
             let tdList = tr.querySelectorAll("td:not(:last-child)");
             activateEditMode(tdList, tableId);
         };
@@ -642,7 +644,7 @@
                 if (tableId === 'table-giaovien' && (index === 6 || index === 7 || index === 8)) isSubjectCol = true;
                 if (tableId === 'table-ttcm-gv' && (index === 5 || index === 6 || index === 7)) isSubjectCol = true;
 
-                let currentVal = td.innerText.trim();
+                let currentVal = td.dataset.val !== undefined ? td.dataset.val : td.innerText.trim();
                 td.classList.add('editing');
                 
                 if (isSubjectCol) {
@@ -662,11 +664,23 @@
             const isEditing = btn.innerText === "Lưu"; 
             
             if(isEditing) {
-                // Thoát sửa
-                tds.forEach(td => {
+                tds.forEach((td, index) => {
                     let input = td.querySelector('.edit-input, .edit-select');
                     if (input) {
-                        td.innerText = input.value.trim();
+                        let newVal = input.value.trim();
+                        td.dataset.val = newVal;
+                        
+                        let isNameColAdmin = (tableId === 'table-giaovien' && index === 2);
+                        let isNameColTtcm = (tableId === 'table-ttcm-gv' && index === 1); 
+                        
+                        if (isNameColAdmin || isNameColTtcm) {
+                            let maGv = tds[0].dataset.val !== undefined ? tds[0].dataset.val : tds[0].innerText.trim();
+                            let homeroom = dbClasses.find(c => c && c[2] === maGv);
+                            if (homeroom) td.innerHTML = `${newVal} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
+                            else td.innerText = newVal;
+                        } else {
+                            td.innerText = newVal;
+                        }
                     }
                     td.classList.remove('editing');
                 });
@@ -674,7 +688,6 @@
                 btn.classList.remove('btn-success');
                 btn.classList.add('btn-edit');
             } else {
-                // Vào sửa
                 activateEditMode(tds, tableId);
                 btn.innerText = "Lưu";
                 btn.classList.remove('btn-edit');
@@ -687,7 +700,6 @@
         window.saveCurrentTab = async function(tabId) {
             const tableId = "table-" + tabId.split('-')[1];
             
-            // Ép lưu tất cả các dòng đang sửa dở
             document.getElementById(tableId).querySelectorAll(".btn-success").forEach(b => { 
                 if(b.innerText==="Lưu") window.editRow(b, tableId); 
             });
@@ -704,7 +716,10 @@
                 const cells = rows[i].querySelectorAll("td");
                 if (cells.length <= 1) continue; 
                 let rowData = [];
-                for(let j=0; j<cells.length-1; j++) rowData.push(cells[j].innerText.trim());
+                for(let j=0; j<cells.length-1; j++) {
+                    let val = cells[j].dataset.val !== undefined ? cells[j].dataset.val : cells[j].innerText.trim();
+                    rowData.push(val);
+                }
                 dataToSave.push(rowData);
             }
             
@@ -739,7 +754,16 @@
                 const tr = document.createElement("tr");
                 for (let j = 0; j < expCols; j++) {
                     let td = document.createElement("td"); 
-                    td.innerText = data[i][j] !== undefined ? data[i][j] : ""; 
+                    let val = data[i][j] !== undefined ? data[i][j] : ""; 
+                    td.dataset.val = val;
+                    if (tabId === 'tab-giaovien' && j === 2) {
+                        let maGv = data[i][0];
+                        let homeroom = dbClasses.find(c => c && c[2] === maGv);
+                        if (homeroom) td.innerHTML = `${val} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
+                        else td.innerText = val;
+                    } else {
+                        td.innerText = val; 
+                    }
                     tr.appendChild(td);
                 }
                 let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
@@ -840,7 +864,16 @@
                     const showCols = [0, 2, 3, 4, 5, 6, 7, 8];
                     showCols.forEach(colIdx => {
                         let td = document.createElement("td"); 
-                        td.innerText = dbTeachers[i][colIdx] || ""; 
+                        let val = dbTeachers[i][colIdx] || "";
+                        td.dataset.val = val;
+                        
+                        if (colIdx === 2) {
+                            let homeroom = dbClasses.find(c => c && c[2] === dbTeachers[i][0]);
+                            if (homeroom) td.innerHTML = `${val} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
+                            else td.innerText = val;
+                        } else {
+                            td.innerText = val;
+                        }
                         tr.appendChild(td);
                     });
                     
@@ -853,7 +886,6 @@
         }
 
         window.saveTtcmGvTab = async function() {
-            // Ép lưu dòng đang sửa dở
             document.getElementById("table-ttcm-gv").querySelectorAll(".btn-success").forEach(b => { 
                 if(b.innerText==="Lưu") window.editRow(b, 'table-ttcm-gv'); 
             });
@@ -866,7 +898,8 @@
                 const index = parseInt(tr.dataset.index);
                 const cells = tr.querySelectorAll("td");
                 for(let j=0; j < mappedIndices.length; j++) {
-                    dbTeachers[index][mappedIndices[j]] = cells[j].innerText.trim();
+                    let val = cells[j].dataset.val !== undefined ? cells[j].dataset.val : cells[j].innerText.trim();
+                    dbTeachers[index][mappedIndices[j]] = val;
                 }
             });
 
@@ -949,11 +982,14 @@
                     }
                 }
 
+                let isHomeroom = dbClasses.some(c => c[0] === tenLop && c[2] === maGv);
+                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : '';
+
                 container.innerHTML += `
                     <label class="class-item" style="${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
                         <input type="checkbox" value="${tenLop}" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                         <div style="display: flex; flex-direction: column;">
-                            <span>${tenLop}</span>
+                            <span style="${nameStyle}">${tenLop}</span>
                             ${noteStr}
                         </div>
                     </label>
