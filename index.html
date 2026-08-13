@@ -154,7 +154,6 @@
                 </div>
             </div>
 
-            <!-- Khóa ô nhập liệu khi chưa chọn Role -->
             <input type="text" id="login-input" placeholder="Vui lòng nhấp chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
@@ -1426,7 +1425,7 @@
             const tbody = document.getElementById("table-admin-tonghop").querySelector("tbody");
             
             let duration = getPeriodDuration(currentPeriodId);
-            thead.innerHTML = `<tr><th>Tổ CM</th><th>Mã GV</th><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng tiết/tuần</th><th>Thừa/Thiếu</th><th>Tổng cả đợt (${duration} tuần)</th></tr>`;
+            thead.innerHTML = `<tr><th>Tổ CM</th><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng tiết/tuần</th><th>Thừa/Thiếu</th><th>Tổng cả đợt (${duration} tuần)</th></tr>`;
             tbody.innerHTML = "";
             
             let hasData = false;
@@ -1493,7 +1492,7 @@
                     </tr>
                 `;
             }
-            if(!hasData) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
+            if(!hasData) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
         }
 
         window.exportAdminTongHopToExcel = function() {
