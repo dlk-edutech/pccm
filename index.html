@@ -148,11 +148,11 @@
             <div class="role-grid">
                 <div class="role-card" id="role-admin" onclick="selectRole('admin')">
                     <h4>Quản trị viên (Admin)</h4>
-                    <p>Quản lý toàn bộ hệ thống, nạp dữ liệu, xuất bảng ma trận phân công.</p>
+                    <p>Quản lý hệ thống, nạp dữ liệu, xuất bảng ma trận phân công toàn trường.</p>
                 </div>
                 <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
                     <h4>Tổ trưởng / Tổ phó (TTCM/TPCM)</h4>
-                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp.</p>
+                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp của Tổ.</p>
                 </div>
                 <div class="role-card" id="role-gv" onclick="selectRole('gv')">
                     <h4>Giáo viên</h4>
@@ -161,7 +161,7 @@
             </div>
 
             <!-- Khóa ô nhập liệu khi chưa chọn Role -->
-            <input type="text" id="login-input" placeholder="Vui lòng chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
+            <input type="text" id="login-input" placeholder="Vui lòng nhấp chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
         </div>
@@ -180,13 +180,15 @@
                 <p id="sidebar-user-role">Đang tải...</p>
             </div>
             <div class="menu" id="sidebar-menu">
+                <!-- Master Admin Items (Độc quyền) -->
+                <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
+
                 <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">Quản lý Giáo viên</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu chéo PCCM</div>
-                <!-- Tính năng mới: Tổng hợp PCCM Toàn trường -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp PCCM Toàn trường</div>
                 
                 <!-- TTCM Items -->
@@ -221,6 +223,21 @@
                             <label>2. Chọn Sheet nạp đè:</label>
                             <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
                             <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
+                        </div>
+                    </div>
+
+                    <!-- TAB QUẢN LÝ ĐƠN VỊ (MASTER ADMIN) -->
+                    <div id="tab-admin-sub" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <h3 style="margin:0;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Tạo tài khoản độc lập cho các trường/đơn vị khác. Dữ liệu phân công của mỗi đơn vị hoàn toàn tách biệt nhau.</p>
+                        <div class="action-bar"><button class="btn btn-success" onclick="addNewSubAdminRow()">+ Thêm đơn vị</button><button class="btn btn-warning" onclick="saveSubAdmins()">💾 Lưu danh sách</button></div>
+                        <div class="table-container">
+                            <table id="table-admin-sub">
+                                <thead><tr><th>Tên đơn vị</th><th>Mã đăng nhập (Pass)</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
                         </div>
                     </div>
 
@@ -378,6 +395,10 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        // Core State
+        let currentUnitId = ''; // Trống = Master Admin, có giá trị = Sub Admin / Đơn vị khác
+        let dbSubAdmins = []; // Lưu danh sách các đơn vị
+
         let dbTeachers = []; 
         let dbClasses = [];
         let dbSubjects = [];
@@ -386,6 +407,11 @@
         let currentUser = null; 
         let currentTabId = '';
         let workbook = null; 
+
+        // Hàm lấy tên Collection theo Đơn vị (để lưu dữ liệu độc lập)
+        function getCollectionName() {
+            return currentUnitId ? "pccm_data_" + currentUnitId : "pccm_data";
+        }
 
         // --- HÀM TOAST NOTIFICATION ---
         window.showToast = function(message, type = 'success') {
@@ -437,39 +463,81 @@
             document.getElementById('loading-overlay').style.display = 'flex';
 
             try {
-                const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
-                if (docSnap.exists()) {
-                    let rawData = docSnap.data().excelData;
-                    dbTeachers = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                // Tải danh sách Sub Admins từ Config chung
+                try {
+                    const subSnap = await getDoc(doc(db, "pccm_config", "sub_admins"));
+                    if (subSnap.exists()) {
+                        dbSubAdmins = JSON.parse(subSnap.data().data);
+                    } else {
+                        dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]];
+                    }
+                } catch(e) {
+                    dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]];
                 }
 
                 if (selectedLoginRole === 'admin') {
                     if (input === adminPw) {
-                        currentUser = { role: 'admin', ten: 'Quản trị viên' };
+                        currentUser = { role: 'admin', ten: 'Quản trị viên Hệ thống' };
+                        currentUnitId = '';
                         await initAdminUI();
-                    } else { throw new Error("Mã Admin không chính xác!"); }
-                } else {
-                    let foundUser = null;
-                    let foundIndex = -1;
-                    if(dbTeachers.length > 1) {
-                        for(let i = 1; i < dbTeachers.length; i++) {
-                            if(dbTeachers[i][1] === input) {
-                                foundUser = dbTeachers[i];
-                                foundIndex = i;
+                    } else {
+                        // Kiểm tra xem có phải là Sub Admin không
+                        let foundSub = null;
+                        for(let i=1; i<dbSubAdmins.length; i++) {
+                            if(dbSubAdmins[i][1] === input) {
+                                foundSub = dbSubAdmins[i];
                                 break;
                             }
                         }
+                        if (foundSub) {
+                            currentUser = { role: 'sub_admin', ten: 'Admin - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
+                            currentUnitId = foundSub[2]; // Gán unitId
+                            await initAdminUI();
+                        } else {
+                            throw new Error("Mã Admin không chính xác!");
+                        }
                     }
+                } else {
+                    // Logic tìm kiếm TTCM/GV trên tất cả các đơn vị
+                    let foundUser = null;
+                    let foundIndex = -1;
+                    let foundUnitId = '';
+                    
+                    let unitsToCheck = [{ id: '', name: 'Main' }];
+                    for(let i=1; i<dbSubAdmins.length; i++) {
+                        if(dbSubAdmins[i][2]) unitsToCheck.push({ id: dbSubAdmins[i][2], name: dbSubAdmins[i][0] });
+                    }
+                    
+                    for(let u of unitsToCheck) {
+                        let colName = u.id ? "pccm_data_" + u.id : "pccm_data";
+                        const docSnap = await getDoc(doc(db, colName, "tab-giaovien"));
+                        if (docSnap.exists()) {
+                            let rawData = docSnap.data().excelData;
+                            let tList = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                            
+                            for(let i = 1; i < tList.length; i++) {
+                                if(tList[i][1] === input) {
+                                    foundUser = tList[i];
+                                    foundIndex = i;
+                                    foundUnitId = u.id;
+                                    dbTeachers = tList; 
+                                    break;
+                                }
+                            }
+                        }
+                        if (foundUser) break;
+                    }
+                    
                     if (foundUser) {
-                        // Cấp quyền Quản lý cho cả TTCM và TPCM
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
                         if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
                         
                         let role = (isManager && selectedLoginRole === 'ttcm') ? "ttcm" : "gv";
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
+                        currentUnitId = foundUnitId; // Gắn GV vào đúng Unit của họ
                         await initTeacherUI(role);
                     } else {
-                        throw new Error("Mã đăng nhập không chính xác!");
+                        throw new Error("Mã đăng nhập cá nhân không chính xác!");
                     }
                 }
                 
@@ -486,23 +554,30 @@
 
         async function initAdminUI() {
             document.querySelector('.admin-only').style.display = 'flex';
-            document.getElementById('sidebar-user-role').innerText = "Tài khoản: Admin";
+            document.getElementById('sidebar-user-role').innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
             
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
             
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'block');
+            } else {
+                document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
+            }
+            
             const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
-                getDoc(doc(db, "pccm_data", "tab-lop")),
-                getDoc(doc(db, "pccm_data", "tab-monhoc")),
-                getDoc(doc(db, "pccm_data", "tab-tohop")),
-                getDoc(doc(db, "pccm_data", "tab-phancong"))
+                getDoc(doc(db, getCollectionName(), "tab-lop")),
+                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
+                getDoc(doc(db, getCollectionName(), "tab-tohop")),
+                getDoc(doc(db, getCollectionName(), "tab-phancong"))
             ]);
             if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
             if(snapMon.exists()) dbSubjects = JSON.parse(snapMon.data().excelData);
             if(snapToHop.exists()) dbCombos = JSON.parse(snapToHop.data().excelData);
             if(snapPc.exists()) dbAssignments = JSON.parse(snapPc.data().assignmentData || "[]");
 
-            document.querySelector('.admin-item').click();
+            if (currentUser.role === 'admin') document.querySelector('.master-admin-item').click();
+            else document.querySelector('.admin-item').click();
         }
 
         async function initTeacherUI(role) {
@@ -521,10 +596,10 @@
             }
             
             const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
-                getDoc(doc(db, "pccm_data", "tab-lop")),
-                getDoc(doc(db, "pccm_data", "tab-monhoc")),
-                getDoc(doc(db, "pccm_data", "tab-tohop")),
-                getDoc(doc(db, "pccm_data", "tab-phancong"))
+                getDoc(doc(db, getCollectionName(), "tab-lop")),
+                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
+                getDoc(doc(db, getCollectionName(), "tab-tohop")),
+                getDoc(doc(db, getCollectionName(), "tab-phancong"))
             ]);
 
             if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
@@ -550,7 +625,7 @@
 
         window.showChangePassword = () => {
             document.getElementById('new-pwd-input').value = "";
-            document.getElementById('pw-modal-title').innerText = currentUser.role === 'admin' ? "Đổi mã Admin" : "Đổi mã đăng nhập cá nhân";
+            document.getElementById('pw-modal-title').innerText = (currentUser.role === 'admin' || currentUser.role === 'sub_admin') ? "Đổi mã Admin" : "Đổi mã đăng nhập cá nhân";
             document.getElementById('pw-modal').style.display = 'flex';
         };
 
@@ -563,16 +638,27 @@
 
             if (currentUser.role === 'admin') {
                 localStorage.setItem("adminPassword", newPw);
-                showToast("Đổi mã Admin thành công!");
+                showToast("Đổi mã Master Admin thành công!");
                 document.getElementById('pw-modal').style.display = 'none';
+            } else if (currentUser.role === 'sub_admin') {
+                document.getElementById('loading-overlay').style.display = 'flex';
+                try {
+                    dbSubAdmins[currentUser.rowIndex][1] = newPw;
+                    await setDoc(doc(db, "pccm_config", "sub_admins"), { data: JSON.stringify(dbSubAdmins) });
+                    showToast("Đổi mã Admin Đơn vị thành công!");
+                    document.getElementById('pw-modal').style.display = 'none';
+                } catch(e) {
+                    showToast("Lỗi khi lưu mã mới: " + e.message, "error");
+                }
+                document.getElementById('loading-overlay').style.display = 'none';
             } else {
                 document.getElementById('loading-overlay').style.display = 'flex';
                 try {
-                    const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
+                    const docSnap = await getDoc(doc(db, getCollectionName(), "tab-giaovien"));
                     if (docSnap.exists()) {
                         let latestDb = JSON.parse(docSnap.data().excelData);
                         latestDb[currentUser.rowIndex][1] = newPw; 
-                        await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
+                        await setDoc(doc(db, getCollectionName(), "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
                         
                         dbTeachers = latestDb; 
                         showToast("Đổi mã đăng nhập thành công!");
@@ -595,11 +681,13 @@
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
             document.getElementById(tabId).classList.add("active");
 
-            if (currentUser.role === 'admin') {
+            if (currentUser.role === 'admin' || currentUser.role === 'sub_admin') {
                 if(tabId === 'tab-admin-matrix') {
                     renderAdminMatrix();
                 } else if(tabId === 'tab-admin-tonghop') {
                     renderAdminTongHop();
+                } else if(tabId === 'tab-admin-sub') {
+                    renderSubAdminTable();
                 } else {
                     await loadAdminTabData(tabId);
                 }
@@ -609,11 +697,113 @@
             }
         };
 
-        // --- CÁC HÀM CHO ADMIN ---
+        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN CHỈ CÓ) ---
+        window.addNewSubAdminRow = function() {
+            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
+            const tr = document.createElement("tr");
+            
+            tr.innerHTML = `
+                <td data-val="" class="editing"><input type="text" class="edit-input" value=""></td>
+                <td data-val="" class="editing"><input type="text" class="edit-input" value=""></td>
+                <td style="text-align:center;">
+                    <button class="btn-small btn-success" onclick="editSubAdminRow(this)">Lưu</button>
+                    <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
+                </td>
+            `;
+            tr.dataset.unitId = "unit_" + Date.now() + Math.floor(Math.random()*1000);
+            tbody.insertBefore(tr, tbody.firstChild);
+            tr.querySelector('.edit-input').focus();
+        };
+
+        window.editSubAdminRow = function(btn) {
+            const tr = btn.closest("tr");
+            const tds = tr.querySelectorAll("td:not(:last-child)");
+            const isEditing = btn.innerText === "Lưu";
+            
+            if(isEditing) {
+                tds.forEach(td => {
+                    let input = td.querySelector('.edit-input');
+                    if(input) {
+                        let newVal = input.value.trim();
+                        td.dataset.val = newVal;
+                        td.innerText = newVal;
+                    }
+                    td.classList.remove('editing');
+                });
+                btn.innerText = "Sửa";
+                btn.classList.replace('btn-success', 'btn-edit');
+            } else {
+                tds.forEach(td => {
+                    let val = td.dataset.val !== undefined ? td.dataset.val : td.innerText.trim();
+                    td.classList.add('editing');
+                    td.innerHTML = `<input type="text" class="edit-input" value="${val}">`;
+                });
+                btn.innerText = "Lưu";
+                btn.classList.replace('btn-edit', 'btn-success');
+                tr.querySelector('.edit-input').focus();
+            }
+        };
+
+        window.saveSubAdmins = async function() {
+            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            tbody.querySelectorAll(".btn-success").forEach(b => { if(b.innerText==="Lưu") window.editSubAdminRow(b); });
+            
+            let dataToSave = [["Tên đơn vị", "Mã đăng nhập", "unitId"]];
+            const rows = tbody.querySelectorAll("tr");
+            
+            for(let i=0; i<rows.length; i++) {
+                const cells = rows[i].querySelectorAll("td");
+                if(cells.length <= 1) continue;
+                let ten = cells[0].dataset.val !== undefined ? cells[0].dataset.val : cells[0].innerText.trim();
+                let ma = cells[1].dataset.val !== undefined ? cells[1].dataset.val : cells[1].innerText.trim();
+                let unitId = rows[i].dataset.unitId;
+                if (!unitId) unitId = "unit_" + Date.now() + Math.floor(Math.random()*1000);
+                
+                dataToSave.push([ten, ma, unitId]);
+            }
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, "pccm_config", "sub_admins"), { data: JSON.stringify(dataToSave) });
+                dbSubAdmins = dataToSave;
+                showToast("Đã lưu danh sách Đơn vị (Sub Admin)!");
+            } catch(e) {
+                showToast("Lỗi: " + e.message, "error");
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        function renderSubAdminTable() {
+            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            tbody.innerHTML = "";
+            if (dbSubAdmins.length <= 1) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; padding: 20px; color:var(--text-muted);">Chưa có đơn vị nào được tạo.</td></tr>';
+                return;
+            }
+            
+            for(let i=1; i<dbSubAdmins.length; i++) {
+                let row = dbSubAdmins[i];
+                let tr = document.createElement("tr");
+                tr.dataset.unitId = row[2];
+                
+                tr.innerHTML = `
+                    <td data-val="${row[0]}">${row[0]}</td>
+                    <td data-val="${row[1]}">${row[1]}</td>
+                    <td style="text-align:center;">
+                        <button class="btn-small btn-edit" onclick="editSubAdminRow(this)">Sửa</button>
+                        <button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        // --- CÁC HÀM CHO ADMIN/SUB_ADMIN ---
         async function loadAdminTabData(tabId) {
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const docRef = doc(db, "pccm_data", tabId);
+                const docRef = doc(db, getCollectionName(), tabId);
                 const docSnap = await getDoc(docRef);
                 let data = [];
                 if (docSnap.exists()) {
@@ -655,7 +845,7 @@
             const cleanData = JSON.parse(JSON.stringify(jsonData));
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, "pccm_data", currentTabId), { excelData: JSON.stringify(cleanData) });
+                await setDoc(doc(db, getCollectionName(), currentTabId), { excelData: JSON.stringify(cleanData) });
                 syncMemoryState(currentTabId, cleanData);
                 renderAdminTable(currentTabId, cleanData);
                 showToast("Đã cập nhật dữ liệu từ Excel!");
@@ -784,7 +974,7 @@
             
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, "pccm_data", tabId), { excelData: JSON.stringify(dataToSave) });
+                await setDoc(doc(db, getCollectionName(), tabId), { excelData: JSON.stringify(dataToSave) });
                 syncMemoryState(tabId, dataToSave);
                 showToast("Đã lưu dữ liệu bảng thành công!");
             } catch (e) { 
@@ -839,7 +1029,6 @@
             tbody.innerHTML = "";
             let hasData = false;
 
-            // Sắp xếp giáo viên theo Tổ CM
             let sortedTeachers = [...dbTeachers].slice(1).sort((a, b) => {
                 let tcmA = a[3] || "";
                 let tcmB = b[3] || "";
@@ -1037,7 +1226,7 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const docSnap = await getDoc(doc(db, "pccm_data", "tab-giaovien"));
+                const docSnap = await getDoc(doc(db, getCollectionName(), "tab-giaovien"));
                 if (docSnap.exists()) {
                     let latestDb = JSON.parse(docSnap.data().excelData);
                     rows.forEach(tr => {
@@ -1046,7 +1235,7 @@
                             latestDb[idx][mappedIndices[j]] = dbTeachers[idx][mappedIndices[j]];
                         }
                     });
-                    await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
+                    await setDoc(doc(db, getCollectionName(), "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb;
                     showToast("Đã lưu thông tin Giáo viên!");
                 }
@@ -1206,7 +1395,7 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, "pccm_data", "tab-phancong"), { assignmentData: JSON.stringify(dbAssignments) });
+                await setDoc(doc(db, getCollectionName(), "tab-phancong"), { assignmentData: JSON.stringify(dbAssignments) });
                 showToast("Đã lưu Phân công chuyên môn!");
             } catch(e) { 
                 showToast("Lỗi: " + e.message, "error"); 
