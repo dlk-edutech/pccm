@@ -47,6 +47,7 @@
         .btn-success { background-color: var(--success); } .btn-success:hover { background-color: var(--success-hover); }
         .btn-warning { background-color: var(--warning); color: #fff; } .btn-warning:hover { background-color: var(--warning-hover); }
         .btn-danger { background-color: var(--danger); } .btn-danger:hover { background-color: var(--danger-hover); }
+        .btn-info { background-color: var(--info); color: #fff; } .btn-info:hover { background-color: var(--info-hover); }
         .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); } .btn-outline:hover { background-color: var(--bg-color); }
         .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 12px; font-weight: 500; margin: 2px; }
         .btn-small:hover { opacity: 0.85; } .btn-edit { background-color: var(--info); } .btn-del { background-color: var(--danger); }
@@ -96,6 +97,9 @@
 
         #table-admin-matrix th { background-color: #00e5ff; color: #000; text-align: center; font-weight: 700; font-size: 14px; border: 1px solid #ccc; }
         #table-admin-matrix td { border: 1px solid #ccc; text-align: center; }
+
+        /* Lock feature styles */
+        body.period-locked .lock-hidden { display: none !important; }
 
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
@@ -221,11 +225,11 @@
                     <!-- TAB QUẢN LÝ ĐỢT PCCM -->
                     <div id="tab-admin-periods" class="tab-content">
                         <h3>Quản lý Đợt Phân Công (Năm học 35 tuần)</h3>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Thêm đợt mới để phân công lại từ một tuần nhất định. Dữ liệu giáo viên, lớp, phân công sẽ được <b>tự động sao chép</b> từ đợt gần nhất sang đợt mới để bạn điều chỉnh cho nhanh.</p>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Khóa đợt sẽ chặn mọi quyền Thêm/Sửa/Xóa của tất cả các tài khoản trong đợt đó.</p>
                         <div class="action-bar"><button class="btn btn-success" onclick="document.getElementById('add-period-modal').style.display='flex'">+ Thêm Đợt mới</button></div>
                         <div class="table-container">
                             <table id="table-periods">
-                                <thead><tr><th>Tên đợt</th><th>Bắt đầu từ (Tuần)</th><th>Kéo dài dự kiến</th><th style="width:80px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Tên đợt</th><th>Bắt đầu từ (Tuần)</th><th>Kéo dài dự kiến</th><th style="width:100px;text-align:center;">Trạng thái</th><th style="width:140px;text-align:center;">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -241,7 +245,7 @@
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <label>2. Chọn Sheet nạp đè:</label>
                                 <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
-                                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
+                                <button class="btn btn-primary lock-hidden" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
                             </div>
                         </div>
                         <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
@@ -250,7 +254,7 @@
                     <!-- TABS ADMIN -->
                     <div id="tab-giaovien" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
-                            <button class="btn btn-success admin-action" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
+                            <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
                             <div class="period-picker-container">
                                 <span>Chọn Đợt:</span>
                                 <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
@@ -258,7 +262,7 @@
                         </div>
                         <div class="table-container">
                             <table id="table-giaovien">
-                                <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;" class="admin-action lock-hidden">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -266,7 +270,7 @@
                     
                     <div id="tab-lop" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
-                            <button class="btn btn-success admin-action" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
+                            <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
                             <div class="period-picker-container">
                                 <span>Chọn Đợt:</span>
                                 <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
@@ -274,27 +278,27 @@
                         </div>
                         <div class="table-container">
                             <table id="table-lop">
-                                <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
+                                <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:120px;text-align:center;" class="admin-action lock-hidden">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
                     <div id="tab-monhoc" class="tab-content">
-                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-monhoc">
-                                <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:120px;text-align:center;" class="admin-action lock-hidden">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
                     <div id="tab-tohop" class="tab-content">
-                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-tohop">
-                                <thead><tr><th>Mã TH môn</th><th>Các môn trong tổ hợp</th><th>Các môn có chuyên đề</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã TH môn</th><th>Các môn trong tổ hợp</th><th>Các môn có chuyên đề</th><th style="width:120px;text-align:center;" class="admin-action lock-hidden">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -352,7 +356,7 @@
                         <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Mã đăng nhập được ẩn để bảo mật. Chỉ Admin mới có quyền cấp lại mã cho giáo viên.</p>
                         <div class="table-container">
                             <table id="table-ttcm-gv">
-                                <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;" class="ttcm-action">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;" class="ttcm-action lock-hidden">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -384,7 +388,7 @@
                                     Dự kiến: <span id="ttcm-total-val" style="font-size: 18px;">0</span> tiết/tuần (Tiết chuẩn: <span id="ttcm-base-val">17</span>) <span id="ttcm-diff-val"></span>
                                 </div>
                             </div>
-                            <div style="text-align: right;" class="ttcm-action">
+                            <div style="text-align: right;" class="ttcm-action lock-hidden">
                                 <button class="btn btn-warning" onclick="savePhanCong()">💾 Lưu phân công</button>
                             </div>
                         </div>
@@ -707,9 +711,33 @@
                 selector.innerHTML = "";
                 dbPeriods.forEach(p => {
                     let selected = (p.id === currentPeriodId) ? "selected" : "";
-                    selector.innerHTML += `<option value="${p.id}" ${selected}>${p.name} (Từ tuần ${p.startWeek})</option>`;
+                    let lockIcon = p.isLocked ? " 🔒" : "";
+                    selector.innerHTML += `<option value="${p.id}" ${selected}>${p.name} (Từ tuần ${p.startWeek})${lockIcon}</option>`;
                 });
             });
+            checkAndApplyLock();
+        }
+
+        window.checkAndApplyLock = function() {
+            let p = dbPeriods.find(x => x.id === currentPeriodId);
+            let isLocked = p && p.isLocked;
+            if (isLocked) {
+                document.body.classList.add('period-locked');
+                document.getElementById('ttcm-select-gv').disabled = true;
+                document.getElementById('ttcm-select-mon').disabled = true;
+                document.querySelectorAll('#ttcm-classes-container input').forEach(i => i.disabled = true);
+            } else {
+                document.body.classList.remove('period-locked');
+                document.getElementById('ttcm-select-gv').disabled = false;
+                if (document.getElementById('ttcm-select-gv').value) {
+                    document.getElementById('ttcm-select-mon').disabled = false;
+                }
+                document.querySelectorAll('#ttcm-classes-container input').forEach(i => {
+                    if (!i.parentElement.style.opacity.includes('0.5')) {
+                        i.disabled = false;
+                    }
+                });
+            }
         }
 
         window.changePeriod = async function(newVal) {
@@ -719,6 +747,7 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             await reloadMemoryForCurrentPeriod();
             document.getElementById('loading-overlay').style.display = 'none';
+            checkAndApplyLock();
             
             if(currentTabId) {
                 let element = document.querySelector(`.menu-item[onclick*="${currentTabId}"]`);
@@ -747,16 +776,22 @@
             tbody.innerHTML = "";
             dbPeriods.forEach(p => {
                 let actionHtml = '';
+                let lockBtnHtml = `<button class="btn-small ${p.isLocked ? 'btn-warning' : 'btn-info'}" onclick="toggleLockPeriod('${p.id}')" style="background-color: ${p.isLocked ? 'var(--warning)' : '#8b5cf6'};">${p.isLocked ? '🔓 Mở' : '🔒 Khóa'}</button>`;
+                
                 if(p.id !== 'default') {
-                    actionHtml = `<button class="btn-small btn-del" onclick="deletePeriod('${p.id}')">Xóa</button>`;
+                    actionHtml = lockBtnHtml + ` <button class="btn-small btn-del" onclick="deletePeriod('${p.id}')">Xóa</button>`;
                 } else {
-                    actionHtml = `<span style="font-size:11px; color:#9ca3af;">Đợt gốc</span>`;
+                    actionHtml = lockBtnHtml;
                 }
+                
+                let statusHtml = p.isLocked ? `<span style="color:var(--danger); font-weight:bold;">Đã khóa</span>` : `<span style="color:var(--success); font-weight:bold;">Đang mở</span>`;
+
                 tbody.innerHTML += `
                     <tr>
                         <td style="font-weight:600;">${p.name}</td>
                         <td style="text-align:center;">${p.startWeek}</td>
                         <td style="text-align:center;">--</td>
+                        <td style="text-align:center;">${statusHtml}</td>
                         <td style="text-align:center;">${actionHtml}</td>
                     </tr>
                 `;
@@ -770,6 +805,29 @@
             }
         }
 
+        window.toggleLockPeriod = async function(pid) {
+            let p = dbPeriods.find(x => x.id === pid);
+            if (!p) return;
+            
+            let newStatus = !p.isLocked;
+            let msg = newStatus ? "khóa" : "mở khóa";
+            if (!confirm(`Bạn có chắc chắn muốn ${msg} đợt phân công này?`)) return;
+
+            p.isLocked = newStatus;
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
+                renderPeriodsTable();
+                updatePeriodDropdown();
+                showToast(`Đã ${msg} đợt thành công!`);
+            } catch(e) {
+                p.isLocked = !newStatus; 
+                showToast("Lỗi: " + e.message, "error");
+            }
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
         window.addPeriod = async function() {
             let ten = document.getElementById("new-period-name").value.trim();
             let tuan = parseInt(document.getElementById("new-period-week").value);
@@ -779,7 +837,7 @@
             if(exists) return showToast("Đã có đợt bắt đầu từ tuần này!", "error");
 
             let newId = 'p_' + Date.now();
-            dbPeriods.push({id: newId, name: ten, startWeek: tuan});
+            dbPeriods.push({id: newId, name: ten, startWeek: tuan, isLocked: false});
             dbPeriods.sort((a,b) => a.startWeek - b.startWeek);
             
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -836,6 +894,7 @@
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
             await reloadMemoryForCurrentPeriod();
+            checkAndApplyLock();
 
             if (currentUser.role === 'admin') document.querySelector('.master-admin-item').click();
             else document.querySelector('.admin-item').click();
@@ -859,6 +918,7 @@
             }
             
             await reloadMemoryForCurrentPeriod();
+            checkAndApplyLock();
 
             if(role === 'ttcm') {
                 let selectGv = document.getElementById('ttcm-select-gv');
@@ -1177,7 +1237,9 @@
                 td.dataset.val = "";
                 tr.appendChild(td);
             }
-            let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
+            let tdAction = document.createElement("td"); 
+            tdAction.style.textAlign = "center";
+            tdAction.className = "admin-action lock-hidden";
             tdAction.innerHTML = `<button class="btn-small btn-success" onclick="editRow(this, '${tableId}')">Lưu</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
             tr.appendChild(tdAction);
             tbody.insertBefore(tr, tbody.firstChild);
@@ -1350,7 +1412,9 @@
                     }
                     tr.appendChild(td);
                 }
-                let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
+                let tdAction = document.createElement("td"); 
+                tdAction.style.textAlign = "center";
+                tdAction.className = "admin-action lock-hidden";
                 tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, '${tableId}')">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
                 tr.appendChild(tdAction); tbody.appendChild(tr);
             }
@@ -1587,8 +1651,10 @@
                         tr.appendChild(td);
                     });
                     
-                    let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
-                    tdAction.innerHTML = `<button class="btn-small btn-edit ttcm-action" onclick="editRow(this, 'table-ttcm-gv')">Sửa</button>`;
+                    let tdAction = document.createElement("td"); 
+                    tdAction.style.textAlign = "center";
+                    tdAction.className = "ttcm-action lock-hidden";
+                    tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, 'table-ttcm-gv')">Sửa</button>`;
                     tr.appendChild(tdAction); tbody.appendChild(tr);
                 }
             }
@@ -1725,6 +1791,9 @@
             });
 
             updateUnsavedTotal();
+            if(document.body.classList.contains('period-locked')) {
+                container.querySelectorAll('input').forEach(i => i.disabled = true);
+            }
         };
 
         window.updateUnsavedTotal = function() {
