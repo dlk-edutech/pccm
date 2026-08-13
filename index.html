@@ -47,7 +47,6 @@
         .btn-success { background-color: var(--success); } .btn-success:hover { background-color: var(--success-hover); }
         .btn-warning { background-color: var(--warning); color: #fff; } .btn-warning:hover { background-color: var(--warning-hover); }
         .btn-danger { background-color: var(--danger); } .btn-danger:hover { background-color: var(--danger-hover); }
-        .btn-info { background-color: var(--info); color: #fff; } .btn-info:hover { background-color: var(--info-hover); }
         .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); } .btn-outline:hover { background-color: var(--bg-color); }
         .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 12px; font-weight: 500; margin: 2px; }
         .btn-small:hover { opacity: 0.85; } .btn-edit { background-color: var(--info); } .btn-del { background-color: var(--danger); }
@@ -181,15 +180,15 @@
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu chéo PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp PCCM theo Đợt</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp Toàn trường</div>
                 
                 <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">Phân công giảng dạy</div>
                 
                 <!-- Chung -->
-                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">Tổng hợp PCCM theo Đợt</div>
-                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #334155; margin-top: 10px;">📊 Tổng hợp Cả Năm (35 tuần)</div>
+                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">Tổng hợp Tổ CM</div>
+                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #334155; margin-top: 10px;">📊 Tổng hợp Cả Năm</div>
             </div>
         </div>
 
@@ -311,7 +310,7 @@
                                     <span>Chọn Đợt:</span>
                                     <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                                 </div>
-                                <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất Excel</button>
+                                <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -331,7 +330,7 @@
                                     <span>Chọn Đợt:</span>
                                     <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                                 </div>
-                                <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất Excel</button>
+                                <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -395,9 +394,12 @@
                     <div id="tab-ttcm-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                             <h3 style="margin:0;">Bảng tổng hợp chuyên môn Đợt này (Tổ <span class="lbl-tcm"></span>)</h3>
-                            <div class="period-picker-container">
-                                <span>Chọn Đợt:</span>
-                                <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <div class="period-picker-container">
+                                    <span>Chọn Đợt:</span>
+                                    <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
+                                </div>
+                                <button class="btn btn-success" onclick="exportTtcmTongHopToExcel()">📥 Xuất file Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -412,7 +414,7 @@
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0;">Báo cáo Tổng hợp Số tiết Cả Năm Học (35 Tuần)</h3>
-                            <button class="btn btn-success admin-action ttcm-action" onclick="exportCaNamToExcel()">📥 Xuất Excel</button>
+                            <button class="btn btn-success" onclick="exportCaNamToExcel()">📥 Xuất file Excel</button>
                         </div>
                         <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Dữ liệu tự động tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn trong năm.</p>
                         <div class="table-container">
@@ -887,7 +889,8 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
+            // Xóa .gv-item khỏi Admin UI để không bị hiển thị lặp Menu của TTCM
+            
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
@@ -1382,13 +1385,6 @@
             }
             document.getElementById('loading-overlay').style.display = 'none';
         };
-
-        function syncMemoryState(tabId, data) {
-            if(tabId === 'tab-giaovien') dbTeachers = data;
-            if(tabId === 'tab-lop') dbClasses = data;
-            if(tabId === 'tab-monhoc') dbSubjects = data;
-            if(tabId === 'tab-tohop') dbCombos = data;
-        }
 
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
@@ -1906,6 +1902,13 @@
             let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
             return cdSubjects.includes(tenMonFull.toLowerCase());
         }
+
+        window.exportTtcmTongHopToExcel = function() {
+            let table = document.getElementById("table-ttcm-tonghop");
+            let wb = XLSX.utils.table_to_book(table, {sheet: "Tong_Hop_To"});
+            XLSX.writeFile(wb, "Tong_Hop_PCCM_To.xlsx");
+            showToast("Xuất file Excel thành công!");
+        };
 
         function renderTtcmTongHop() {
             const thead = document.getElementById("table-ttcm-tonghop").querySelector("thead");
