@@ -64,14 +64,14 @@
         .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
         .topbar { height: 60px; background: var(--surface); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; box-shadow: var(--shadow-sm); flex-shrink: 0; z-index: 5; }
         .topbar h1 { font-size: 18px; margin: 0; color: var(--text-main); }
-        .topbar-actions { display: flex; gap: 10px; }
+        .topbar-actions { display: flex; gap: 10px; align-items: center; }
 
         .content-area { flex-grow: 1; overflow-y: auto; padding: 25px; background: var(--bg-color); }
         .content-inner { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        .control-panel { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+        .control-panel { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .control-panel label { font-size: 14px; font-weight: 600; color: var(--text-main); }
-        .control-panel select, .control-panel input[type="file"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
+        .control-panel select, .control-panel input[type="file"], .control-panel input[type="number"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
 
         .tab-content { display: none; background: var(--surface); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); animation: fadeIn 0.3s; }
         .tab-content.active { display: block; }
@@ -95,7 +95,7 @@
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
 
         .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; }
-        .modal-box { background:var(--surface); padding:30px; border-radius:12px; text-align:center; box-shadow:var(--shadow-md); width:300px; }
+        .modal-box { background:var(--surface); padding:30px; border-radius:12px; text-align:center; box-shadow:var(--shadow-md); width:350px; max-width: 90%; }
 
         #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { min-width: 250px; padding: 15px 20px; border-radius: 8px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 500; border-left: 5px solid; animation: slideInRight 0.3s ease forwards; pointer-events: auto; }
@@ -132,11 +132,11 @@
             <div class="role-grid">
                 <div class="role-card" id="role-admin" onclick="selectRole('admin')">
                     <h4 id="lbl-admin-role">Quản trị viên (Admin)</h4>
-                    <p>Quản lý hệ thống, nạp dữ liệu, xuất bảng ma trận phân công.</p>
+                    <p>Quản lý hệ thống, nạp dữ liệu, xuất bảng ma trận phân công toàn trường.</p>
                 </div>
                 <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
                     <h4>Tổ trưởng / Tổ phó (TTCM/TPCM)</h4>
-                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp.</p>
+                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp của Tổ.</p>
                 </div>
                 <div class="role-card" id="role-gv" onclick="selectRole('gv')">
                     <h4>Giáo viên</h4>
@@ -144,6 +144,7 @@
                 </div>
             </div>
 
+            <!-- Khóa ô nhập liệu khi chưa chọn Role -->
             <input type="text" id="login-input" placeholder="Vui lòng nhấp chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
@@ -162,19 +163,25 @@
                 <p id="sidebar-user-role">Đang tải...</p>
             </div>
             <div class="menu" id="sidebar-menu">
+                <!-- Master Admin Items -->
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
+                <!-- Admin Items -->
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">Quản lý Giáo viên</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu chéo PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp PCCM Toàn trường</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp PCCM theo Đợt</div>
                 
+                <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">Phân công giảng dạy</div>
                 
-                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">Tổng hợp phân công Tổ</div>
+                <!-- Chung -->
+                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">Tổng hợp PCCM theo Đợt</div>
+                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #334155; margin-top: 10px;">📊 Tổng hợp Cả Năm (35 tuần)</div>
             </div>
         </div>
 
@@ -182,6 +189,12 @@
             <div class="topbar">
                 <h1 id="topbar-title">Hệ thống</h1>
                 <div class="topbar-actions">
+                    <div style="display:flex; align-items:center; background:#f1f5f9; padding:0 10px; border-radius:6px; border:1px solid #e2e8f0; margin-right: 15px;">
+                        <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                        <select id="period-selector" onchange="changePeriod()" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;">
+                            <option value="default">Đang tải...</option>
+                        </select>
+                    </div>
                     <button class="btn btn-outline" onclick="showChangePassword()">🔑 Đổi mã cá nhân</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Đăng xuất</button>
                 </div>
@@ -190,23 +203,7 @@
             <div class="content-area">
                 <div class="content-inner">
                     
-                    <!-- Vùng Upload Excel & Tải Mẫu -->
-                    <div class="control-panel admin-only" style="display: none;">
-                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label>1. Tải file Excel:</label>
-                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label>2. Chọn Sheet nạp đè:</label>
-                                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
-                                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
-                    </div>
-
-                    <!-- TAB QUẢN LÝ ĐƠN VỊ -->
+                    <!-- TAB QUẢN LÝ ĐỢN VỊ (Master Admin) -->
                     <div id="tab-admin-sub" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
@@ -221,42 +218,71 @@
                         </div>
                     </div>
 
+                    <!-- TAB QUẢN LÝ ĐỢT PCCM -->
+                    <div id="tab-admin-periods" class="tab-content">
+                        <h3>Quản lý Đợt Phân Công (Năm học 35 tuần)</h3>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Thêm đợt mới để phân công lại từ một tuần nhất định. Dữ liệu giáo viên, lớp, phân công sẽ được <b>tự động sao chép</b> từ đợt gần nhất sang đợt mới để bạn điều chỉnh cho nhanh.</p>
+                        <div class="action-bar"><button class="btn btn-success" onclick="document.getElementById('add-period-modal').style.display='flex'">+ Thêm Đợt mới</button></div>
+                        <div class="table-container">
+                            <table id="table-periods">
+                                <thead><tr><th>Tên đợt</th><th>Bắt đầu từ (Tuần)</th><th>Kéo dài dự kiến</th><th style="width:80px;text-align:center;">Thao tác</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Vùng Upload Excel & Tải Mẫu -->
+                    <div class="control-panel admin-only" id="excel-panel" style="display: none;">
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>1. Tải file Excel:</label>
+                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>2. Chọn Sheet nạp đè:</label>
+                                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
+                                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
+                    </div>
+
                     <!-- TABS ADMIN -->
                     <div id="tab-giaovien" class="tab-content">
-                        <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-giaovien">
-                                <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
                     
                     <div id="tab-lop" class="tab-content">
-                        <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-lop">
-                                <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
                     <div id="tab-monhoc" class="tab-content">
-                        <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-monhoc">
-                                <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
                     <div id="tab-tohop" class="tab-content">
-                        <div class="action-bar"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
                             <table id="table-tohop">
-                                <thead><tr><th>Mã TH môn</th><th>Các môn trong tổ hợp</th><th>Các môn có chuyên đề</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã TH môn</th><th>Các môn trong tổ hợp</th><th>Các môn có chuyên đề</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -265,7 +291,7 @@
                     <!-- TAB ADMIN MATRIX -->
                     <div id="tab-admin-matrix" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Bảng Ma trận Phân công chuyên môn Toàn trường</h3>
+                            <h3 style="margin:0;">Bảng Ma trận Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
                             <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
                         </div>
                         <div class="table-container">
@@ -279,7 +305,7 @@
                     <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
                     <div id="tab-admin-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường</h3>
+                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
                             <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
                         </div>
                         <div class="table-container">
@@ -296,7 +322,7 @@
                         <p style="font-size: 13px; color: var(--text-muted);">Mã đăng nhập được ẩn để bảo mật. Chỉ Admin mới có quyền cấp lại mã cho giáo viên.</p>
                         <div class="table-container">
                             <table id="table-ttcm-gv">
-                                <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;" class="ttcm-action">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -322,17 +348,32 @@
                                     Dự kiến: <span id="ttcm-total-val" style="font-size: 18px;">0</span> tiết (Tiết chuẩn: <span id="ttcm-base-val">17</span>) <span id="ttcm-diff-val"></span>
                                 </div>
                             </div>
-                            <div style="text-align: right;">
+                            <div style="text-align: right;" class="ttcm-action">
                                 <button class="btn btn-warning" onclick="savePhanCong()">💾 Lưu phân công</button>
                             </div>
                         </div>
                     </div>
 
                     <div id="tab-ttcm-tonghop" class="tab-content">
-                        <h3>Bảng tổng hợp chuyên môn (Tổ <span class="lbl-tcm"></span>)</h3>
+                        <h3>Bảng tổng hợp chuyên môn Đợt này (Tổ <span class="lbl-tcm"></span>)</h3>
                         <div class="table-container">
                             <table id="table-ttcm-tonghop">
                                 <thead><tr><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng số tiết</th><th>Thừa/Thiếu</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB TỔNG HỢP CẢ NĂM -->
+                    <div id="tab-tonghop-canam" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <h3 style="margin:0;">Báo cáo Tổng hợp Số tiết Cả Năm Học (35 Tuần)</h3>
+                            <button class="btn btn-success admin-action ttcm-action" onclick="exportCaNamToExcel()">📥 Xuất Excel</button>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Dữ liệu tự động tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn trong năm.</p>
+                        <div class="table-container">
+                            <table id="table-tonghop-canam">
+                                <thead><tr><th>Tổ CM</th><th>Giáo viên</th><th>Tổng Tiết Chuẩn</th><th>Tổng Tiết Dạy</th><th>Tổng Kiêm Nhiệm</th><th>Tổng Thực Tế</th><th>Thừa/Thiếu (Cả năm)</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -358,6 +399,28 @@
         </div>
     </div>
 
+    <!-- Modal Thêm Đợt Mới -->
+    <div id="add-period-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>Thêm Đợt Phân Công Mới</h3>
+            <p style="font-size:12px; color:var(--warning); margin-bottom:15px;">Lưu ý: Dữ liệu (Lớp, GV, Phân công) sẽ được sao chép tự động từ đợt hiện tại.</p>
+            
+            <div style="text-align: left; margin-bottom: 10px;">
+                <label style="font-size: 13px; font-weight: 600;">Tên đợt (VD: Đợt 2, Học kỳ 2...)</label>
+                <input type="text" id="new-period-name" style="width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--border); border-radius:6px; margin-top:5px;">
+            </div>
+            <div style="text-align: left; margin-bottom: 20px;">
+                <label style="font-size: 13px; font-weight: 600;">Áp dụng từ tuần (1 - 35)</label>
+                <input type="number" id="new-period-week" min="1" max="35" value="19" style="width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--border); border-radius:6px; margin-top:5px;">
+            </div>
+
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('add-period-modal').style.display='none'">Hủy</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="addPeriod()">Tạo đợt</button>
+            </div>
+        </div>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
@@ -377,6 +440,9 @@
         let currentUnitId = ''; 
         let currentUnitName = 'THPT Số 1 Trần Phú';
         let dbSubAdmins = []; 
+
+        let dbPeriods = [];
+        let currentPeriodId = 'default';
 
         let dbTeachers = []; 
         let dbClasses = [];
@@ -416,6 +482,13 @@
             return currentUnitId ? "pccm_data_" + currentUnitId : "pccm_data";
         }
 
+        // Logic Lấy tên Document theo Đợt
+        function getDocName(baseName, pId) {
+            if(baseName === 'tab-monhoc' || baseName === 'tab-tohop') return baseName; // Global
+            if(pId === 'default') return baseName;
+            return baseName + "_" + pId;
+        }
+
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
@@ -446,7 +519,6 @@
             document.getElementById("login-error").style.display = "none";
         };
 
-        // Hàm bổ sung Cột Tiết chuẩn = 17 nếu DB cũ chưa có
         function migrateTeachersDb(teachersData) {
             if (teachersData && teachersData.length > 1 && teachersData[1].length === 9) {
                 teachersData.forEach((t, i) => {
@@ -481,46 +553,63 @@
                     }
                 } catch(e) { dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]]; }
 
+                // Check Admin
+                let isAdmin = false;
                 if (selectedLoginRole === 'admin') {
                     if (currentUnitId) {
-                        // Đăng nhập Sub Admin (Qua link riêng)
                         let foundSub = dbSubAdmins.find(s => s[2] === currentUnitId);
                         if (foundSub && foundSub[1] === input) {
                             currentUser = { role: 'sub_admin', ten: 'Admin - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
-                            await initAdminUI();
-                        } else {
-                            throw new Error("Mã Admin Đơn vị không chính xác!");
-                        }
+                            isAdmin = true;
+                        } else throw new Error("Mã Admin Đơn vị không chính xác!");
                     } else {
-                        // Đăng nhập Master Admin
                         let adminPw = localStorage.getItem("adminPassword") || "11043006";
                         if (input === adminPw) {
                             currentUser = { role: 'admin', ten: 'Quản trị viên Hệ thống' };
-                            await initAdminUI();
-                        } else {
-                            throw new Error("Mã Master Admin không chính xác!");
-                        }
+                            isAdmin = true;
+                        } else throw new Error("Mã Master Admin không chính xác!");
                     }
-                } else {
-                    // TTCM / GV Login Logic (Cách ly triệt để theo Đơn vị)
+                } 
+
+                if (!isAdmin) {
                     let foundUser = null;
                     let foundIndex = -1;
+                    let foundUnitId = '';
                     
-                    let colName = getCollectionName(); 
-                    const docSnap = await getDoc(doc(db, colName, "tab-giaovien"));
+                    let unitsToCheck = [{ id: '', name: 'Main' }];
+                    for(let i=1; i<dbSubAdmins.length; i++) {
+                        if(dbSubAdmins[i][2]) unitsToCheck.push({ id: dbSubAdmins[i][2], name: dbSubAdmins[i][0] });
+                    }
                     
-                    if (docSnap.exists()) {
-                        let rawData = docSnap.data().excelData;
-                        let tList = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                        tList = migrateTeachersDb(tList);
-                        for(let i = 1; i < tList.length; i++) {
-                            if(tList[i][1] === input) {
-                                foundUser = tList[i];
-                                foundIndex = i;
-                                dbTeachers = tList; 
-                                break;
+                    for(let u of unitsToCheck) {
+                        let colName = u.id ? "pccm_data_" + u.id : "pccm_data";
+                        // Find latest period for this unit just to verify login
+                        let pIdForLogin = 'default';
+                        try {
+                            const pSnap = await getDoc(doc(db, colName, "pccm_periods"));
+                            if (pSnap.exists()) {
+                                let tmpPs = JSON.parse(pSnap.data().data);
+                                tmpPs.sort((a,b)=>a.startWeek - b.startWeek);
+                                pIdForLogin = tmpPs[tmpPs.length-1].id;
+                            }
+                        } catch(e) {}
+
+                        const docSnap = await getDoc(doc(db, colName, getDocName("tab-giaovien", pIdForLogin)));
+                        if (docSnap.exists()) {
+                            let rawData = docSnap.data().excelData;
+                            let tList = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                            tList = migrateTeachersDb(tList);
+                            
+                            for(let i = 1; i < tList.length; i++) {
+                                if(tList[i][1] === input) {
+                                    foundUser = tList[i];
+                                    foundIndex = i;
+                                    foundUnitId = u.id;
+                                    break;
+                                }
                             }
                         }
+                        if (foundUser) break;
                     }
                     
                     if (foundUser) {
@@ -529,12 +618,33 @@
                         
                         let role = (isManager && selectedLoginRole === 'ttcm') ? "ttcm" : "gv";
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
-                        await initTeacherUI(role);
+                        currentUnitId = foundUnitId; 
                     } else {
                         throw new Error("Mã đăng nhập cá nhân không chính xác cho Đơn vị này!");
                     }
                 }
                 
+                // Tải Periods của Unit
+                try {
+                    const pSnap = await getDoc(doc(db, getCollectionName(), "pccm_periods"));
+                    if(pSnap.exists()) {
+                        dbPeriods = JSON.parse(pSnap.data().data);
+                    } else {
+                        dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
+                    }
+                } catch(e) {
+                    dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
+                }
+                dbPeriods.sort((a,b)=>a.startWeek - b.startWeek);
+                currentPeriodId = dbPeriods[dbPeriods.length-1].id;
+                updatePeriodDropdown();
+
+                if (isAdmin) {
+                    await initAdminUI();
+                } else {
+                    await initTeacherUI(currentUser.role);
+                }
+
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("app-layout").style.display = "flex";
                 showToast(`Đăng nhập thành công! Xin chào ${currentUser.ten}.`);
@@ -545,6 +655,123 @@
                 document.getElementById('loading-overlay').style.display = 'none';
             }
         };
+
+        function updatePeriodDropdown() {
+            const selector = document.getElementById("period-selector");
+            selector.innerHTML = "";
+            dbPeriods.forEach(p => {
+                let selected = (p.id === currentPeriodId) ? "selected" : "";
+                selector.innerHTML += `<option value="${p.id}" ${selected}>${p.name} (Từ tuần ${p.startWeek})</option>`;
+            });
+        }
+
+        window.changePeriod = async function() {
+            const selector = document.getElementById("period-selector");
+            currentPeriodId = selector.value;
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            await reloadMemoryForCurrentPeriod();
+            document.getElementById('loading-overlay').style.display = 'none';
+            
+            if(currentTabId) {
+                let element = document.querySelector(`.menu-item[onclick*="${currentTabId}"]`);
+                if(element) window.switchTab(element, currentTabId);
+            }
+        };
+
+        async function reloadMemoryForCurrentPeriod() {
+            const [snapLop, snapMon, snapToHop, snapPc, snapGv] = await Promise.all([
+                getDoc(doc(db, getCollectionName(), getDocName("tab-lop", currentPeriodId))),
+                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
+                getDoc(doc(db, getCollectionName(), "tab-tohop")),
+                getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId))),
+                getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)))
+            ]);
+            dbClasses = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
+            dbSubjects = snapMon.exists() ? JSON.parse(snapMon.data().excelData) : [];
+            dbCombos = snapToHop.exists() ? JSON.parse(snapToHop.data().excelData) : [];
+            dbAssignments = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
+            dbTeachers = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
+        }
+
+        // --- HÀM QUẢN LÝ ĐỢT ---
+        function renderPeriodsTable() {
+            const tbody = document.getElementById("table-periods").querySelector("tbody");
+            tbody.innerHTML = "";
+            dbPeriods.forEach(p => {
+                let actionHtml = '';
+                if(p.id !== 'default') {
+                    actionHtml = `<button class="btn-small btn-del" onclick="deletePeriod('${p.id}')">Xóa</button>`;
+                } else {
+                    actionHtml = `<span style="font-size:11px; color:#9ca3af;">Đợt gốc</span>`;
+                }
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:600;">${p.name}</td>
+                        <td style="text-align:center;">${p.startWeek}</td>
+                        <td style="text-align:center;">--</td>
+                        <td style="text-align:center;">${actionHtml}</td>
+                    </tr>
+                `;
+            });
+            // Update duration purely visual
+            let rows = tbody.querySelectorAll("tr");
+            for(let i=0; i<dbPeriods.length; i++) {
+                let wStart = parseInt(dbPeriods[i].startWeek);
+                let wEnd = (i < dbPeriods.length - 1) ? parseInt(dbPeriods[i+1].startWeek) - 1 : 35;
+                let duration = wEnd - wStart + 1;
+                rows[i].querySelectorAll("td")[2].innerText = duration + " tuần";
+            }
+        }
+
+        window.addPeriod = async function() {
+            let ten = document.getElementById("new-period-name").value.trim();
+            let tuan = parseInt(document.getElementById("new-period-week").value);
+            if(!ten || isNaN(tuan) || tuan < 1 || tuan > 35) return showToast("Vui lòng nhập Tên đợt và Tuần hợp lệ (1-35)!", "error");
+            
+            let exists = dbPeriods.find(p => p.startWeek == tuan);
+            if(exists) return showToast("Đã có đợt bắt đầu từ tuần này!", "error");
+
+            let newId = 'p_' + Date.now();
+            dbPeriods.push({id: newId, name: ten, startWeek: tuan});
+            dbPeriods.sort((a,b) => a.startWeek - b.startWeek);
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
+                
+                // Copy data from current memory
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", newId)), { excelData: JSON.stringify(dbTeachers) });
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
+                
+                currentPeriodId = newId;
+                updatePeriodDropdown();
+                document.getElementById("add-period-modal").style.display = 'none';
+                renderPeriodsTable();
+                showToast("Đã thêm đợt mới và sao chép dữ liệu thành công!");
+            } catch(e) { showToast(e.message, 'error'); }
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        window.deletePeriod = async function(pid) {
+            if(!confirm("Chắc chắn xóa đợt này? Các dữ liệu đã phân công trong đợt sẽ bị mất.")) return;
+            dbPeriods = dbPeriods.filter(p => p.id !== pid);
+            
+            document.getElementById('loading-overlay').style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
+                if (currentPeriodId === pid) {
+                    currentPeriodId = dbPeriods[dbPeriods.length-1].id;
+                    updatePeriodDropdown();
+                    await reloadMemoryForCurrentPeriod();
+                }
+                renderPeriodsTable();
+                showToast("Đã xóa đợt phân công!");
+            } catch(e) { showToast(e.message, 'error'); }
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
 
         async function initAdminUI() {
             document.querySelector('.admin-only').style.display = 'flex';
@@ -559,16 +786,13 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
-                getDoc(doc(db, getCollectionName(), "tab-lop")),
-                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
-                getDoc(doc(db, getCollectionName(), "tab-tohop")),
-                getDoc(doc(db, getCollectionName(), "tab-phancong"))
-            ]);
-            if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
-            if(snapMon.exists()) dbSubjects = JSON.parse(snapMon.data().excelData);
-            if(snapToHop.exists()) dbCombos = JSON.parse(snapToHop.data().excelData);
-            if(snapPc.exists()) dbAssignments = JSON.parse(snapPc.data().assignmentData || "[]");
+            // Hiện chức năng chung
+            document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
+            
+            document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
+            document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
+
+            await reloadMemoryForCurrentPeriod();
 
             if (currentUser.role === 'admin') document.querySelector('.master-admin-item').click();
             else document.querySelector('.admin-item').click();
@@ -585,21 +809,14 @@
             
             if(role === 'ttcm') {
                 document.querySelectorAll('.ttcm-item').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = '');
             } else {
                 document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
+                // Hide actions for GV
+                document.querySelectorAll('.ttcm-action, .admin-action').forEach(el => el.style.display = 'none');
             }
             
-            const [snapLop, snapMon, snapToHop, snapPc] = await Promise.all([
-                getDoc(doc(db, getCollectionName(), "tab-lop")),
-                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
-                getDoc(doc(db, getCollectionName(), "tab-tohop")),
-                getDoc(doc(db, getCollectionName(), "tab-phancong"))
-            ]);
-
-            if(snapLop.exists()) dbClasses = JSON.parse(snapLop.data().excelData);
-            if(snapMon.exists()) dbSubjects = JSON.parse(snapMon.data().excelData);
-            if(snapToHop.exists()) dbCombos = JSON.parse(snapToHop.data().excelData);
-            if(snapPc.exists()) dbAssignments = JSON.parse(snapPc.data().assignmentData || "[]");
+            await reloadMemoryForCurrentPeriod();
 
             if(role === 'ttcm') {
                 let selectGv = document.getElementById('ttcm-select-gv');
@@ -650,7 +867,7 @@
                 try {
                     let latestDb = JSON.parse(JSON.stringify(dbTeachers));
                     latestDb[currentUser.rowIndex][1] = newPw; 
-                    await setDoc(doc(db, getCollectionName(), "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
+                    await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb; 
                     showToast("Đổi mã đăng nhập thành công!");
                     document.getElementById('pw-modal').style.display = 'none';
@@ -678,12 +895,17 @@
                     renderAdminTongHop();
                 } else if(tabId === 'tab-admin-sub') {
                     renderSubAdminTable();
+                } else if(tabId === 'tab-admin-periods') {
+                    renderPeriodsTable();
+                } else if(tabId === 'tab-tonghop-canam') {
+                    renderTongHopCaNam();
                 } else {
                     await loadAdminTabData(tabId);
                 }
             } else {
                 if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
+                if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
             }
         };
 
@@ -844,7 +1066,7 @@
         async function loadAdminTabData(tabId) {
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const docRef = doc(db, getCollectionName(), tabId);
+                const docRef = doc(db, getCollectionName(), getDocName(tabId, currentPeriodId));
                 const docSnap = await getDoc(docRef);
                 let data = [];
                 if (docSnap.exists()) {
@@ -893,7 +1115,7 @@
             const cleanData = JSON.parse(JSON.stringify(jsonData));
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, getCollectionName(), currentTabId), { excelData: JSON.stringify(cleanData) });
+                await setDoc(doc(db, getCollectionName(), getDocName(currentTabId, currentPeriodId)), { excelData: JSON.stringify(cleanData) });
                 syncMemoryState(currentTabId, cleanData);
                 renderAdminTable(currentTabId, cleanData);
                 showToast("Đã cập nhật dữ liệu từ Excel!");
@@ -1025,6 +1247,10 @@
         window.saveCurrentTab = async function(tabId) {
             const tableId = "table-" + tabId.split('-')[1];
             
+            document.getElementById(tableId).querySelectorAll(".btn-success").forEach(b => { 
+                if(b.innerText==="Lưu") window.editRow(b, tableId); 
+            });
+
             const rows = document.getElementById(tableId).querySelectorAll("tr");
             let dataToSave = [];
             
@@ -1046,7 +1272,7 @@
             
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, getCollectionName(), tabId), { excelData: JSON.stringify(dataToSave) });
+                await setDoc(doc(db, getCollectionName(), getDocName(tabId, currentPeriodId)), { excelData: JSON.stringify(dataToSave) });
                 syncMemoryState(tabId, dataToSave);
                 showToast("Đã lưu dữ liệu bảng thành công!");
             } catch (e) { 
@@ -1318,11 +1544,15 @@
                     });
                     
                     let tdAction = document.createElement("td"); tdAction.style.textAlign = "center";
-                    tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, 'table-ttcm-gv')">Sửa</button>`;
+                    tdAction.innerHTML = `<button class="btn-small btn-edit ttcm-action" onclick="editRow(this, 'table-ttcm-gv')">Sửa</button>`;
                     tr.appendChild(tdAction); tbody.appendChild(tr);
                 }
             }
             if(count===0) tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 20px;">Tổ chưa có giáo viên.</td></tr>`;
+            
+            if(currentUser.role === 'gv') {
+                document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
+            }
         }
 
         window.saveTtcmGvTab = async function() {
@@ -1345,7 +1575,7 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                const docSnap = await getDoc(doc(db, getCollectionName(), "tab-giaovien"));
+                const docSnap = await getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)));
                 if (docSnap.exists()) {
                     let latestDb = JSON.parse(docSnap.data().excelData);
                     rows.forEach(tr => {
@@ -1354,7 +1584,7 @@
                             latestDb[idx][mappedIndices[j]] = dbTeachers[idx][mappedIndices[j]];
                         }
                     });
-                    await setDoc(doc(db, getCollectionName(), "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
+                    await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb;
                     showToast("Đã lưu thông tin Giáo viên!");
                 }
@@ -1525,7 +1755,7 @@
 
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
-                await setDoc(doc(db, getCollectionName(), "tab-phancong"), { assignmentData: JSON.stringify(dbAssignments) });
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId)), { assignmentData: JSON.stringify(dbAssignments) });
                 showToast("Đã lưu Phân công chuyên môn!");
             } catch(e) { 
                 showToast("Lỗi: " + e.message, "error"); 
@@ -1546,9 +1776,9 @@
             return 0;
         }
         function checkChuyenDe(lop, tenMonFull) {
-            let cl = dbClasses.find(c => c[0] === lop);
+            let cl = dbClasses.find(c => c && c[0] === lop);
             if(!cl) return false;
-            let combo = dbCombos.find(c => c[0] === cl[1]);
+            let combo = dbCombos.find(c => c && c[0] === cl[1]);
             if(!combo || combo.length < 3) return false;
             let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
             return cdSubjects.includes(tenMonFull.toLowerCase());
@@ -1611,6 +1841,104 @@
             }
             if(!hasData) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px;">Không có giáo viên</td></tr>`;
         }
+
+        // --- TỔNG HỢP CẢ NĂM ---
+        window.renderTongHopCaNam = async function() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            let yearlyData = {}; 
+            
+            let periods = [...dbPeriods].sort((a,b) => a.startWeek - b.startWeek);
+            
+            for(let i=0; i<periods.length; i++) {
+                let p = periods[i];
+                let start = parseInt(p.startWeek);
+                let end = (i < periods.length - 1) ? parseInt(periods[i+1].startWeek) - 1 : 35;
+                let duration = end - start + 1;
+                if(duration <= 0) duration = 0; 
+
+                const [snapGv, snapLop, snapPc] = await Promise.all([
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-lop", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id)))
+                ]);
+                
+                let gvs = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
+                let lops = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
+                let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
+                
+                const checkCD = (lop, tenMonFull) => {
+                    let cl = lops.find(c => c && c[0] === lop);
+                    if(!cl) return false;
+                    let combo = dbCombos.find(c => c && c[0] === cl[1]);
+                    if(!combo || combo.length < 3) return false;
+                    return combo[2].split(',').map(s=>s.trim().toLowerCase()).includes(tenMonFull.toLowerCase());
+                };
+
+                for(let j=1; j<gvs.length; j++) {
+                    let gv = gvs[j];
+                    if(!gv || !gv[0]) continue;
+                    let maGv = gv[0];
+                    let ten = gv[2];
+                    let tcm = gv[3];
+                    let tietChuan = parseInt(gv[5]) || 17;
+                    let kiemNhiem = parseInt(gv[6]) || 0;
+                    
+                    if((currentUser.role === 'ttcm' || currentUser.role === 'gv') && tcm !== currentUser.tcm) continue;
+                    
+                    let myPcs = pcs.filter(a => a.maGv === maGv);
+                    let teachingHours = 0;
+                    myPcs.forEach(a => {
+                        let tm = getTenMonByMa(a.maMon);
+                        let base = getBaseHours(a.maMon);
+                        teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
+                    });
+                    
+                    if(!yearlyData[maGv]) {
+                        yearlyData[maGv] = { ten, tcm, tongChuan: 0, tongDay: 0, tongKN: 0 };
+                    }
+                    yearlyData[maGv].tongChuan += tietChuan * duration;
+                    yearlyData[maGv].tongDay += teachingHours * duration;
+                    yearlyData[maGv].tongKN += kiemNhiem * duration;
+                }
+            }
+            
+            const tbody = document.getElementById("table-tonghop-canam").querySelector("tbody");
+            tbody.innerHTML = "";
+            let hasData = false;
+            
+            let arr = Object.keys(yearlyData).map(k => ({maGv: k, ...yearlyData[k]}));
+            arr.sort((a,b) => a.tcm.localeCompare(b.tcm));
+            
+            arr.forEach(d => {
+                hasData = true;
+                let tongThucTe = d.tongDay + d.tongKN;
+                let diff = tongThucTe - d.tongChuan;
+                let thColor = diff > 0 ? "var(--warning)" : (diff < 0 ? "var(--danger)" : "var(--success)");
+                let thText = diff > 0 ? `+${diff}` : diff;
+                
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:600; color:var(--primary);">${d.tcm}</td>
+                        <td><div style="font-weight:600;">${d.ten}</div><div style="font-size:12px;color:var(--text-muted);">${d.maGv}</div></td>
+                        <td style="text-align:center;">${d.tongChuan}</td>
+                        <td style="text-align:center;">${d.tongDay}</td>
+                        <td style="text-align:center;">${d.tongKN}</td>
+                        <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongThucTe}</td>
+                        <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
+                    </tr>
+                `;
+            });
+            
+            if(!hasData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+
+        window.exportCaNamToExcel = function() {
+            let table = document.getElementById("table-tonghop-canam");
+            let wb = XLSX.utils.table_to_book(table, {sheet: "TongHop_CaNam"});
+            XLSX.writeFile(wb, "Tong_Hop_PCCM_Ca_Nam.xlsx");
+            showToast("Xuất file Excel thành công!");
+        };
 
     </script>
 </body>
