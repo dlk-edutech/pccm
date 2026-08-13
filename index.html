@@ -90,38 +90,31 @@
         tr:last-child td { border-bottom: none; } 
         tr:hover td { background-color: #f1f5f9; }
         
-        /* Chỉnh sửa Inline Editing Chuyên nghiệp */
+        /* Chỉnh sửa Inline Editing */
         td.editing { padding: 6px 10px; background-color: #f8fafc; }
-        .edit-input, .edit-select {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px 10px;
-            border: 1px solid var(--primary);
-            border-radius: 6px;
-            font-family: inherit;
-            font-size: 13px;
-            color: var(--text-main);
-            background-color: #ffffff;
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
-            transition: all 0.2s;
-        }
-        .edit-input:focus, .edit-select:focus {
-            border-color: var(--primary-hover);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25);
-        }
+        .edit-input, .edit-select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--primary); border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--text-main); background-color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); transition: all 0.2s; }
+        .edit-input:focus, .edit-select:focus { border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 
         /* CSS tùy chỉnh cho Ma trận PCCM */
         #table-admin-matrix th { background-color: #00e5ff; color: #000; text-align: center; font-weight: 700; font-size: 14px; border: 1px solid #ccc; }
         #table-admin-matrix td { border: 1px solid #ccc; text-align: center; }
 
-        /* Overlay */
+        /* Overlay Loading */
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
         .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
 
-        /* Modal */
+        /* Modal Đổi MK */
         .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; }
         .modal-box { background:var(--surface); padding:30px; border-radius:12px; text-align:center; box-shadow:var(--shadow-md); width:300px; }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { min-width: 250px; padding: 15px 20px; border-radius: 8px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 500; border-left: 5px solid; animation: slideInRight 0.3s ease forwards; }
+        .toast.success { border-left-color: var(--success); color: var(--success-hover); }
+        .toast.error { border-left-color: var(--danger); color: var(--danger-hover); }
+        .toast.warning { border-left-color: var(--warning); color: var(--warning-hover); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(10px); } }
 
         /* Chức năng Phân công */
         .assign-container { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
@@ -138,6 +131,9 @@
     </style>
 </head>
 <body>
+
+    <!-- Container chứa thông báo đẩy (Toast) -->
+    <div id="toast-container"></div>
 
     <div id="loading-overlay">
         <div class="spinner"></div>
@@ -374,9 +370,25 @@
         let currentUser = null; 
         let currentTabId = '';
         let workbook = null; 
+
+        // --- HÀM TOAST NOTIFICATION ---
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : '⚠️');
+            toast.innerHTML = `<span style="margin-right: 8px;">${icon}</span> <span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        };
         
-        let selectedLoginRole = null; // Mặc định không chọn để bắt buộc người dùng chọn
-        
+        let selectedLoginRole = null; 
         window.selectRole = function(role) {
             selectedLoginRole = role;
             document.querySelectorAll('.role-card').forEach(el => el.classList.remove('active'));
@@ -433,9 +445,7 @@
                         }
                     }
                     if (foundUser) {
-                        // Cấp quyền Quản lý cho cả TTCM và TPCM
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
-                        
                         if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
                         
                         let role = (isManager && selectedLoginRole === 'ttcm') ? "ttcm" : "gv";
@@ -448,6 +458,7 @@
                 
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("app-layout").style.display = "flex";
+                showToast(`Đăng nhập thành công! Xin chào ${currentUser.ten}.`);
             } catch (err) {
                 document.getElementById("login-error").innerText = err.message;
                 document.getElementById("login-error").style.display = "block";
@@ -528,11 +539,14 @@
 
         window.submitChangePassword = async function() {
             const newPw = document.getElementById("new-pwd-input").value.trim();
-            if (!newPw) return alert("Mã không được để trống!");
+            if (!newPw) {
+                showToast("Mã không được để trống!", "error");
+                return;
+            }
 
             if (currentUser.role === 'admin') {
                 localStorage.setItem("adminPassword", newPw);
-                alert("Đổi mã Admin thành công!");
+                showToast("Đổi mã Admin thành công!");
                 document.getElementById('pw-modal').style.display = 'none';
             } else {
                 document.getElementById('loading-overlay').style.display = 'flex';
@@ -544,11 +558,11 @@
                         await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
                         
                         dbTeachers = latestDb; 
-                        alert("Đổi mã đăng nhập thành công!");
+                        showToast("Đổi mã đăng nhập thành công!");
                         document.getElementById('pw-modal').style.display = 'none';
                     }
                 } catch(e) {
-                    alert("Lỗi khi lưu mã mới: " + e.message);
+                    showToast("Lỗi khi lưu mã mới: " + e.message, "error");
                 }
                 document.getElementById('loading-overlay').style.display = 'none';
             }
@@ -614,7 +628,10 @@
 
             const sheetName = document.getElementById('sheet-select').value;
             let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1, defval: ""});
-            if (jsonData.length <= 1) return alert("Sheet trống hoặc không hợp lệ!");
+            if (jsonData.length <= 1) {
+                showToast("Sheet trống hoặc không hợp lệ!", "error");
+                return;
+            }
 
             const cleanData = JSON.parse(JSON.stringify(jsonData));
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -622,8 +639,10 @@
                 await setDoc(doc(db, "pccm_data", currentTabId), { excelData: JSON.stringify(cleanData) });
                 syncMemoryState(currentTabId, cleanData);
                 renderAdminTable(currentTabId, cleanData);
-                alert("Đã cập nhật dữ liệu từ Excel!");
-            } catch (e) { alert("Lỗi Firebase: " + e.message); }
+                showToast("Đã cập nhật dữ liệu từ Excel!");
+            } catch (e) { 
+                showToast("Lỗi Firebase: " + e.message, "error"); 
+            }
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
@@ -748,8 +767,10 @@
             try {
                 await setDoc(doc(db, "pccm_data", tabId), { excelData: JSON.stringify(dataToSave) });
                 syncMemoryState(tabId, dataToSave);
-                alert("Đã lưu dữ liệu bảng!");
-            } catch (e) { alert("Lỗi: " + e.message); }
+                showToast("Đã lưu dữ liệu bảng thành công!");
+            } catch (e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
@@ -869,6 +890,7 @@
             let table = document.getElementById("table-admin-matrix");
             let wb = XLSX.utils.table_to_book(table, {sheet: "PCCM"});
             XLSX.writeFile(wb, "Mau_PCCM.xlsx");
+            showToast("Xuất file Excel thành công!");
         };
 
         // --- CÁC HÀM CHO TTCM ---
@@ -937,9 +959,11 @@
                     });
                     await setDoc(doc(db, "pccm_data", "tab-giaovien"), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb;
-                    alert("Đã lưu thông tin Giáo viên!");
+                    showToast("Đã lưu thông tin Giáo viên!");
                 }
-            } catch(e) { alert("Lỗi: " + e.message); }
+            } catch(e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
@@ -1079,7 +1103,10 @@
         window.savePhanCong = async function() {
             const maGv = document.getElementById("ttcm-select-gv").value;
             const maMon = document.getElementById("ttcm-select-mon").value;
-            if(!maGv || !maMon) return alert("Vui lòng chọn Giáo viên và Môn dạy!");
+            if(!maGv || !maMon) {
+                showToast("Vui lòng chọn Giáo viên và Môn dạy!", "warning");
+                return;
+            }
             
             dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
             
@@ -1091,8 +1118,10 @@
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
                 await setDoc(doc(db, "pccm_data", "tab-phancong"), { assignmentData: JSON.stringify(dbAssignments) });
-                alert("Đã lưu Phân công chuyên môn!");
-            } catch(e) { alert("Lỗi: " + e.message); }
+                showToast("Đã lưu Phân công chuyên môn!");
+            } catch(e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
