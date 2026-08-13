@@ -69,7 +69,7 @@
         .content-area { flex-grow: 1; overflow-y: auto; padding: 25px; background: var(--bg-color); }
         .content-inner { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
 
-        .control-panel { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .control-panel { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
         .control-panel label { font-size: 14px; font-weight: 600; color: var(--text-main); }
         .control-panel select, .control-panel input[type="file"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
 
@@ -190,17 +190,20 @@
             <div class="content-area">
                 <div class="content-inner">
                     
-                    <!-- Vùng Upload Excel -->
+                    <!-- Vùng Upload Excel & Tải Mẫu -->
                     <div class="control-panel admin-only" style="display: none;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label>1. Tải file Excel:</label>
-                            <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>1. Tải file Excel:</label>
+                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>2. Chọn Sheet nạp đè:</label>
+                                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
+                                <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
+                            </div>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label>2. Chọn Sheet nạp đè:</label>
-                            <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
-                            <button class="btn btn-primary" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
-                        </div>
+                        <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
                     </div>
 
                     <!-- TAB QUẢN LÝ ĐƠN VỊ -->
@@ -443,11 +446,7 @@
             document.getElementById("login-error").style.display = "none";
         };
 
-        window.copyToClipboard = function(text) {
-            navigator.clipboard.writeText(text).then(() => showToast("Đã copy link truy cập!"));
-        };
-
-        // Hàm hỗ trợ nâng cấp DB cũ (thêm Tiết chuẩn = 17)
+        // Hàm bổ sung Cột Tiết chuẩn = 17 nếu DB cũ chưa có
         function migrateTeachersDb(teachersData) {
             if (teachersData && teachersData.length > 1 && teachersData[1].length === 9) {
                 teachersData.forEach((t, i) => {
@@ -482,17 +481,9 @@
                     }
                 } catch(e) { dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]]; }
 
-                // Tải Giáo viên
-                const docSnap = await getDoc(doc(db, getCollectionName(), "tab-giaovien"));
-                if (docSnap.exists()) {
-                    let rawData = docSnap.data().excelData;
-                    dbTeachers = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                    dbTeachers = migrateTeachersDb(dbTeachers);
-                }
-
                 if (selectedLoginRole === 'admin') {
                     if (currentUnitId) {
-                        // Login vào Sub Admin
+                        // Đăng nhập Sub Admin (Qua link riêng)
                         let foundSub = dbSubAdmins.find(s => s[2] === currentUnitId);
                         if (foundSub && foundSub[1] === input) {
                             currentUser = { role: 'sub_admin', ten: 'Admin - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
@@ -501,7 +492,7 @@
                             throw new Error("Mã Admin Đơn vị không chính xác!");
                         }
                     } else {
-                        // Login vào Master Admin
+                        // Đăng nhập Master Admin
                         let adminPw = localStorage.getItem("adminPassword") || "11043006";
                         if (input === adminPw) {
                             currentUser = { role: 'admin', ten: 'Quản trị viên Hệ thống' };
@@ -511,18 +502,27 @@
                         }
                     }
                 } else {
-                    // TTCM / Giáo viên
+                    // TTCM / GV Login Logic (Cách ly triệt để theo Đơn vị)
                     let foundUser = null;
                     let foundIndex = -1;
-                    if(dbTeachers.length > 1) {
-                        for(let i = 1; i < dbTeachers.length; i++) {
-                            if(dbTeachers[i][1] === input) {
-                                foundUser = dbTeachers[i];
+                    
+                    let colName = getCollectionName(); 
+                    const docSnap = await getDoc(doc(db, colName, "tab-giaovien"));
+                    
+                    if (docSnap.exists()) {
+                        let rawData = docSnap.data().excelData;
+                        let tList = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
+                        tList = migrateTeachersDb(tList);
+                        for(let i = 1; i < tList.length; i++) {
+                            if(tList[i][1] === input) {
+                                foundUser = tList[i];
                                 foundIndex = i;
+                                dbTeachers = tList; 
                                 break;
                             }
                         }
                     }
+                    
                     if (foundUser) {
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
                         if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
@@ -531,7 +531,7 @@
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
                         await initTeacherUI(role);
                     } else {
-                        throw new Error("Mã đăng nhập cá nhân không chính xác!");
+                        throw new Error("Mã đăng nhập cá nhân không chính xác cho Đơn vị này!");
                     }
                 }
                 
@@ -548,7 +548,7 @@
 
         async function initAdminUI() {
             document.querySelector('.admin-only').style.display = 'flex';
-            document.getElementById('sidebar-user-role').innerText = "Tài khoản: " + currentUser.ten;
+            document.getElementById('sidebar-user-role').innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
             
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
@@ -687,7 +687,40 @@
             }
         };
 
-        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN) ---
+        // --- HÀM TẢI MẪU EXCEL ---
+        window.downloadExcelTemplate = function() {
+            let wb = XLSX.utils.book_new();
+            
+            let ws1 = XLSX.utils.aoa_to_sheet([
+                ["Mã GV", "Mã đăng nhập", "Tên giáo viên", "TCM", "Chức vụ", "Tiết chuẩn", "Tiết kiêm nhiệm", "Môn 1", "Môn 2", "Môn 3"],
+                ["GV01", "1234", "Nguyễn Văn A", "Toán", "Gv", "17", "0", "Toán", "", ""]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws1, "Thông tin giáo viên");
+
+            let ws2 = XLSX.utils.aoa_to_sheet([
+                ["Lớp", "Mã TH môn", "Mã GVCN"],
+                ["10A1", "TH1", "GV01"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws2, "Thông tin lớp");
+
+            let ws3 = XLSX.utils.aoa_to_sheet([
+                ["Mã môn", "Tên môn", "Số tiết/tuần"],
+                ["Toán", "Toán học", "3"],
+                ["SH", "Sinh hoạt", "1"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws3, "Thông tin môn học");
+
+            let ws4 = XLSX.utils.aoa_to_sheet([
+                ["Mã TH môn", "Các môn trong tổ hợp", "Các môn có chuyên đề"],
+                ["TH1", "Toán, Vật lý, Hóa học, Sinh hoạt", "Toán"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws4, "Thông tin TH môn");
+
+            XLSX.writeFile(wb, "Mau_Du_Lieu_PCCM.xlsx");
+            showToast("Đã tải file mẫu Excel!");
+        };
+
+        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN CHỈ CÓ) ---
         window.addNewSubAdminRow = function() {
             const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
             if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
@@ -910,7 +943,6 @@
 
                 let currentVal = td.dataset.val !== undefined ? td.dataset.val : td.innerText.trim();
                 
-                // Tiết chuẩn mặc định 17 khi tạo mới
                 if (currentVal === "" && tableId === 'table-giaovien' && index === 5) currentVal = "17";
                 if (currentVal === "" && tableId === 'table-ttcm-gv' && index === 4) currentVal = "17";
 
@@ -1023,6 +1055,13 @@
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
+        function syncMemoryState(tabId, data) {
+            if(tabId === 'tab-giaovien') dbTeachers = data;
+            if(tabId === 'tab-lop') dbClasses = data;
+            if(tabId === 'tab-monhoc') dbSubjects = data;
+            if(tabId === 'tab-tohop') dbCombos = data;
+        }
+
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
             let expCols = tabId==='tab-giaovien' ? 10 : 3;
@@ -1090,8 +1129,12 @@
                     let classHours = base + (hasCD ? 1 : 0);
                     tongTietDay += classHours;
                     
-                    if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
-                    groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${classHours})` : a.lop);
+                    if (!groupedByMon[tenMonFull]) {
+                        groupedByMon[tenMonFull] = [];
+                    }
+                    
+                    let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
+                    groupedByMon[tenMonFull].push(classText);
                 });
 
                 let resultStrings = [];
@@ -1283,6 +1326,10 @@
         }
 
         window.saveTtcmGvTab = async function() {
+            document.getElementById("table-ttcm-gv").querySelectorAll(".btn-success").forEach(b => { 
+                if(b.innerText==="Lưu") window.editRow(b, 'table-ttcm-gv'); 
+            });
+
             const rows = document.getElementById("table-ttcm-gv").querySelectorAll("tbody tr");
             const mappedIndices = [0, 2, 3, 4, 5, 6, 7, 8, 9]; 
             
