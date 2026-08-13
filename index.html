@@ -185,7 +185,9 @@
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu PCCM</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu chéo PCCM</div>
+                <!-- Tính năng mới: Tổng hợp PCCM Toàn trường -->
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp PCCM Toàn trường</div>
                 
                 <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">Giáo viên trong Tổ</div>
@@ -266,12 +268,26 @@
                     <!-- TAB ADMIN MATRIX -->
                     <div id="tab-admin-matrix" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Bảng tổng hợp Phân công chuyên môn Toàn trường</h3>
+                            <h3 style="margin:0;">Bảng Ma trận Phân công chuyên môn Toàn trường</h3>
                             <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
                         </div>
                         <div class="table-container">
                             <table id="table-admin-matrix">
                                 <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
+                    <div id="tab-admin-tonghop" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường</h3>
+                            <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="table-admin-tonghop">
+                                <thead><tr><th>Tổ CM</th><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết kiêm nhiệm</th><th>Tổng số tiết</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -445,6 +461,7 @@
                         }
                     }
                     if (foundUser) {
+                        // Cấp quyền Quản lý cho cả TTCM và TPCM
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
                         if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
                         
@@ -581,6 +598,8 @@
             if (currentUser.role === 'admin') {
                 if(tabId === 'tab-admin-matrix') {
                     renderAdminMatrix();
+                } else if(tabId === 'tab-admin-tonghop') {
+                    renderAdminTongHop();
                 } else {
                     await loadAdminTabData(tabId);
                 }
@@ -814,7 +833,77 @@
             }
         }
 
-        // --- XUẤT MA TRẬN PCCM ADMIN ---
+        // --- TỔNG HỢP PCCM TOÀN TRƯỜNG (ADMIN) ---
+        window.renderAdminTongHop = function() {
+            const tbody = document.getElementById("table-admin-tonghop").querySelector("tbody");
+            tbody.innerHTML = "";
+            let hasData = false;
+
+            // Sắp xếp giáo viên theo Tổ CM
+            let sortedTeachers = [...dbTeachers].slice(1).sort((a, b) => {
+                let tcmA = a[3] || "";
+                let tcmB = b[3] || "";
+                return tcmA.localeCompare(tcmB);
+            });
+
+            for(let i=0; i<sortedTeachers.length; i++) {
+                let teacher = sortedTeachers[i];
+                if (!teacher[0]) continue;
+
+                hasData = true;
+                let maGv = teacher[0];
+                let tenGv = teacher[2];
+                let tcm = teacher[3];
+                let kiemNhiem = parseInt(teacher[5]) || 0;
+                
+                let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
+                let tongTietDay = 0;
+                let groupedByMon = {};
+
+                teacherAssignments.forEach(a => {
+                    let tenMonFull = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    let hasCD = checkChuyenDe(a.lop, tenMonFull);
+                    let classHours = base + (hasCD ? 1 : 0);
+                    tongTietDay += classHours;
+                    
+                    if (!groupedByMon[tenMonFull]) {
+                        groupedByMon[tenMonFull] = [];
+                    }
+                    
+                    let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
+                    groupedByMon[tenMonFull].push(classText);
+                });
+
+                let resultStrings = [];
+                for (let mon in groupedByMon) {
+                    resultStrings.push(`<b>${mon}:</b> ${groupedByMon[mon].join(', ')}`);
+                }
+
+                let tongTiet = tongTietDay + kiemNhiem;
+                let textPhanCong = resultStrings.length > 0 ? resultStrings.join("; ") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="font-weight:600; color:var(--primary);">${tcm}</td>
+                        <td><div style="font-weight:600;">${tenGv}</div><div style="font-size:12px;color:var(--text-muted);">${maGv}</div></td>
+                        <td style="line-height: 1.8;">${textPhanCong}</td>
+                        <td style="text-align:center;">${kiemNhiem}</td>
+                        <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongTiet}</td>
+                    </tr>
+                `;
+            }
+            if(!hasData) tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
+        }
+
+        window.exportAdminTongHopToExcel = function() {
+            let table = document.getElementById("table-admin-tonghop");
+            let wb = XLSX.utils.table_to_book(table, {sheet: "Tong_Hop_PCCM"});
+            XLSX.writeFile(wb, "Tong_Hop_PCCM_Toan_Truong.xlsx");
+            showToast("Xuất file Excel thành công!");
+        };
+
+        // --- XUẤT MA TRẬN CHÉO PCCM ADMIN ---
         window.renderAdminMatrix = function() {
             const thead = document.getElementById("table-admin-matrix").querySelector("thead");
             const tbody = document.getElementById("table-admin-matrix").querySelector("tbody");
@@ -888,8 +977,8 @@
 
         window.exportMatrixToExcel = function() {
             let table = document.getElementById("table-admin-matrix");
-            let wb = XLSX.utils.table_to_book(table, {sheet: "PCCM"});
-            XLSX.writeFile(wb, "Mau_PCCM.xlsx");
+            let wb = XLSX.utils.table_to_book(table, {sheet: "Ma_Tran_PCCM"});
+            XLSX.writeFile(wb, "Ma_Tran_PCCM.xlsx");
             showToast("Xuất file Excel thành công!");
         };
 
