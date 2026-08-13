@@ -144,7 +144,6 @@
                 </div>
             </div>
 
-            <!-- Khóa ô nhập liệu khi chưa chọn Role -->
             <input type="text" id="login-input" placeholder="Vui lòng nhấp chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
             <button class="btn btn-full" onclick="login()">Đăng nhập</button>
             <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
@@ -189,12 +188,6 @@
             <div class="topbar">
                 <h1 id="topbar-title">Hệ thống</h1>
                 <div class="topbar-actions">
-                    <div style="display:flex; align-items:center; background:#f1f5f9; padding:0 10px; border-radius:6px; border:1px solid #e2e8f0; margin-right: 15px;">
-                        <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
-                        <select id="period-selector" onchange="changePeriod()" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;">
-                            <option value="default">Đang tải...</option>
-                        </select>
-                    </div>
                     <button class="btn btn-outline" onclick="showChangePassword()">🔑 Đổi mã cá nhân</button>
                     <button class="btn btn-danger" onclick="logout()">🚪 Đăng xuất</button>
                 </div>
@@ -249,7 +242,13 @@
 
                     <!-- TABS ADMIN -->
                     <div id="tab-giaovien" class="tab-content">
-                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar" style="justify-content: space-between;">
+                            <button class="btn btn-success admin-action" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
+                            <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-left:auto;">
+                                <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="table-giaovien">
                                 <thead><tr><th>Mã GV</th><th>Mã đăng nhập</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
@@ -259,7 +258,13 @@
                     </div>
                     
                     <div id="tab-lop" class="tab-content">
-                        <div class="action-bar admin-action"><button class="btn btn-success" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar" style="justify-content: space-between;">
+                            <button class="btn btn-success admin-action" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
+                            <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0; margin-left:auto;">
+                                <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="table-lop">
                                 <thead><tr><th>Lớp</th><th>Mã TH môn</th><th>Mã GVCN</th><th style="width:120px;text-align:center;" class="admin-action">Thao tác</th></tr></thead>
@@ -292,7 +297,13 @@
                     <div id="tab-admin-matrix" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                             <h3 style="margin:0;">Bảng Ma trận Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
-                            <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                    <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                                </div>
+                                <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
+                            </div>
                         </div>
                         <div class="table-container">
                             <table id="table-admin-matrix">
@@ -305,8 +316,14 @@
                     <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
                     <div id="tab-admin-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
-                            <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
+                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường</h3>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                    <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                    <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                                </div>
+                                <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
+                            </div>
                         </div>
                         <div class="table-container">
                             <table id="table-admin-tonghop">
@@ -318,8 +335,14 @@
 
                     <!-- TABS TTCM / GV -->
                     <div id="tab-ttcm-gv" class="tab-content">
-                        <h3>Danh sách Giáo viên (Tổ <span class="lbl-tcm"></span>)</h3>
-                        <p style="font-size: 13px; color: var(--text-muted);">Mã đăng nhập được ẩn để bảo mật. Chỉ Admin mới có quyền cấp lại mã cho giáo viên.</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <h3 style="margin:0;">Danh sách Giáo viên (Tổ <span class="lbl-tcm"></span>)</h3>
+                            <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
+                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Mã đăng nhập được ẩn để bảo mật. Chỉ Admin mới có quyền cấp lại mã cho giáo viên.</p>
                         <div class="table-container">
                             <table id="table-ttcm-gv">
                                 <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;" class="ttcm-action">Thao tác</th></tr></thead>
@@ -329,7 +352,13 @@
                     </div>
 
                     <div id="tab-ttcm-phancong" class="tab-content">
-                        <h3>Phân công giảng dạy</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3 style="margin:0;">Phân công giảng dạy</h3>
+                            <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
                         <div class="assign-container">
                             <div class="assign-row">
                                 <label style="width: 100px; font-weight: 600;">Giáo viên:</label>
@@ -355,7 +384,13 @@
                     </div>
 
                     <div id="tab-ttcm-tonghop" class="tab-content">
-                        <h3>Bảng tổng hợp chuyên môn Đợt này (Tổ <span class="lbl-tcm"></span>)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
+                            <h3 style="margin:0;">Bảng tổng hợp chuyên môn Đợt này (Tổ <span class="lbl-tcm"></span>)</h3>
+                            <div style="display:flex; align-items:center; background:#f1f5f9; padding:6px 12px; border-radius:6px; border:1px solid #e2e8f0;">
+                                <span style="font-size:13px; font-weight:600; color:var(--primary); margin-right:8px;">Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)" style="border:none; background:transparent; font-weight:600; font-family:inherit; outline:none; font-size:14px; color:var(--text-main); cursor:pointer;"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="table-ttcm-tonghop">
                                 <thead><tr><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng số tiết</th><th>Thừa/Thiếu</th></tr></thead>
@@ -482,7 +517,6 @@
             return currentUnitId ? "pccm_data_" + currentUnitId : "pccm_data";
         }
 
-        // Logic Lấy tên Document theo Đợt
         function getDocName(baseName, pId) {
             if(baseName === 'tab-monhoc' || baseName === 'tab-tohop') return baseName; // Global
             if(pId === 'default') return baseName;
@@ -553,7 +587,6 @@
                     }
                 } catch(e) { dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]]; }
 
-                // Check Admin
                 let isAdmin = false;
                 if (selectedLoginRole === 'admin') {
                     if (currentUnitId) {
@@ -583,7 +616,6 @@
                     
                     for(let u of unitsToCheck) {
                         let colName = u.id ? "pccm_data_" + u.id : "pccm_data";
-                        // Find latest period for this unit just to verify login
                         let pIdForLogin = 'default';
                         try {
                             const pSnap = await getDoc(doc(db, colName, "pccm_periods"));
@@ -624,7 +656,6 @@
                     }
                 }
                 
-                // Tải Periods của Unit
                 try {
                     const pSnap = await getDoc(doc(db, getCollectionName(), "pccm_periods"));
                     if(pSnap.exists()) {
@@ -657,18 +688,21 @@
         };
 
         function updatePeriodDropdown() {
-            const selector = document.getElementById("period-selector");
-            selector.innerHTML = "";
-            dbPeriods.forEach(p => {
-                let selected = (p.id === currentPeriodId) ? "selected" : "";
-                selector.innerHTML += `<option value="${p.id}" ${selected}>${p.name} (Từ tuần ${p.startWeek})</option>`;
+            document.querySelectorAll(".period-selector").forEach(selector => {
+                selector.innerHTML = "";
+                dbPeriods.forEach(p => {
+                    let selected = (p.id === currentPeriodId) ? "selected" : "";
+                    selector.innerHTML += `<option value="${p.id}" ${selected}>${p.name} (Từ tuần ${p.startWeek})</option>`;
+                });
             });
         }
 
-        window.changePeriod = async function() {
-            const selector = document.getElementById("period-selector");
-            currentPeriodId = selector.value;
+        window.changePeriod = async function(newVal) {
+            currentPeriodId = newVal;
             
+            // Đồng bộ lại tất cả các selector trên giao diện
+            document.querySelectorAll(".period-selector").forEach(s => s.value = newVal);
+
             document.getElementById('loading-overlay').style.display = 'flex';
             await reloadMemoryForCurrentPeriod();
             document.getElementById('loading-overlay').style.display = 'none';
@@ -740,7 +774,6 @@
             try {
                 await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
                 
-                // Copy data from current memory
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", newId)), { excelData: JSON.stringify(dbTeachers) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
@@ -786,7 +819,6 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            // Hiện chức năng chung
             document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
             
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
@@ -812,7 +844,6 @@
                 document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = '');
             } else {
                 document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
-                // Hide actions for GV
                 document.querySelectorAll('.ttcm-action, .admin-action').forEach(el => el.style.display = 'none');
             }
             
