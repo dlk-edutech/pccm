@@ -138,7 +138,7 @@
         .class-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; padding: 8px; border-radius: 6px; }
         .class-item:hover { background: #f1f5f9; }
         .class-item input { width: 18px; height: 18px; cursor: pointer; margin-top: 2px; accent-color: var(--primary); }
-        .class-note { display: block; font-size: 11px; color: var(--danger); font-weight: 500; margin-top: 4px; }
+        .class-note { display: block; font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
 
         .footer { text-align: center; padding: 20px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); flex-shrink: 0; font-weight: 500; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -148,7 +148,7 @@
 <body>
 
     <div id="toast-container"></div>
-    <div id="loading-overlay"><div class="spinner"></div><div>Đang xử lý dữ liệu với Firebase...</div></div>
+    <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
 
     <!-- ĐĂNG NHẬP -->
     <div id="login-section">
@@ -523,7 +523,6 @@
         let dbAssignments = []; 
         let currentUser = null; 
         let currentTabId = '';
-        let workbook = null; 
 
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -766,6 +765,21 @@
             }
         };
 
+        window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName) {
+            if (cb.checked && otherTeacherId) {
+                if (!confirm(`Lớp ${tenLop} đã được phân cho GV ${otherTeacherName}.\nBạn có muốn phân lại cho GV hiện tại và hủy của GV cũ không?`)) {
+                    cb.checked = false; 
+                } else {
+                    let noteContainer = cb.closest('.class-item').querySelector('.note-container');
+                    if (noteContainer) noteContainer.innerHTML = `<span class="class-note" style="color:var(--warning);">(Sẽ chuyển từ ${otherTeacherName})</span>`;
+                }
+            } else if (!cb.checked && otherTeacherId) {
+                let noteContainer = cb.closest('.class-item').querySelector('.note-container');
+                if (noteContainer) noteContainer.innerHTML = `<span class="class-note">(Đã giao: ${otherTeacherName})</span>`;
+            }
+            updateUnsavedTotal();
+        };
+
         window.handleExcelUpload = function(e) {
             const file = e.target.files[0];
             if (!file) {
@@ -834,9 +848,7 @@
                     selMon.disabled = false;
                 }
                 inputs.forEach(i => {
-                    if (i.parentElement && i.parentElement.style && !i.parentElement.style.opacity.includes('0.5')) {
-                        i.disabled = false;
-                    }
+                    i.disabled = false; 
                 });
             }
         }
@@ -1866,7 +1878,7 @@
                     });
                     await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb;
-                    showToast("Đã lưu thông tin Giáo viên!");
+                    showToast("Đã lưu thông Giáo viên!");
                 }
             } catch(e) { 
                 showToast("Lỗi: " + e.message, "error"); 
@@ -1940,16 +1952,19 @@
                 let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
                 let isChecked = false;
                 let isDisabled = false;
+                let otherTeacherId = "";
+                let otherTeacherName = "";
                 let noteStr = "";
 
                 if (assigned) {
                     if (assigned.maGv === maGv) {
                         isChecked = true; 
                     } else {
-                        isDisabled = true; 
+                        otherTeacherId = assigned.maGv;
                         let t = dbTeachers.find(x => x && x[0] === assigned.maGv);
-                        let tName = t ? t[2] : assigned.maGv;
-                        noteStr = `<span class="class-note">(Đã giao: ${tName})</span>`;
+                        otherTeacherName = t ? t[2] : assigned.maGv;
+                        otherTeacherName = otherTeacherName.replace(/'/g, "\\'");
+                        noteStr = `<span class="class-note">(Đã giao: ${otherTeacherName})</span>`;
                     }
                 }
 
@@ -1960,11 +1975,11 @@
                 let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${baseHours + 1})</span>` : tenLop;
 
                 container.innerHTML += `
-                    <label class="class-item" style="${isDisabled ? 'opacity:0.6; cursor:not-allowed; background:#f1f5f9;' : ''}">
-                        <input type="checkbox" value="${tenLop}" onchange="updateUnsavedTotal()" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+                    <label class="class-item">
+                        <input type="checkbox" value="${tenLop}" onchange="handleCheckboxChange(this, '${tenLop}', '${otherTeacherId}', '${otherTeacherName}')" ${isChecked ? 'checked' : ''}>
                         <div style="display: flex; flex-direction: column;">
                             <span style="${nameStyle}">${displayLop}</span>
-                            ${noteStr}
+                            <span class="note-container">${noteStr}</span>
                         </div>
                     </label>
                 `;
@@ -2059,6 +2074,7 @@
             if(container) {
                 const checkboxes = container.querySelectorAll("input[type=checkbox]:checked:not(:disabled)");
                 checkboxes.forEach(cb => {
+                    dbAssignments = dbAssignments.filter(a => !(a.maMon === maMon && a.lop === cb.value));
                     dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
                 });
             }
@@ -2068,6 +2084,7 @@
             try {
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId)), { assignmentData: JSON.stringify(dbAssignments) });
                 showToast("Đã lưu Phân công chuyên môn!");
+                window.ttcmMonChanged(); 
             } catch(e) { 
                 showToast("Lỗi: " + e.message, "error"); 
             }
