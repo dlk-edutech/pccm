@@ -158,7 +158,7 @@
             <div class="role-grid">
                 <div class="role-card" id="role-admin" onclick="selectRole('admin')">
                     <h4 id="lbl-admin-role">Quản trị viên (Admin)</h4>
-                    <p>Quản lý toàn bộ hệ thống, thiết lập dữ liệu đầu năm, xuất báo cáo.</p>
+                    <p>Quản lý toàn bộ hệ thống, thiết lập dữ liệu, xuất báo cáo toàn trường.</p>
                 </div>
                 <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
                     <h4>Ban Quản lý Tổ (TTCM/TPCM)</h4>
@@ -204,8 +204,10 @@
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">👥 Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">✍️ Phân công Giảng dạy</div>
                 
-                <!-- Chung -->
+                <!-- Chung (TTCM & GV) -->
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">📋 Tổng hợp Tổ CM</div>
+                
+                <!-- Chung Tất cả (Cả năm) -->
                 <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
             </div>
         </div>
@@ -248,6 +250,22 @@
                                 <tbody></tbody>
                             </table>
                         </div>
+                    </div>
+
+                    <!-- Vùng Upload Excel & Tải Mẫu -->
+                    <div class="control-panel admin-only" id="excel-panel" style="display: none;">
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>1. Tải file Excel:</label>
+                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <label>2. Chọn Sheet nạp đè:</label>
+                                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
+                                <button class="btn btn-primary lock-hidden" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
                     </div>
 
                     <!-- TABS ADMIN: GIÁO VIÊN -->
@@ -346,7 +364,7 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM / GV: GIÁO VIÊN -->
+                    <!-- TABS TTCM: GIÁO VIÊN -->
                     <div id="tab-ttcm-gv" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Danh sách Giáo viên (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
@@ -422,6 +440,7 @@
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Báo cáo Tổng số tiết Cả Năm Học (35 Tuần)</h3>
+                            <!-- LUÔN LUÔN HIỆN NÚT NÀY CHO TẤT CẢ CÁC ROLE KHI Ở TAB NÀY -->
                             <button class="btn btn-success" onclick="exportCaNamToExcel()">📥 Xuất Excel</button>
                         </div>
                         <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Dữ liệu tự động nội suy tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn cấu hình trong năm.</p>
@@ -511,7 +530,8 @@
             
             if (unitParam) {
                 currentUnitId = unitParam;
-                document.getElementById('lbl-admin-role').innerText = "Quản trị viên Đơn vị";
+                const roleEl = document.getElementById('lbl-admin-role');
+                if(roleEl) roleEl.innerText = "Quản trị viên Đơn vị";
                 
                 try {
                     const subSnap = await getDoc(doc(db, "pccm_config", "sub_admins"));
@@ -520,9 +540,13 @@
                         let sub = subs.find(s => s && s[2] === currentUnitId);
                         if (sub) {
                             currentUnitName = sub[0];
-                            document.getElementById('unit-name-display').innerText = "Đơn vị: " + currentUnitName;
-                            document.getElementById('unit-name-display').style.display = "block";
-                            document.getElementById('sidebar-unit-name').innerText = currentUnitName;
+                            const unitDisplay = document.getElementById('unit-name-display');
+                            if(unitDisplay) {
+                                unitDisplay.innerText = "Đơn vị: " + currentUnitName;
+                                unitDisplay.style.display = "block";
+                            }
+                            const sidebarUnit = document.getElementById('sidebar-unit-name');
+                            if(sidebarUnit) sidebarUnit.innerText = currentUnitName;
                         }
                     }
                 } catch(e) {}
@@ -552,6 +576,7 @@
 
         window.showToast = function(message, type = 'success') {
             const container = document.getElementById('toast-container');
+            if(!container) return;
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             let icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : '⚠️');
@@ -567,17 +592,19 @@
         window.selectRole = function(role) {
             selectedLoginRole = role;
             document.querySelectorAll('.role-card').forEach(el => el.classList.remove('active'));
-            document.getElementById('role-' + role).classList.add('active');
+            const card = document.getElementById('role-' + role);
+            if(card) card.classList.add('active');
             
             let input = document.getElementById("login-input");
-            input.disabled = false;
-            
-            if (role === 'admin') input.placeholder = "Nhập mã Admin...";
-            else if (role === 'ttcm') input.placeholder = "Nhập mã đăng nhập Quản lý Tổ...";
-            else input.placeholder = "Nhập mã cá nhân Giáo viên...";
-            
-            input.focus();
-            document.getElementById("login-error").style.display = "none";
+            if(input) {
+                input.disabled = false;
+                if (role === 'admin') input.placeholder = "Nhập mã Admin...";
+                else if (role === 'ttcm') input.placeholder = "Nhập mã đăng nhập Quản lý Tổ...";
+                else input.placeholder = "Nhập mã cá nhân Giáo viên...";
+                input.focus();
+            }
+            const errEl = document.getElementById("login-error");
+            if(errEl) errEl.style.display = "none";
         };
 
         function migrateTeachersDb(teachersData) {
@@ -595,21 +622,23 @@
         }
 
         window.login = async function() {
+            const errEl = document.getElementById("login-error");
+            const overlay = document.getElementById('loading-overlay');
+            const loginInput = document.getElementById("login-input");
+
             if (!selectedLoginRole) {
-                document.getElementById("login-error").innerText = "Vui lòng nhấp chọn 1 trong 3 phân quyền ở trên trước khi đăng nhập!";
-                document.getElementById("login-error").style.display = "block";
+                if(errEl) { errEl.innerText = "Vui lòng nhấp chọn 1 trong 3 phân quyền ở trên trước khi đăng nhập!"; errEl.style.display = "block"; }
                 return;
             }
 
-            const input = document.getElementById("login-input").value.trim();
+            const input = loginInput ? loginInput.value.trim() : "";
             if (!input) {
-                document.getElementById("login-error").innerText = "Vui lòng nhập mã đăng nhập!";
-                document.getElementById("login-error").style.display = "block";
+                if(errEl) { errEl.innerText = "Vui lòng nhập mã đăng nhập!"; errEl.style.display = "block"; }
                 return;
             }
             
-            document.getElementById("login-error").style.display = "none";
-            document.getElementById('loading-overlay').style.display = 'flex';
+            if(errEl) errEl.style.display = "none";
+            if(overlay) overlay.style.display = 'flex';
 
             try {
                 try {
@@ -720,14 +749,18 @@
                     await initTeacherUI(currentUser.role);
                 }
 
-                document.getElementById("login-section").style.display = "none";
-                document.getElementById("app-layout").style.display = "flex";
+                const loginSec = document.getElementById("login-section");
+                const appLayout = document.getElementById("app-layout");
+                if(loginSec) loginSec.style.display = "none";
+                if(appLayout) appLayout.style.display = "flex";
                 showToast(`Đăng nhập thành công! Xin chào ${currentUser.ten}.`);
             } catch (err) {
-                document.getElementById("login-error").innerText = err.message;
-                document.getElementById("login-error").style.display = "block";
+                if(errEl) {
+                    errEl.innerText = err.message;
+                    errEl.style.display = "block";
+                }
             } finally {
-                document.getElementById('loading-overlay').style.display = 'none';
+                if(overlay) overlay.style.display = 'none';
             }
         };
 
@@ -746,19 +779,24 @@
         window.checkAndApplyLock = function() {
             let p = dbPeriods.find(x => x.id === currentPeriodId);
             let isLocked = p && p.isLocked;
+            
+            const selGv = document.getElementById('ttcm-select-gv');
+            const selMon = document.getElementById('ttcm-select-mon');
+            const inputs = document.querySelectorAll('#ttcm-classes-container input');
+            
             if (isLocked) {
                 document.body.classList.add('period-locked');
-                document.getElementById('ttcm-select-gv').disabled = true;
-                document.getElementById('ttcm-select-mon').disabled = true;
-                document.querySelectorAll('#ttcm-classes-container input').forEach(i => i.disabled = true);
+                if(selGv) selGv.disabled = true;
+                if(selMon) selMon.disabled = true;
+                inputs.forEach(i => i.disabled = true);
             } else {
                 document.body.classList.remove('period-locked');
-                document.getElementById('ttcm-select-gv').disabled = false;
-                if (document.getElementById('ttcm-select-gv').value) {
-                    document.getElementById('ttcm-select-mon').disabled = false;
+                if(selGv) selGv.disabled = false;
+                if (selGv && selGv.value && selMon) {
+                    selMon.disabled = false;
                 }
-                document.querySelectorAll('#ttcm-classes-container input').forEach(i => {
-                    if (!i.parentElement.style.opacity.includes('0.5')) {
+                inputs.forEach(i => {
+                    if (i.parentElement && i.parentElement.style && !i.parentElement.style.opacity.includes('0.5')) {
                         i.disabled = false;
                     }
                 });
@@ -769,9 +807,10 @@
             currentPeriodId = newVal;
             document.querySelectorAll(".period-selector").forEach(s => s.value = newVal);
 
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             await reloadMemoryForCurrentPeriod();
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
             checkAndApplyLock();
             
             if(currentTabId) {
@@ -797,8 +836,12 @@
 
         // --- HÀM QUẢN LÝ ĐỢT ---
         function renderPeriodsTable() {
-            const tbody = document.getElementById("table-periods").querySelector("tbody");
+            const tbl = document.getElementById("table-periods");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
             tbody.innerHTML = "";
+            
             dbPeriods.forEach(p => {
                 let actionHtml = '';
                 let lockBtnHtml = `<button class="btn-small ${p.isLocked ? 'btn-warning' : 'btn-info'}" onclick="toggleLockPeriod('${p.id}')" style="background-color: ${p.isLocked ? 'var(--warning)' : 'var(--info)'}; padding: 6px 16px;">${p.isLocked ? '🔓 Mở khóa' : '🔒 Khóa đợt'}</button>`;
@@ -840,7 +883,8 @@
 
             p.isLocked = newStatus;
             
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
                 renderPeriodsTable();
@@ -850,7 +894,7 @@
                 p.isLocked = !newStatus; 
                 showToast("Lỗi: " + e.message, "error");
             }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         };
 
         window.addPeriod = async function() {
@@ -865,7 +909,8 @@
             dbPeriods.push({id: newId, name: ten, startWeek: tuan, isLocked: false});
             dbPeriods.sort((a,b) => a.startWeek - b.startWeek);
             
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
                 
@@ -875,18 +920,20 @@
                 
                 currentPeriodId = newId;
                 updatePeriodDropdown();
-                document.getElementById("add-period-modal").style.display = 'none';
+                const modal = document.getElementById("add-period-modal");
+                if(modal) modal.style.display = 'none';
                 renderPeriodsTable();
                 showToast("Đã thêm đợt mới và sao chép dữ liệu thành công!");
             } catch(e) { showToast(e.message, 'error'); }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         }
 
         window.deletePeriod = async function(pid) {
             if(!confirm("Chắc chắn xóa đợt này? Các dữ liệu đã phân công trong đợt sẽ bị mất vĩnh viễn.")) return;
             dbPeriods = dbPeriods.filter(p => p.id !== pid);
             
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 await setDoc(doc(db, getCollectionName(), "pccm_periods"), { data: JSON.stringify(dbPeriods) });
                 if (currentPeriodId === pid) {
@@ -897,13 +944,16 @@
                 renderPeriodsTable();
                 showToast("Đã xóa đợt phân công!");
             } catch(e) { showToast(e.message, 'error'); }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         }
 
 
         async function initAdminUI() {
-            document.querySelector('.admin-only').style.display = 'flex';
-            document.getElementById('sidebar-user-role').innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
+            const adminOnly = document.querySelectorAll('.admin-only');
+            adminOnly.forEach(el => el.style.display = 'flex');
+            
+            const userRole = document.getElementById('sidebar-user-role');
+            if(userRole) userRole.innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
             
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
@@ -920,14 +970,22 @@
             await reloadMemoryForCurrentPeriod();
             checkAndApplyLock();
 
-            if (currentUser.role === 'admin') document.querySelector('.master-admin-item').click();
-            else document.querySelector('.admin-item').click();
+            if (currentUser.role === 'admin') {
+                const item = document.querySelector('.master-admin-item');
+                if(item) item.click();
+            } else {
+                const item = document.querySelector('.admin-item');
+                if(item) item.click();
+            }
         }
 
         async function initTeacherUI(role) {
-            document.querySelector('.admin-only').style.display = 'none';
-            let roleName = role === 'ttcm' ? 'Quản lý Tổ CM' : 'Giáo viên';
-            document.getElementById('sidebar-user-role').innerText = `${roleName} | ${currentUser.ten}`;
+            const adminOnly = document.querySelectorAll('.admin-only');
+            adminOnly.forEach(el => el.style.display = 'none');
+            
+            let roleName = role === 'ttcm' ? 'Ban Quản lý Tổ' : 'Giáo viên';
+            const userRole = document.getElementById('sidebar-user-role');
+            if(userRole) userRole.innerText = `${roleName} | ${currentUser.ten}`;
             
             document.querySelectorAll('.lbl-tcm').forEach(el => el.innerText = currentUser.tcm);
 
@@ -946,28 +1004,36 @@
 
             if(role === 'ttcm') {
                 let selectGv = document.getElementById('ttcm-select-gv');
-                selectGv.innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
-                for(let i=1; i<dbTeachers.length; i++) {
-                    if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
-                        selectGv.innerHTML += `<option value="${dbTeachers[i][0]}">${dbTeachers[i][2]} (${dbTeachers[i][0]})</option>`;
+                if(selectGv) {
+                    selectGv.innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
+                    for(let i=1; i<dbTeachers.length; i++) {
+                        if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
+                            selectGv.innerHTML += `<option value="${dbTeachers[i][0]}">${dbTeachers[i][2]} (${dbTeachers[i][0]})</option>`;
+                        }
                     }
                 }
-                document.querySelector('.ttcm-item').click();
+                const item = document.querySelector('.ttcm-item');
+                if(item) item.click();
             } else {
-                document.querySelector('.gv-item').click();
+                const item = document.querySelector('.gv-item');
+                if(item) item.click();
             }
         }
 
         window.logout = function() { location.reload(); };
 
         window.showChangePassword = () => {
-            document.getElementById('new-pwd-input').value = "";
-            document.getElementById('pw-modal-title').innerText = (currentUser.role === 'admin' || currentUser.role === 'sub_admin') ? "Đổi mã Admin" : "Đổi mã đăng nhập cá nhân";
-            document.getElementById('pw-modal').style.display = 'flex';
+            const modal = document.getElementById('pw-modal');
+            const title = document.getElementById('pw-modal-title');
+            const input = document.getElementById('new-pwd-input');
+            if(input) input.value = "";
+            if(title) title.innerText = (currentUser.role === 'admin' || currentUser.role === 'sub_admin') ? "Đổi mã Admin" : "Đổi mã cá nhân";
+            if(modal) modal.style.display = 'flex';
         };
 
         window.submitChangePassword = async function() {
-            const newPw = document.getElementById("new-pwd-input").value.trim();
+            const input = document.getElementById("new-pwd-input");
+            const newPw = input ? input.value.trim() : "";
             if (!newPw) {
                 showToast("Mã không được để trống!", "error");
                 return;
@@ -976,31 +1042,36 @@
             if (currentUser.role === 'admin') {
                 localStorage.setItem("adminPassword", newPw);
                 showToast("Đổi mã Master Admin thành công!");
-                document.getElementById('pw-modal').style.display = 'none';
+                const modal = document.getElementById('pw-modal');
+                if(modal) modal.style.display = 'none';
             } else if (currentUser.role === 'sub_admin') {
-                document.getElementById('loading-overlay').style.display = 'flex';
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay) overlay.style.display = 'flex';
                 try {
                     dbSubAdmins[currentUser.rowIndex][1] = newPw;
                     await setDoc(doc(db, "pccm_config", "sub_admins"), { data: JSON.stringify(dbSubAdmins) });
                     showToast("Đổi mã Admin Đơn vị thành công!");
-                    document.getElementById('pw-modal').style.display = 'none';
+                    const modal = document.getElementById('pw-modal');
+                    if(modal) modal.style.display = 'none';
                 } catch(e) {
                     showToast("Lỗi khi lưu mã mới: " + e.message, "error");
                 }
-                document.getElementById('loading-overlay').style.display = 'none';
+                if(overlay) overlay.style.display = 'none';
             } else {
-                document.getElementById('loading-overlay').style.display = 'flex';
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay) overlay.style.display = 'flex';
                 try {
                     let latestDb = JSON.parse(JSON.stringify(dbTeachers));
                     latestDb[currentUser.rowIndex][1] = newPw; 
                     await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(latestDb) });
                     dbTeachers = latestDb; 
                     showToast("Đổi mã đăng nhập thành công!");
-                    document.getElementById('pw-modal').style.display = 'none';
+                    const modal = document.getElementById('pw-modal');
+                    if(modal) modal.style.display = 'none';
                 } catch(e) {
                     showToast("Lỗi khi lưu mã mới: " + e.message, "error");
                 }
-                document.getElementById('loading-overlay').style.display = 'none';
+                if(overlay) overlay.style.display = 'none';
             }
         };
 
@@ -1008,11 +1079,14 @@
             currentTabId = tabId;
             
             document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("active"));
-            element.classList.add("active");
-            document.getElementById("topbar-title").innerText = element.innerText;
+            if(element) element.classList.add("active");
+            
+            const title = document.getElementById("topbar-title");
+            if(title && element) title.innerText = element.innerText;
 
             document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
-            document.getElementById(tabId).classList.add("active");
+            const tab = document.getElementById(tabId);
+            if(tab) tab.classList.add("active");
 
             if (currentUser.role === 'admin' || currentUser.role === 'sub_admin') {
                 if(tabId === 'tab-admin-matrix') {
@@ -1035,8 +1109,46 @@
             }
         };
 
+        // --- HÀM TẢI MẪU EXCEL ---
+        window.downloadExcelTemplate = function() {
+            let wb = XLSX.utils.book_new();
+            
+            let ws1 = XLSX.utils.aoa_to_sheet([
+                ["Mã GV", "Mã đăng nhập", "Tên giáo viên", "TCM", "Chức vụ", "Tiết chuẩn", "Tiết kiêm nhiệm", "Môn 1", "Môn 2", "Môn 3"],
+                ["GV01", "1234", "Nguyễn Văn A", "Toán", "Gv", "17", "0", "Toán", "", ""]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws1, "Thông tin giáo viên");
+
+            let ws2 = XLSX.utils.aoa_to_sheet([
+                ["Lớp", "Mã TH môn", "Mã GVCN"],
+                ["10A1", "TH1", "GV01"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws2, "Thông tin lớp");
+
+            let ws3 = XLSX.utils.aoa_to_sheet([
+                ["Mã môn", "Tên môn", "Số tiết/tuần"],
+                ["Toán", "Toán học", "3"],
+                ["SH", "Sinh hoạt", "1"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws3, "Thông tin môn học");
+
+            let ws4 = XLSX.utils.aoa_to_sheet([
+                ["Mã TH môn", "Các môn trong tổ hợp", "Các môn có chuyên đề"],
+                ["TH1", "Toán, Vật lý, Hóa học, Sinh hoạt", "Toán"]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws4, "Thông tin TH môn");
+
+            XLSX.writeFile(wb, "Mau_Du_Lieu_PCCM.xlsx");
+            showToast("Đã tải file mẫu Excel!");
+        };
+
+        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN CHỈ CÓ) ---
         window.addNewSubAdminRow = function() {
-            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            const tbl = document.getElementById("table-admin-sub");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
+            
             if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
             const tr = document.createElement("tr");
             
@@ -1051,7 +1163,8 @@
             `;
             tr.dataset.unitId = "unit_" + Date.now() + Math.floor(Math.random()*1000);
             tbody.insertBefore(tr, tbody.firstChild);
-            tr.querySelector('.edit-input').focus();
+            const focusInput = tr.querySelector('.edit-input');
+            if(focusInput) focusInput.focus();
         };
 
         window.editSubAdminRow = async function(btn, skipAutoSave = false) {
@@ -1085,12 +1198,16 @@
                 });
                 btn.innerText = "Lưu";
                 btn.classList.replace('btn-edit', 'btn-success');
-                tr.querySelector('.edit-input').focus();
+                const focusInput = tr.querySelector('.edit-input');
+                if(focusInput) focusInput.focus();
             }
         };
 
         window.saveSubAdmins = async function() {
-            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            const tbl = document.getElementById("table-admin-sub");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
             
             let dataToSave = [["Tên đơn vị", "Mã đăng nhập", "unitId"]];
             const rows = tbody.querySelectorAll("tr");
@@ -1113,7 +1230,8 @@
                 dataToSave.push([ten, ma, unitId]);
             }
             
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 await setDoc(doc(db, "pccm_config", "sub_admins"), { data: JSON.stringify(dataToSave) });
                 dbSubAdmins = dataToSave;
@@ -1122,11 +1240,15 @@
             } catch(e) {
                 showToast("Lỗi: " + e.message, "error");
             }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         };
 
         function renderSubAdminTable() {
-            const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
+            const tbl = document.getElementById("table-admin-sub");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
+            
             tbody.innerHTML = "";
             if (dbSubAdmins.length <= 1) {
                 tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color:var(--text-muted);">Chưa có đơn vị nào được tạo.</td></tr>';
@@ -1154,8 +1276,10 @@
             }
         }
 
+        // --- CÁC HÀM CHO ADMIN/SUB_ADMIN ---
         async function loadAdminTabData(tabId) {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 const docRef = doc(db, getCollectionName(), getDocName(tabId, currentPeriodId));
                 const docSnap = await getDoc(docRef);
@@ -1170,14 +1294,72 @@
                 }
                 renderAdminTable(tabId, data);
             } catch (e) { console.error(e); }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         }
 
+        document.getElementById('excel-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const sheetSelect = document.getElementById('sheet-select');
+                if(!sheetSelect) return;
+                sheetSelect.innerHTML = "";
+                workbook.SheetNames.forEach(name => {
+                    let opt = document.createElement('option');
+                    opt.value = name;
+                    opt.innerText = name;
+                    sheetSelect.appendChild(opt);
+                });
+                sheetSelect.disabled = false;
+                const loadBtn = document.getElementById('load-sheet-btn');
+                if(loadBtn) loadBtn.disabled = false;
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        window.loadSheetToTab = async function() {
+            if (!workbook) return;
+            if (!confirm("CẢNH BÁO: Dữ liệu hiện tại của bảng này sẽ bị XÓA SẠCH và thay thế bằng file Excel. Bạn chắc chắn chứ?")) return;
+
+            const sheetSelect = document.getElementById('sheet-select');
+            if(!sheetSelect) return;
+            const sheetName = sheetSelect.value;
+            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1, defval: ""});
+            if (jsonData.length <= 1) {
+                showToast("Sheet trống hoặc không hợp lệ!", "error");
+                return;
+            }
+
+            if (currentTabId === 'tab-giaovien') {
+                jsonData = migrateTeachersDb(jsonData);
+            }
+
+            const cleanData = JSON.parse(JSON.stringify(jsonData));
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), getDocName(currentTabId, currentPeriodId)), { excelData: JSON.stringify(cleanData) });
+                syncMemoryState(currentTabId, cleanData);
+                renderAdminTable(currentTabId, cleanData);
+                showToast("Đã cập nhật dữ liệu từ Excel!");
+            } catch (e) { 
+                showToast("Lỗi Firebase: " + e.message, "error"); 
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
         window.addNewRow = function(tableId) {
-            const tbody = document.getElementById(tableId).querySelector("tbody");
+            const tbl = document.getElementById(tableId);
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
+            
             if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
             const tr = document.createElement("tr");
-            const colCount = document.getElementById(tableId).querySelectorAll("th").length - 1;
+            const headers = tbl.querySelectorAll("th");
+            const colCount = headers ? headers.length - 1 : 0;
             for(let i=0; i<colCount; i++) {
                 let td = document.createElement("td");
                 td.dataset.val = "";
@@ -1198,7 +1380,7 @@
             let optionsHtml = `<option value="">-- Trống --</option>`;
             if (dbSubjects && dbSubjects.length > 1) {
                 for(let i=1; i<dbSubjects.length; i++) {
-                    if(!dbSubjects[i][0]) continue;
+                    if(!dbSubjects[i] || !dbSubjects[i][0]) continue;
                     let maMon = dbSubjects[i][0].trim();
                     let selected = (String(maMon) === String(currentVal)) ? "selected" : "";
                     optionsHtml += `<option value="${maMon}" ${selected}>${maMon}</option>`;
@@ -1226,13 +1408,14 @@
                     td.innerHTML = `<input type="text" class="edit-input" value="${currentVal}">`;
                 }
             });
-            let firstInput = tds[0].querySelector('.edit-input, .edit-select');
+            let firstInput = tds[0] ? tds[0].querySelector('.edit-input, .edit-select') : null;
             if (firstInput) firstInput.focus();
         }
 
         window.editRow = async function(btn, explicitTableId = null, skipAutoSave = false) {
             const tr = btn.closest("tr");
-            const tableId = explicitTableId || tr.closest("table").id;
+            const table = tr.closest("table");
+            const tableId = explicitTableId || (table ? table.id : null);
             const tds = tr.querySelectorAll("td:not(:last-child)"); 
             const isEditing = btn.innerText === "Lưu"; 
             
@@ -1258,36 +1441,34 @@
                     td.classList.remove('editing');
                 });
                 btn.innerText = "Sửa";
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-edit');
+                btn.classList.replace('btn-success', 'btn-edit');
 
                 if (!skipAutoSave) {
                     if (tableId === 'table-ttcm-gv') {
                         await saveTtcmGvTab();
-                    } else {
+                    } else if (tableId) {
                         let tabId = tableId.replace('table-', 'tab-');
                         await saveCurrentTab(tabId);
                     }
                 }
             } else {
-                activateEditMode(tds, tableId);
+                if(tableId) activateEditMode(tds, tableId);
                 btn.innerText = "Lưu";
-                btn.classList.remove('btn-edit');
-                btn.classList.add('btn-success');
+                btn.classList.replace('btn-edit', 'btn-success');
             }
         };
 
         window.deleteRow = async function(btn) { 
             if(confirm("Chắc chắn xóa dòng này? Dữ liệu sẽ được cập nhật ngay lập tức.")) {
                 const table = btn.closest("table");
-                const tableId = table.id;
+                const tableId = table ? table.id : null;
                 btn.closest("tr").remove(); 
                 
                 if (tableId === 'table-admin-sub') {
                     await saveSubAdmins();
                 } else if (tableId === 'table-ttcm-gv') {
                     await saveTtcmGvTab();
-                } else {
+                } else if (tableId) {
                     let tabId = tableId.replace('table-', 'tab-');
                     await saveCurrentTab(tabId);
                 }
@@ -1296,16 +1477,18 @@
 
         window.saveCurrentTab = async function(tabId) {
             const tableId = "table-" + tabId.split('-')[1];
+            const tbl = document.getElementById(tableId);
+            if(!tbl) return;
             
-            document.getElementById(tableId).querySelectorAll(".btn-success").forEach(b => { 
+            tbl.querySelectorAll(".btn-success").forEach(b => { 
                 if(b.innerText==="Lưu") window.editRow(b, tableId, true); 
             });
 
-            const rows = document.getElementById(tableId).querySelectorAll("tr");
+            const rows = tbl.querySelectorAll("tr");
             let dataToSave = [];
             
             let headers = [];
-            const headerCells = rows[0].querySelectorAll("th");
+            const headerCells = rows[0] ? rows[0].querySelectorAll("th") : [];
             for(let i=0; i<headerCells.length-1; i++) headers.push(headerCells[i].innerText.trim());
             dataToSave.push(headers);
             
@@ -1320,7 +1503,8 @@
                 dataToSave.push(rowData);
             }
             
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 await setDoc(doc(db, getCollectionName(), getDocName(tabId, currentPeriodId)), { excelData: JSON.stringify(dataToSave) });
                 syncMemoryState(tabId, dataToSave);
@@ -1328,13 +1512,23 @@
             } catch (e) { 
                 showToast("Lỗi: " + e.message, "error"); 
             }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         };
+
+        function syncMemoryState(tabId, data) {
+            if(tabId === 'tab-giaovien') dbTeachers = data;
+            if(tabId === 'tab-lop') dbClasses = data;
+            if(tabId === 'tab-monhoc') dbSubjects = data;
+            if(tabId === 'tab-tohop') dbCombos = data;
+        }
 
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
+            const tbl = document.getElementById(tableId);
+            if(!tbl) return;
             let expCols = tabId==='tab-giaovien' ? 10 : 3;
-            const tbody = document.getElementById(tableId).querySelector("tbody");
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
             tbody.innerHTML = ""; 
 
             if (!data || data.length <= 1) {
@@ -1367,8 +1561,11 @@
         }
 
         window.renderAdminTongHop = function() {
-            const thead = document.getElementById("table-admin-tonghop").querySelector("thead");
-            const tbody = document.getElementById("table-admin-tonghop").querySelector("tbody");
+            const tbl = document.getElementById("table-admin-tonghop");
+            if(!tbl) return;
+            const thead = tbl.querySelector("thead");
+            const tbody = tbl.querySelector("tbody");
+            if(!thead || !tbody) return;
             
             let duration = getPeriodDuration(currentPeriodId);
             thead.innerHTML = `<tr><th>Tổ CM</th><th>Giáo viên</th><th>Phân công dạy</th><th style="text-align:center;">Tiết chuẩn</th><th style="text-align:center;">Tiết kiêm nhiệm</th><th style="text-align:center;">Tổng tiết/tuần</th><th style="text-align:center;">Thừa/Thiếu</th><th style="text-align:center;">Tổng cả đợt (${duration} tuần)</th><th style="text-align:center;">Thừa/Thiếu cả đợt</th></tr>`;
@@ -1496,8 +1693,11 @@
         };
 
         window.renderAdminMatrix = function() {
-            const thead = document.getElementById("table-admin-matrix").querySelector("thead");
-            const tbody = document.getElementById("table-admin-matrix").querySelector("tbody");
+            const tbl = document.getElementById("table-admin-matrix");
+            if(!tbl) return;
+            const thead = tbl.querySelector("thead");
+            const tbody = tbl.querySelector("tbody");
+            if(!thead || !tbody) return;
             thead.innerHTML = "";
             tbody.innerHTML = "";
 
@@ -1568,13 +1768,17 @@
 
         window.exportMatrixToExcel = function() {
             let table = document.getElementById("table-admin-matrix");
+            if(!table) return;
             let wb = XLSX.utils.table_to_book(table, {sheet: "Ma_Tran_PCCM"});
             XLSX.writeFile(wb, "Ma_Tran_PCCM.xlsx");
             showToast("Xuất file Excel thành công!");
         };
 
         function renderTtcmGvTable() {
-            const tbody = document.getElementById("table-ttcm-gv").querySelector("tbody");
+            const tbl = document.getElementById("table-ttcm-gv");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            if(!tbody) return;
             tbody.innerHTML = "";
             let count = 0;
             
@@ -1614,11 +1818,13 @@
         }
 
         window.saveTtcmGvTab = async function() {
-            document.getElementById("table-ttcm-gv").querySelectorAll(".btn-success").forEach(b => { 
+            const tbl = document.getElementById("table-ttcm-gv");
+            if(!tbl) return;
+            tbl.querySelectorAll(".btn-success").forEach(b => { 
                 if(b.innerText==="Lưu") window.editRow(b, 'table-ttcm-gv', true); 
             });
 
-            const rows = document.getElementById("table-ttcm-gv").querySelectorAll("tbody tr");
+            const rows = tbl.querySelectorAll("tbody tr");
             const mappedIndices = [0, 2, 3, 4, 5, 6, 7, 8, 9]; 
             
             rows.forEach(tr => {
@@ -1631,7 +1837,8 @@
                 }
             });
 
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             try {
                 const docSnap = await getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)));
                 if (docSnap.exists()) {
@@ -1639,7 +1846,7 @@
                     rows.forEach(tr => {
                         const idx = parseInt(tr.dataset.index);
                         for(let j=0; j < mappedIndices.length; j++) {
-                            latestDb[idx][mappedIndices[j]] = dbTeachers[idx][mappedIndices[j]];
+                            if(latestDb[idx]) latestDb[idx][mappedIndices[j]] = dbTeachers[idx][mappedIndices[j]];
                         }
                     });
                     await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(latestDb) });
@@ -1649,12 +1856,236 @@
             } catch(e) { 
                 showToast("Lỗi: " + e.message, "error"); 
             }
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
         };
 
+        window.ttcmGvChanged = function() {
+            const selectGv = document.getElementById("ttcm-select-gv");
+            const selMon = document.getElementById("ttcm-select-mon");
+            const container = document.getElementById("ttcm-classes-container");
+            const totalContainer = document.getElementById("ttcm-current-total");
+            
+            if(!selectGv || !selMon || !container) return;
+            const maGv = selectGv.value;
+            
+            container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn Môn dạy...</span>";
+            selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
+            if(totalContainer) totalContainer.style.display = 'none';
+            
+            if(!maGv) { selMon.disabled = true; return; }
+            selMon.disabled = false;
+            let teacher = dbTeachers.find(t => t && t[0] === maGv);
+            if(teacher) {
+                if(teacher[7]) selMon.innerHTML += `<option value="${teacher[7]}">${teacher[7]}</option>`;
+                if(teacher[8]) selMon.innerHTML += `<option value="${teacher[8]}">${teacher[8]}</option>`;
+                if(teacher[9]) selMon.innerHTML += `<option value="${teacher[9]}">${teacher[9]}</option>`;
+            }
+            updateUnsavedTotal();
+        };
+
+        window.ttcmMonChanged = function() {
+            const selectGv = document.getElementById("ttcm-select-gv");
+            const selMon = document.getElementById("ttcm-select-mon");
+            const container = document.getElementById("ttcm-classes-container");
+            if(!selectGv || !selMon || !container) return;
+
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            
+            if(!maGv || !maMon) { 
+                container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Giáo viên và Môn...</span>"; 
+                updateUnsavedTotal();
+                return; 
+            }
+            
+            let tenMonFull = getTenMonByMa(maMon);
+            let validClasses = [];
+
+            for(let i=1; i<dbClasses.length; i++) {
+                if(!dbClasses[i] || dbClasses[i].length < 2) continue;
+                let tenLop = dbClasses[i][0];
+                let maTh = dbClasses[i][1];
+                let combo = dbCombos.find(c => c && c[0] === maTh);
+                if(combo && combo.length >= 2) {
+                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
+                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
+                }
+            }
+
+            if(validClasses.length === 0) {
+                container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
+                updateUnsavedTotal();
+                return;
+            }
+
+            container.innerHTML = "";
+            let baseHours = getBaseHours(maMon);
+
+            validClasses.forEach(tenLop => {
+                let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
+                let isChecked = false;
+                let isDisabled = false;
+                let noteStr = "";
+
+                if (assigned) {
+                    if (assigned.maGv === maGv) {
+                        isChecked = true; 
+                    } else {
+                        isDisabled = true; 
+                        let t = dbTeachers.find(x => x && x[0] === assigned.maGv);
+                        let tName = t ? t[2] : assigned.maGv;
+                        noteStr = `<span class="class-note">(Đã giao: ${tName})</span>`;
+                    }
+                }
+
+                let isHomeroom = dbClasses.some(c => c && c[0] === tenLop && c[2] === maGv);
+                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
+
+                let hasCD = checkChuyenDe(tenLop, tenMonFull);
+                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${baseHours + 1})</span>` : tenLop;
+
+                container.innerHTML += `
+                    <label class="class-item" style="${isDisabled ? 'opacity:0.6; cursor:not-allowed; background:#f1f5f9;' : ''}">
+                        <input type="checkbox" value="${tenLop}" onchange="updateUnsavedTotal()" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="${nameStyle}">${displayLop}</span>
+                            ${noteStr}
+                        </div>
+                    </label>
+                `;
+            });
+
+            updateUnsavedTotal();
+            if(document.body.classList.contains('period-locked')) {
+                container.querySelectorAll('input').forEach(i => i.disabled = true);
+            }
+        };
+
+        window.updateUnsavedTotal = function() {
+            const selectGv = document.getElementById("ttcm-select-gv");
+            const selMon = document.getElementById("ttcm-select-mon");
+            const totalContainer = document.getElementById("ttcm-current-total");
+            if(!selectGv || !selMon || !totalContainer) return;
+            
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            
+            if(!maGv) {
+                totalContainer.style.display = 'none';
+                return;
+            }
+            
+            let kiemNhiem = 0;
+            let tietChuan = 17;
+            let t = dbTeachers.find(x => x && x[0] === maGv);
+            if(t) {
+                tietChuan = parseInt(t[5]) || 17;
+                kiemNhiem = parseInt(t[6]) || 0;
+            }
+            
+            let tongTietDay = 0;
+
+            if (maMon) {
+                let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
+                otherAssignments.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+
+                let currentSubBase = getBaseHours(maMon);
+                let currentTenMonF = getTenMonByMa(maMon);
+                let container = document.getElementById("ttcm-classes-container");
+                if(container) {
+                    let checkboxes = container.querySelectorAll("input[type=checkbox]:checked");
+                    checkboxes.forEach(cb => {
+                        tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
+                    });
+                }
+            } else {
+                let allAss = dbAssignments.filter(a => a.maGv === maGv);
+                allAss.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+            }
+
+            let tong = tongTietDay + kiemNhiem;
+            let thuaThieu = tong - tietChuan;
+            let thText = thuaThieu > 0 ? `(Thừa ${thuaThieu})` : (thuaThieu < 0 ? `(Thiếu ${Math.abs(thuaThieu)})` : `(Đủ tiết)`);
+            let thColor = thuaThieu > 0 ? "var(--warning-hover)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
+
+            const ttVal = document.getElementById("ttcm-total-val");
+            const tbVal = document.getElementById("ttcm-base-val");
+            const tdfVal = document.getElementById("ttcm-diff-val");
+            
+            if(ttVal) ttVal.innerText = tong;
+            if(tbVal) tbVal.innerText = tietChuan;
+            if(tdfVal) tdfVal.innerHTML = `<span style="color:${thColor}; padding:4px 8px; background:#fff; border-radius:6px; font-size:13px; box-shadow:var(--shadow-sm);">${thText}</span>`;
+            totalContainer.style.display = 'flex';
+        }
+
+        window.savePhanCong = async function() {
+            const selectGv = document.getElementById("ttcm-select-gv");
+            const selMon = document.getElementById("ttcm-select-mon");
+            if(!selectGv || !selMon) return;
+            
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            if(!maGv || !maMon) {
+                showToast("Vui lòng chọn Giáo viên và Môn dạy!", "warning");
+                return;
+            }
+            
+            dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
+            
+            const container = document.getElementById("ttcm-classes-container");
+            if(container) {
+                const checkboxes = container.querySelectorAll("input[type=checkbox]:checked:not(:disabled)");
+                checkboxes.forEach(cb => {
+                    dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
+                });
+            }
+
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId)), { assignmentData: JSON.stringify(dbAssignments) });
+                showToast("Đã lưu Phân công chuyên môn!");
+            } catch(e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
+        function getTenMonByMa(maMon) {
+            for(let i=1; i<dbSubjects.length; i++) {
+                if(dbSubjects[i] && dbSubjects[i][0] && dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return dbSubjects[i][1].trim();
+            }
+            return maMon.trim();
+        }
+        function getBaseHours(maMon) {
+            for(let i=1; i<dbSubjects.length; i++) {
+                if(dbSubjects[i] && dbSubjects[i][0] && dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return parseInt(dbSubjects[i][2]) || 0;
+            }
+            return 0;
+        }
+        function checkChuyenDe(lop, tenMonFull) {
+            let cl = dbClasses.find(c => c && c[0] === lop);
+            if(!cl) return false;
+            let combo = dbCombos.find(c => c && c[0] === cl[1]);
+            if(!combo || combo.length < 3) return false;
+            let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
+            return cdSubjects.includes(tenMonFull.toLowerCase());
+        }
+
         function renderTtcmTongHop() {
-            const thead = document.getElementById("table-ttcm-tonghop").querySelector("thead");
-            const tbody = document.getElementById("table-ttcm-tonghop").querySelector("tbody");
+            const tbl = document.getElementById("table-ttcm-tonghop");
+            if(!tbl) return;
+            const thead = tbl.querySelector("thead");
+            const tbody = tbl.querySelector("tbody");
+            if(!thead || !tbody) return;
             
             let duration = getPeriodDuration(currentPeriodId);
             thead.innerHTML = `<tr><th>Giáo viên</th><th>Phân công dạy</th><th style="text-align:center;">Tiết chuẩn</th><th style="text-align:center;">Tiết kiêm nhiệm</th><th style="text-align:center;">Tổng tiết/tuần</th><th style="text-align:center;">Thừa/Thiếu</th><th style="text-align:center;">Tổng cả đợt (${duration} tuần)</th><th style="text-align:center;">Thừa/Thiếu cả đợt</th></tr>`;
@@ -1772,7 +2203,8 @@
 
         // --- TỔNG HỢP CẢ NĂM ---
         window.renderTongHopCaNam = async function() {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             let yearlyData = {}; 
             
             let periods = [...dbPeriods].sort((a,b) => a.startWeek - b.startWeek);
@@ -1830,39 +2262,45 @@
                 }
             }
             
-            const tbody = document.getElementById("table-tonghop-canam").querySelector("tbody");
-            tbody.innerHTML = "";
-            let hasData = false;
-            
-            let arr = Object.keys(yearlyData).map(k => ({maGv: k, ...yearlyData[k]}));
-            arr.sort((a,b) => a.tcm.localeCompare(b.tcm));
-            
-            arr.forEach(d => {
-                hasData = true;
-                let tongThucTe = d.tongDay + d.tongKN;
-                let diff = tongThucTe - d.tongChuan;
-                let thColor = diff > 0 ? "var(--warning)" : (diff < 0 ? "var(--danger)" : "var(--success)");
-                let thText = diff > 0 ? `+${diff}` : diff;
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td style="font-weight:700; color:var(--primary);">${d.tcm}</td>
-                        <td><div style="font-weight:700; color:var(--dark);">${d.ten}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${d.maGv}</div></td>
-                        <td style="text-align:center; font-weight:500;">${d.tongChuan}</td>
-                        <td style="text-align:center; font-weight:500;">${d.tongDay}</td>
-                        <td style="text-align:center; font-weight:500;">${d.tongKN}</td>
-                        <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongThucTe}</td>
-                        <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
-                    </tr>
-                `;
-            });
-            
-            if(!hasData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
-            document.getElementById('loading-overlay').style.display = 'none';
+            const tbl = document.getElementById("table-tonghop-canam");
+            if(tbl) {
+                const tbody = tbl.querySelector("tbody");
+                if(tbody) {
+                    tbody.innerHTML = "";
+                    let hasData = false;
+                    
+                    let arr = Object.keys(yearlyData).map(k => ({maGv: k, ...yearlyData[k]}));
+                    arr.sort((a,b) => a.tcm.localeCompare(b.tcm));
+                    
+                    arr.forEach(d => {
+                        hasData = true;
+                        let tongThucTe = d.tongDay + d.tongKN;
+                        let diff = tongThucTe - d.tongChuan;
+                        let thColor = diff > 0 ? "var(--warning)" : (diff < 0 ? "var(--danger)" : "var(--success)");
+                        let thText = diff > 0 ? `+${diff}` : diff;
+                        
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="font-weight:700; color:var(--primary);">${d.tcm}</td>
+                                <td><div style="font-weight:700; color:var(--dark);">${d.ten}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${d.maGv}</div></td>
+                                <td style="text-align:center; font-weight:500;">${d.tongChuan}</td>
+                                <td style="text-align:center; font-weight:500;">${d.tongDay}</td>
+                                <td style="text-align:center; font-weight:500;">${d.tongKN}</td>
+                                <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongThucTe}</td>
+                                <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    if(!hasData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
+                }
+            }
+            if(overlay) overlay.style.display = 'none';
         }
 
         window.exportCaNamToExcel = async function() {
-            document.getElementById('loading-overlay').style.display = 'flex';
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
             let yearlyData = {}; 
             let periods = [...dbPeriods].sort((a,b) => a.startWeek - b.startWeek);
             
@@ -1935,7 +2373,7 @@
             XLSX.utils.book_append_sheet(wb, ws, "TongHop_CaNam");
             XLSX.writeFile(wb, "TongHop_PCCM_CaNam.xlsx");
             
-            document.getElementById('loading-overlay').style.display = 'none';
+            if(overlay) overlay.style.display = 'none';
             showToast("Xuất file Excel Tổng hợp Cả năm thành công!");
         };
 
