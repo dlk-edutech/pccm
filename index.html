@@ -3,124 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý PCCM - THPT Số 1 Trần Phú</title>
+    <title>Hệ thống Quản lý Phân Công Chuyên Môn</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4f46e5; --primary-hover: #4338ca;
-            --success: #10b981; --success-hover: #059669;
-            --warning: #f59e0b; --warning-hover: #d97706;
-            --danger: #ef4444; --danger-hover: #dc2626;
+            --primary: #4f46e5; --primary-hover: #4338ca; --primary-light: #e0e7ff;
+            --success: #10b981; --success-hover: #059669; --success-light: #d1fae5;
+            --warning: #f59e0b; --warning-hover: #d97706; --warning-light: #fef3c7;
+            --danger: #ef4444; --danger-hover: #dc2626; --danger-light: #fee2e2;
             --info: #0ea5e9; --info-hover: #0284c7;
-            --dark: #1e293b; --darker: #0f172a;
-            --bg-color: #f1f5f9; --surface: #ffffff;
+            --dark: #0f172a; --darker: #020617;
+            --bg-color: #f8fafc; --surface: #ffffff;
             --text-main: #334155; --text-muted: #64748b;
             --border: #e2e8f0;
             --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-            --radius: 8px;
+            --radius: 10px;
         }
 
         body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); height: 100vh; overflow: hidden; }
         
+        /* Đăng nhập */
         #login-section { display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%); position: fixed; top: 0; left: 0; width: 100%; z-index: 50; }
-        .login-box { background: var(--surface); padding: 40px; border-radius: 12px; box-shadow: var(--shadow-md); text-align: center; width: 380px; max-width: 90%; }
-        .login-box h2 { margin-top: 0; color: var(--primary); font-weight: 700; margin-bottom: 5px; }
-        .unit-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 20px; font-weight: 500; }
+        .login-box { background: var(--surface); padding: 40px; border-radius: 16px; box-shadow: var(--shadow-md); text-align: center; width: 400px; max-width: 90%; }
+        .login-box h2 { margin-top: 0; color: var(--primary); font-weight: 700; margin-bottom: 5px; font-size: 22px; }
+        .unit-subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 25px; font-weight: 500; }
         
-        .role-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; text-align: left; }
-        .role-card { border: 1px solid var(--border); padding: 12px 15px; border-radius: 8px; cursor: pointer; transition: 0.2s; background: var(--bg-color); display: flex; flex-direction: column; gap: 4px; }
-        .role-card:hover { border-color: var(--primary); }
-        .role-card.active { border-color: var(--primary); background: #e0e7ff; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
-        .role-card h4 { margin: 0; font-size: 14px; color: var(--primary); }
+        .role-grid { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 25px; text-align: left; }
+        .role-card { border: 1px solid var(--border); padding: 14px 16px; border-radius: var(--radius); cursor: pointer; transition: all 0.2s ease; background: var(--surface); display: flex; flex-direction: column; gap: 4px; box-shadow: var(--shadow-sm); }
+        .role-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+        .role-card.active { border-color: var(--primary); background: var(--primary-light); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
+        .role-card h4 { margin: 0; font-size: 14px; color: var(--primary); font-weight: 600; }
         .role-card p { margin: 0; font-size: 12px; color: var(--text-muted); line-height: 1.4; }
 
-        .login-box input { width: 100%; box-sizing: border-box; padding: 12px 15px; margin: 10px 0 20px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; transition: 0.2s; }
-        .login-box input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-        .login-box input:disabled { background-color: #f8fafc; cursor: not-allowed; }
+        .login-box input { width: 100%; box-sizing: border-box; padding: 14px 16px; margin: 10px 0 20px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s; background: #f8fafc; }
+        .login-box input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .login-box input:disabled { background-color: #e2e8f0; cursor: not-allowed; opacity: 0.7; }
 
-        .btn { background-color: var(--primary); color: white; border: none; padding: 10px 18px; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: 500; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-        .btn:hover { background-color: var(--primary-hover); }
-        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-        .btn-full { width: 100%; padding: 12px; font-size: 15px; }
+        .btn { background-color: var(--primary); color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 8px; font-size: 14px; font-weight: 600; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: var(--shadow-sm); }
+        .btn:hover { background-color: var(--primary-hover); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn:disabled { background-color: #94a3b8; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-full { width: 100%; padding: 14px; font-size: 15px; }
         .btn-success { background-color: var(--success); } .btn-success:hover { background-color: var(--success-hover); }
         .btn-warning { background-color: var(--warning); color: #fff; } .btn-warning:hover { background-color: var(--warning-hover); }
         .btn-danger { background-color: var(--danger); } .btn-danger:hover { background-color: var(--danger-hover); }
-        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); } .btn-outline:hover { background-color: var(--bg-color); }
-        .btn-small { padding: 6px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; font-size: 12px; font-weight: 500; margin: 2px; }
+        .btn-info { background-color: var(--info); color: #fff; } .btn-info:hover { background-color: var(--info-hover); }
+        .btn-outline { background-color: transparent; border: 1px solid var(--border); color: var(--text-main); box-shadow: none; } .btn-outline:hover { background-color: #f1f5f9; box-shadow: none; }
+        
+        .btn-small { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-size: 12px; font-weight: 600; margin: 2px; transition: opacity 0.2s; }
         .btn-small:hover { opacity: 0.85; } .btn-edit { background-color: var(--info); } .btn-del { background-color: var(--danger); }
 
+        /* Badge Trạng thái */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: var(--success-light); color: var(--success-hover); }
+        .badge-danger { background: var(--danger-light); color: var(--danger-hover); }
+
+        /* Layout Ứng dụng */
         #app-layout { display: none; height: 100vh; width: 100vw; }
-        .sidebar { width: 260px; background: var(--dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 5px rgba(0,0,0,0.1); z-index: 10; }
-        .sidebar-header { padding: 20px; background: var(--darker); text-align: center; border-bottom: 1px solid #334155; }
-        .sidebar-header h2 { margin: 0; font-size: 18px; color: #e2e8f0; }
-        .sidebar-header p { margin: 5px 0 0 0; font-size: 13px; color: #94a3b8; }
-        .menu { flex-grow: 1; overflow-y: auto; padding: 15px 0; }
-        .menu-item { padding: 12px 20px; color: #cbd5e1; cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; font-size: 14px; font-weight: 500; display: none; }
-        .menu-item:hover { background: #334155; color: white; }
-        .menu-item.active { background: #334155; color: white; border-left-color: var(--primary); }
+        .sidebar { width: 260px; background: var(--dark); color: white; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.15); z-index: 10; }
+        .sidebar-header { padding: 25px 20px; background: var(--darker); text-align: center; border-bottom: 1px solid #1e293b; }
+        .sidebar-header h2 { margin: 0; font-size: 17px; color: #f8fafc; font-weight: 700; letter-spacing: 0.5px; }
+        .sidebar-header p { margin: 8px 0 0 0; font-size: 12px; color: #94a3b8; font-weight: 500; }
         
-        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .topbar { height: 60px; background: var(--surface); display: flex; justify-content: space-between; align-items: center; padding: 0 25px; box-shadow: var(--shadow-sm); flex-shrink: 0; z-index: 5; }
-        .topbar h1 { font-size: 18px; margin: 0; color: var(--text-main); }
-        .topbar-actions { display: flex; gap: 10px; align-items: center; }
+        .menu { flex-grow: 1; overflow-y: auto; padding: 15px 0; }
+        .menu-item { padding: 14px 20px; color: #94a3b8; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; font-weight: 500; display: none; }
+        .menu-item:hover { background: #1e293b; color: #f8fafc; }
+        .menu-item.active { background: #1e293b; color: white; border-left-color: var(--primary); font-weight: 600; }
+        
+        .main-wrapper { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-color); }
+        .topbar { height: 65px; background: var(--surface); display: flex; justify-content: space-between; align-items: center; padding: 0 30px; box-shadow: var(--shadow-sm); flex-shrink: 0; z-index: 5; border-bottom: 1px solid var(--border); }
+        .topbar h1 { font-size: 19px; margin: 0; color: var(--dark); font-weight: 700; }
+        .topbar-actions { display: flex; gap: 12px; align-items: center; }
 
-        .content-area { flex-grow: 1; overflow-y: auto; padding: 25px; background: var(--bg-color); }
-        .content-inner { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        .content-area { flex-grow: 1; overflow-y: auto; padding: 30px; }
+        .content-inner { max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
 
-        .period-picker-container { display: inline-flex; align-items: center; background: #f8fafc; padding: 8px 16px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.02); transition: 0.2s; margin-left: auto; }
-        .period-picker-container:hover { border-color: #cbd5e1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .period-picker-container span { font-size: 15px; font-weight: 700; color: var(--primary); margin-right: 10px; }
-        .period-picker-container select { border: none; background: transparent; font-weight: 700; font-family: inherit; outline: none; font-size: 15px; color: var(--text-main); cursor: pointer; padding-right: 5px; }
+        /* Period Picker Component */
+        .period-picker-container { display: inline-flex; align-items: center; background: var(--primary-light); padding: 8px 16px; border-radius: 8px; border: 1px solid #c7d2fe; transition: 0.2s; margin-left: auto; }
+        .period-picker-container:hover { box-shadow: 0 2px 4px rgba(79, 70, 229, 0.1); }
+        .period-picker-container span { font-size: 14px; font-weight: 600; color: var(--primary-hover); margin-right: 8px; }
+        .period-picker-container select { border: none; background: transparent; font-weight: 700; font-family: inherit; outline: none; font-size: 14px; color: var(--primary-hover); cursor: pointer; padding-right: 5px; }
 
-        .control-panel { background: var(--surface); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+        .control-panel { background: var(--surface); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
         .control-panel label { font-size: 14px; font-weight: 600; color: var(--text-main); }
-        .control-panel select, .control-panel input[type="file"], .control-panel input[type="number"] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; outline: none; }
+        .control-panel select, .control-panel input[type="file"], .control-panel input[type="number"] { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; transition: 0.2s; }
+        .control-panel select:focus, .control-panel input[type="number"]:focus { border-color: var(--primary); }
 
-        .tab-content { display: none; background: var(--surface); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); animation: fadeIn 0.3s; }
+        .tab-content { display: none; background: var(--surface); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); animation: fadeIn 0.3s ease-out; }
         .tab-content.active { display: block; }
-        .action-bar { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .action-bar { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
 
-        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; min-width: 800px; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
-        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 13px; white-space: nowrap; }
+        /* Bảng dữ liệu chuyên nghiệp */
+        .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-sm); max-height: calc(100vh - 280px); }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; text-align: left; }
+        th, td { padding: 14px 16px; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+        th { background-color: #f8fafc; color: var(--text-muted); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 0 var(--border); }
         tr:last-child td { border-bottom: none; } 
         tr:hover td { background-color: #f1f5f9; }
         
-        td.editing { padding: 6px 10px; background-color: #f8fafc; }
-        .edit-input, .edit-select { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--primary); border-radius: 6px; font-family: inherit; font-size: 13px; color: var(--text-main); background-color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); transition: all 0.2s; }
+        td.editing { padding: 8px 12px; background-color: var(--warning-light); }
+        .edit-input, .edit-select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--primary); border-radius: 6px; font-family: inherit; font-size: 14px; color: var(--text-main); background-color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); transition: all 0.2s; }
         .edit-input:focus, .edit-select:focus { border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 
-        #table-admin-matrix th { background-color: #00e5ff; color: #000; text-align: center; font-weight: 700; font-size: 14px; border: 1px solid #ccc; }
-        #table-admin-matrix td { border: 1px solid #ccc; text-align: center; }
+        #table-admin-matrix th { background-color: var(--primary-light); color: var(--primary-hover); text-align: center; }
+        #table-admin-matrix td { border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; }
 
         body.period-locked .lock-hidden { display: none !important; }
 
-        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.9); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
-        .spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.2); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        /* Overlay Loading */
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
+        .spinner { width: 45px; height: 45px; border: 4px solid var(--primary-light); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
 
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; justify-content:center; align-items:center; }
-        .modal-box { background:var(--surface); padding:30px; border-radius:12px; text-align:center; box-shadow:var(--shadow-md); width:350px; max-width: 90%; }
+        /* Modals */
+        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); backdrop-filter: blur(3px); z-index:9999; justify-content:center; align-items:center; }
+        .modal-box { background:var(--surface); padding:35px; border-radius:16px; text-align:center; box-shadow:var(--shadow-lg); width:380px; max-width: 90%; animation: slideUp 0.3s ease-out; }
 
-        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { min-width: 250px; padding: 15px 20px; border-radius: 8px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 500; border-left: 5px solid; animation: slideInRight 0.3s ease forwards; pointer-events: auto; }
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 25px; right: 25px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .toast { min-width: 280px; padding: 16px 20px; border-radius: 10px; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 600; border-left: 6px solid; animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: auto; }
         .toast.success { border-left-color: var(--success); color: var(--success-hover); }
         .toast.error { border-left-color: var(--danger); color: var(--danger-hover); }
         .toast.warning { border-left-color: var(--warning); color: var(--warning-hover); }
-        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(10px); } }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .assign-container { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
-        .assign-row { display: flex; gap: 20px; align-items: center; }
-        .assign-row select { padding: 10px; border-radius: 6px; border: 1px solid var(--border); flex-grow: 1; font-size: 14px; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid var(--border); }
-        .class-item { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s; }
-        .class-item input { width: 16px; height: 16px; cursor: pointer; margin-top: 2px; }
-        .class-note { display: block; font-size: 11px; color: var(--danger); font-weight: normal; margin-top: 2px; }
+        /* Assign Grid */
+        .assign-container { display: flex; flex-direction: column; gap: 25px; max-width: 900px; }
+        .assign-row { display: flex; gap: 20px; align-items: center; background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid var(--border); }
+        .assign-row select { padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; flex-grow: 1; font-size: 15px; font-weight: 500; }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 20px; background: #ffffff; border-radius: 10px; border: 1px solid var(--border); box-shadow: inner 0 2px 4px rgba(0,0,0,0.02); }
+        .class-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; padding: 8px; border-radius: 6px; }
+        .class-item:hover { background: #f1f5f9; }
+        .class-item input { width: 18px; height: 18px; cursor: pointer; margin-top: 2px; accent-color: var(--primary); }
+        .class-note { display: block; font-size: 11px; color: var(--danger); font-weight: 500; margin-top: 4px; }
 
-        .footer { text-align: center; padding: 15px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); flex-shrink: 0; }
+        .footer { text-align: center; padding: 20px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); flex-shrink: 0; font-weight: 500; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -128,33 +147,32 @@
 <body>
 
     <div id="toast-container"></div>
-    <div id="loading-overlay"><div class="spinner"></div><div>Đang xử lý dữ liệu với Firebase...</div></div>
+    <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
 
     <!-- ĐĂNG NHẬP -->
     <div id="login-section">
         <div class="login-box">
-            <h2>Hệ thống PCCM</h2>
+            <h2>Hệ Thống PCCM</h2>
             <div id="unit-name-display" class="unit-subtitle" style="display:none;"></div>
             
             <div class="role-grid">
                 <div class="role-card" id="role-admin" onclick="selectRole('admin')">
                     <h4 id="lbl-admin-role">Quản trị viên (Admin)</h4>
-                    <p>Quản lý hệ thống, nạp dữ liệu, xuất bảng ma trận phân công toàn trường.</p>
+                    <p>Quản lý toàn bộ hệ thống, thiết lập dữ liệu đầu năm, xuất báo cáo.</p>
                 </div>
                 <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
-                    <h4>Tổ trưởng / Tổ phó (TTCM/TPCM)</h4>
-                    <p>Quản lý thông tin tổ, phân công chuyên môn, xem báo cáo tổng hợp của Tổ.</p>
+                    <h4>Ban Quản lý Tổ (TTCM/TPCM)</h4>
+                    <p>Điều hành phân công chuyên môn nội bộ Tổ, kiểm soát thừa thiếu tiết.</p>
                 </div>
                 <div class="role-card" id="role-gv" onclick="selectRole('gv')">
-                    <h4>Giáo viên</h4>
-                    <p>Xem bảng phân công chuyên môn, cập nhật mã đăng nhập cá nhân.</p>
+                    <h4>Giáo viên Bộ môn</h4>
+                    <p>Truy cập xem phân công cá nhân, theo dõi tổng số tiết được giao.</p>
                 </div>
             </div>
 
-            <!-- Khóa ô nhập liệu khi chưa chọn Role -->
             <input type="text" id="login-input" placeholder="Vui lòng nhấp chọn phân quyền ở trên..." style="-webkit-text-security: disc;" autocomplete="off" disabled>
-            <button class="btn btn-full" onclick="login()">Đăng nhập</button>
-            <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px;"></p>
+            <button class="btn btn-full" onclick="login()">Đăng Nhập Hệ Thống</button>
+            <p id="login-error" style="color:var(--danger); display:none; font-size:13px; margin-top: 15px; font-weight:500;"></p>
         </div>
         
         <div style="position: absolute; bottom: 20px; width: 100%; text-align: center; color: var(--text-muted); font-size: 13px;">
@@ -175,20 +193,20 @@
 
                 <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">Quản lý Giáo viên</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">Quản lý Lớp học</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">Danh mục Môn học</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">Tổ hợp môn</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">Xuất mẫu chéo PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">Tổng hợp Toàn trường</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">🔗 Tổ hợp Môn</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
                 
                 <!-- TTCM Items -->
-                <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">Giáo viên trong Tổ</div>
-                <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">Phân công giảng dạy</div>
+                <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">👥 Giáo viên trong Tổ</div>
+                <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">✍️ Phân công Giảng dạy</div>
                 
                 <!-- Chung -->
-                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">Tổng hợp Tổ CM</div>
-                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #334155; margin-top: 10px;">📊 Tổng hợp Cả Năm</div>
+                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">📋 Tổng hợp Tổ CM</div>
+                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
             </div>
         </div>
 
@@ -207,13 +225,13 @@
                     <!-- TAB QUẢN LÝ ĐỢN VỊ (Master Admin) -->
                     <div id="tab-admin-sub" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                            <h3 style="margin:0;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
+                            <h3 style="margin:0; font-size:20px;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
                         </div>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Tạo tài khoản độc lập cho các trường. Hãy gửi <b>Link truy cập riêng</b> cho các trường để sử dụng.</p>
-                        <div class="action-bar"><button class="btn btn-success" onclick="addNewSubAdminRow()">+ Thêm đơn vị</button></div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Tạo tài khoản độc lập cho các trường. Hãy copy <b>Link truy cập riêng</b> gửi cho Admin Đơn vị để họ sử dụng hệ thống.</p>
+                        <div class="action-bar"><button class="btn btn-success" onclick="addNewSubAdminRow()">+ Thêm đơn vị mới</button></div>
                         <div class="table-container">
                             <table id="table-admin-sub">
-                                <thead><tr><th>Tên đơn vị</th><th>Mã đăng nhập (Pass)</th><th>Link truy cập riêng</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Tên đơn vị</th><th>Mã đăng nhập (Pass)</th><th>Link truy cập riêng (Bấm để Copy)</th><th style="width:120px;text-align:center;">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -221,34 +239,18 @@
 
                     <!-- TAB QUẢN LÝ ĐỢT PCCM -->
                     <div id="tab-admin-periods" class="tab-content">
-                        <h3>Quản lý Đợt Phân Công (Năm học 35 tuần)</h3>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Khóa đợt sẽ chặn mọi quyền Thêm/Sửa/Xóa của tất cả các tài khoản trong đợt đó.</p>
-                        <div class="action-bar"><button class="btn btn-success" onclick="document.getElementById('add-period-modal').style.display='flex'">+ Thêm Đợt mới</button></div>
+                        <h3 style="margin:0 0 5px 0; font-size:20px;">Quản lý Đợt Phân Công (Khung 35 tuần)</h3>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:0; margin-bottom:20px;">Quản lý các lần thay đổi PCCM trong năm học. Khi <b>Khóa đợt</b>, mọi dữ liệu trong đợt đó sẽ bị đóng băng (không cho phép sửa/xóa).</p>
+                        <div class="action-bar"><button class="btn btn-success" onclick="document.getElementById('add-period-modal').style.display='flex'">+ Khởi tạo Đợt mới</button></div>
                         <div class="table-container">
                             <table id="table-periods">
-                                <thead><tr><th>Tên đợt</th><th>Bắt đầu từ (Tuần)</th><th>Kéo dài dự kiến</th><th style="width:100px;text-align:center;">Trạng thái</th><th style="width:140px;text-align:center;">Thao tác</th></tr></thead>
+                                <thead><tr><th>Tên đợt</th><th style="text-align:center;">Bắt đầu từ (Tuần)</th><th style="text-align:center;">Kéo dài dự kiến</th><th style="text-align:center;">Trạng thái</th><th style="text-align:center;">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Vùng Upload Excel & Tải Mẫu -->
-                    <div class="control-panel admin-only" id="excel-panel" style="display: none;">
-                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label>1. Tải file Excel:</label>
-                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <label>2. Chọn Sheet nạp đè:</label>
-                                <select id="sheet-select" disabled><option value="">-- Chưa tải file --</option></select>
-                                <button class="btn btn-primary lock-hidden" id="load-sheet-btn" onclick="loadSheetToTab()" disabled>⚡ Thực hiện nạp</button>
-                            </div>
-                        </div>
-                        <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
-                    </div>
-
-                    <!-- TABS ADMIN -->
+                    <!-- TABS ADMIN: GIÁO VIÊN -->
                     <div id="tab-giaovien" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
@@ -265,6 +267,7 @@
                         </div>
                     </div>
                     
+                    <!-- TABS ADMIN: LỚP -->
                     <div id="tab-lop" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
@@ -281,6 +284,7 @@
                         </div>
                     </div>
 
+                    <!-- TABS ADMIN: MÔN HỌC (Global) -->
                     <div id="tab-monhoc" class="tab-content">
                         <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
@@ -291,6 +295,7 @@
                         </div>
                     </div>
 
+                    <!-- TABS ADMIN: TỔ HỢP MÔN (Global) -->
                     <div id="tab-tohop" class="tab-content">
                         <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
@@ -303,14 +308,14 @@
 
                     <!-- TAB ADMIN MATRIX -->
                     <div id="tab-admin-matrix" class="tab-content">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Bảng Ma trận Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Bảng Ma trận Phân công chuyên môn Toàn trường</h3>
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <div class="period-picker-container">
                                     <span>Chọn Đợt:</span>
                                     <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                                 </div>
-                                <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất file Excel</button>
+                                <button class="btn btn-success" onclick="exportMatrixToExcel()">📥 Xuất Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -323,14 +328,14 @@
 
                     <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
                     <div id="tab-admin-tonghop" class="tab-content">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Danh sách Tổng hợp Phân công chuyên môn Toàn trường (Theo Đợt)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Danh sách Tổng hợp Phân công Toàn trường</h3>
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <div class="period-picker-container">
                                     <span>Chọn Đợt:</span>
                                     <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                                 </div>
-                                <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất file Excel</button>
+                                <button class="btn btn-success" onclick="exportAdminTongHopToExcel()">📥 Xuất Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -341,16 +346,16 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM / GV -->
+                    <!-- TABS TTCM / GV: GIÁO VIÊN -->
                     <div id="tab-ttcm-gv" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                            <h3 style="margin:0;">Danh sách Giáo viên (Tổ <span class="lbl-tcm"></span>)</h3>
+                            <h3 style="margin:0; font-size:20px;">Danh sách Giáo viên (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
                             <div class="period-picker-container">
                                 <span>Chọn Đợt:</span>
                                 <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                             </div>
                         </div>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Mã đăng nhập được ẩn để bảo mật. Chỉ Admin mới có quyền cấp lại mã cho giáo viên.</p>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Quản lý thông tin và thiết lập môn dạy cứng cho từng thành viên trong Tổ.</p>
                         <div class="table-container">
                             <table id="table-ttcm-gv">
                                 <thead><tr><th>Mã GV</th><th>Tên giáo viên</th><th>TCM</th><th>Chức vụ</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Môn 1</th><th>Môn 2</th><th>Môn 3</th><th style="width:80px;text-align:center;" class="ttcm-action lock-hidden">Thao tác</th></tr></thead>
@@ -359,9 +364,10 @@
                         </div>
                     </div>
 
+                    <!-- TABS TTCM: PHÂN CÔNG -->
                     <div id="tab-ttcm-phancong" class="tab-content">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Phân công giảng dạy</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Phân công Giảng dạy theo Đợt</h3>
                             <div class="period-picker-container">
                                 <span>Chọn Đợt:</span>
                                 <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
@@ -376,30 +382,32 @@
                                 <label style="width: 100px; font-weight: 600;">Môn dạy:</label>
                                 <select id="ttcm-select-mon" onchange="ttcmMonChanged()" disabled><option value="">-- Chọn Môn --</option></select>
                             </div>
-                            <div>
-                                <label style="font-weight: 600; display: block; margin-bottom: 10px;">Chọn lớp phân công:</label>
+                            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <label style="font-weight: 700; display: block; margin-bottom: 15px; color: var(--dark);">Danh sách Lớp học (Tích chọn để phân công):</label>
                                 <div id="ttcm-classes-container" class="class-grid">
-                                    <span style="color: var(--text-muted); font-size: 13px;">Vui lòng chọn Giáo viên và Môn dạy...</span>
+                                    <span style="color: var(--text-muted); font-size: 14px;">Vui lòng chọn Giáo viên và Môn dạy...</span>
                                 </div>
-                                <div id="ttcm-current-total" style="margin-top: 15px; font-size: 15px; font-weight: 600; color: var(--primary); display: none; background: #e0e7ff; padding: 12px 15px; border-radius: 6px; border: 1px solid #c7d2fe;">
-                                    Dự kiến: <span id="ttcm-total-val" style="font-size: 18px;">0</span> tiết/tuần (Tiết chuẩn: <span id="ttcm-base-val">17</span>) <span id="ttcm-diff-val"></span>
+                                <div id="ttcm-current-total" style="margin-top: 20px; font-size: 15px; font-weight: 600; color: var(--primary); display: none; background: var(--primary-light); padding: 15px 20px; border-radius: 8px; border: 1px dashed #a5b4fc; display:flex; justify-content:space-between; align-items:center;">
+                                    <div>Tiết chuẩn: <span id="ttcm-base-val">17</span> tiết/tuần</div>
+                                    <div style="font-size: 16px;">Dự kiến phân công: <span id="ttcm-total-val" style="font-size: 20px; font-weight:700;">0</span> tiết <span id="ttcm-diff-val" style="margin-left: 10px;"></span></div>
                                 </div>
                             </div>
                             <div style="text-align: right;" class="ttcm-action lock-hidden">
-                                <button class="btn btn-warning" onclick="savePhanCong()">💾 Lưu phân công</button>
+                                <button class="btn btn-warning" onclick="savePhanCong()" style="padding: 12px 25px; font-size:15px;">💾 Cập nhật Phân công</button>
                             </div>
                         </div>
                     </div>
 
+                    <!-- TABS TTCM / GV: TỔNG HỢP TỔ -->
                     <div id="tab-ttcm-tonghop" class="tab-content">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
-                            <h3 style="margin:0;">Bảng tổng hợp chuyên môn Đợt này (Tổ <span class="lbl-tcm"></span>)</h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Bảng Tổng hợp Chuyên môn (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
                             <div style="display:flex; gap:10px; align-items:center;">
                                 <div class="period-picker-container">
                                     <span>Chọn Đợt:</span>
                                     <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
                                 </div>
-                                <button class="btn btn-success" onclick="exportTtcmTongHopToExcel()">📥 Xuất file Excel</button>
+                                <button class="btn btn-success" onclick="exportTtcmTongHopToExcel()">📥 Xuất Excel</button>
                             </div>
                         </div>
                         <div class="table-container">
@@ -413,13 +421,13 @@
                     <!-- TAB TỔNG HỢP CẢ NĂM -->
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-                            <h3 style="margin:0;">Báo cáo Tổng hợp Số tiết Cả Năm Học (35 Tuần)</h3>
-                            <button class="btn btn-success" onclick="exportCaNamToExcel()">📥 Xuất file Excel</button>
+                            <h3 style="margin:0; font-size:20px;">Báo cáo Tổng số tiết Cả Năm Học (35 Tuần)</h3>
+                            <button class="btn btn-success" onclick="exportCaNamToExcel()">📥 Xuất Excel</button>
                         </div>
-                        <p style="font-size: 13px; color: var(--text-muted); margin-top:0; margin-bottom:15px;">Dữ liệu tự động tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn trong năm.</p>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Dữ liệu tự động nội suy tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn cấu hình trong năm.</p>
                         <div class="table-container">
                             <table id="table-tonghop-canam">
-                                <thead><tr><th>Tổ CM</th><th>Giáo viên</th><th>Tổng Tiết Chuẩn</th><th>Tổng Tiết Dạy</th><th>Tổng Kiêm Nhiệm</th><th>Tổng Thực Tế</th><th>Thừa/Thiếu (Cả năm)</th></tr></thead>
+                                <thead><tr><th>Tổ CM</th><th>Giáo viên</th><th style="text-align:center;">Tổng Tiết Chuẩn</th><th style="text-align:center;">Tổng Tiết Dạy</th><th style="text-align:center;">Tổng Kiêm Nhiệm</th><th style="text-align:center;">Tổng Thực Tế</th><th style="text-align:center;">Thừa/Thiếu (Cả năm)</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -435,10 +443,10 @@
     <!-- Modal Đổi Mã Đăng Nhập -->
     <div id="pw-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3 id="pw-modal-title">Đổi mã cá nhân</h3>
-            <p style="font-size:13px; color:var(--text-muted); margin-bottom:15px;">Mã mới dùng cho những lần đăng nhập sau.</p>
-            <input type="text" id="new-pwd-input" placeholder="Nhập mã mới..." style="width:100%; box-sizing:border-box; padding:10px; margin-bottom:20px; border:1px solid var(--border); border-radius:6px; -webkit-text-security: disc;" autocomplete="off">
-            <div style="display:flex; gap:10px;">
+            <h3 id="pw-modal-title" style="margin-top:0; color:var(--dark);">Đổi mã cá nhân</h3>
+            <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;">Mã mới sẽ dùng cho những lần đăng nhập sau.</p>
+            <input type="text" id="new-pwd-input" placeholder="Nhập mã mới..." style="width:100%; box-sizing:border-box; padding:12px 15px; margin-bottom:25px; border:1px solid var(--border); border-radius:8px; font-size:15px; -webkit-text-security: disc; outline:none;" autocomplete="off">
+            <div style="display:flex; gap:12px;">
                 <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('pw-modal').style.display='none'">Hủy</button>
                 <button class="btn btn-primary" style="flex:1;" onclick="submitChangePassword()">Xác nhận</button>
             </div>
@@ -448,19 +456,19 @@
     <!-- Modal Thêm Đợt Mới -->
     <div id="add-period-modal" class="modal-overlay">
         <div class="modal-box">
-            <h3>Thêm Đợt Phân Công Mới</h3>
-            <p style="font-size:12px; color:var(--warning); margin-bottom:15px;">Lưu ý: Dữ liệu (Lớp, GV, Phân công) sẽ được sao chép tự động từ đợt hiện tại.</p>
+            <h3 style="margin-top:0; color:var(--dark);">Khởi tạo Đợt Mới</h3>
+            <p style="font-size:13px; color:var(--warning-hover); background:var(--warning-light); padding:10px; border-radius:6px; margin-bottom:20px;">Toàn bộ dữ liệu Lớp, Giáo viên, Phân công sẽ được <b>sao chép tự động</b> từ đợt hiện tại sang đợt mới để giảm thiểu thao tác nhập lại.</p>
             
-            <div style="text-align: left; margin-bottom: 10px;">
-                <label style="font-size: 13px; font-weight: 600;">Tên đợt (VD: Đợt 2, Học kỳ 2...)</label>
-                <input type="text" id="new-period-name" style="width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--border); border-radius:6px; margin-top:5px;">
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Tên đợt (VD: Đợt 2, Học kỳ 2...)</label>
+                <input type="text" id="new-period-name" style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid var(--border); border-radius:8px; margin-top:8px; outline:none;">
             </div>
-            <div style="text-align: left; margin-bottom: 20px;">
-                <label style="font-size: 13px; font-weight: 600;">Áp dụng từ tuần (1 - 35)</label>
-                <input type="number" id="new-period-week" min="1" max="35" value="19" style="width:100%; box-sizing:border-box; padding:8px; border:1px solid var(--border); border-radius:6px; margin-top:5px;">
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Áp dụng từ tuần thứ (1 - 35)</label>
+                <input type="number" id="new-period-week" min="1" max="35" value="19" style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid var(--border); border-radius:8px; margin-top:8px; outline:none;">
             </div>
 
-            <div style="display:flex; gap:10px;">
+            <div style="display:flex; gap:12px;">
                 <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('add-period-modal').style.display='none'">Hủy</button>
                 <button class="btn btn-primary" style="flex:1;" onclick="addPeriod()">Tạo đợt</button>
             </div>
@@ -551,8 +559,8 @@
             toast.innerHTML = `<span style="margin-right: 8px;">${icon}</span> <span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease forwards';
-                setTimeout(() => toast.remove(), 300);
+                toast.style.animation = 'fadeOut 0.4s ease forwards';
+                setTimeout(() => toast.remove(), 400);
             }, 3000);
         };
         
@@ -567,7 +575,7 @@
             
             if (role === 'admin') input.placeholder = "Nhập mã Admin...";
             else if (role === 'ttcm') input.placeholder = "Nhập mã đăng nhập Quản lý Tổ...";
-            else input.placeholder = "Nhập mã đăng nhập cá nhân Giáo viên...";
+            else input.placeholder = "Nhập mã cá nhân Giáo viên...";
             
             input.focus();
             document.getElementById("login-error").style.display = "none";
@@ -611,7 +619,7 @@
                     if (currentUnitId) {
                         let foundSub = dbSubAdmins.find(s => s[2] === currentUnitId);
                         if (foundSub && foundSub[1] === input) {
-                            currentUser = { role: 'sub_admin', ten: 'Admin - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
+                            currentUser = { role: 'sub_admin', ten: 'Admin Đơn vị - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
                             isAdmin = true;
                         } else throw new Error("Mã Admin Đơn vị không chính xác!");
                     } else {
@@ -665,13 +673,13 @@
                     
                     if (foundUser) {
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
-                        if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
+                        if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền quản lý Tổ chuyên môn!");
                         
                         let role = (isManager && selectedLoginRole === 'ttcm') ? "ttcm" : "gv";
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
                         currentUnitId = foundUnitId; 
                     } else {
-                        throw new Error("Mã đăng nhập cá nhân không chính xác cho Đơn vị này!");
+                        throw new Error("Mã đăng nhập không chính xác!");
                     }
                 }
                 
@@ -697,7 +705,7 @@
 
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("app-layout").style.display = "flex";
-                showToast(`Đăng nhập thành công! Xin chào ${currentUser.ten}.`);
+                showToast(`Xin chào ${currentUser.ten}! Đăng nhập thành công.`);
             } catch (err) {
                 document.getElementById("login-error").innerText = err.message;
                 document.getElementById("login-error").style.display = "block";
@@ -776,7 +784,7 @@
             tbody.innerHTML = "";
             dbPeriods.forEach(p => {
                 let actionHtml = '';
-                let lockBtnHtml = `<button class="btn-small ${p.isLocked ? 'btn-warning' : 'btn-info'}" onclick="toggleLockPeriod('${p.id}')" style="background-color: ${p.isLocked ? 'var(--warning)' : '#8b5cf6'};">${p.isLocked ? '🔓 Mở' : '🔒 Khóa'}</button>`;
+                let lockBtnHtml = `<button class="btn-small ${p.isLocked ? 'btn-warning' : 'btn-info'}" onclick="toggleLockPeriod('${p.id}')" style="background-color: ${p.isLocked ? 'var(--warning)' : 'var(--info)'}; padding: 6px 16px;">${p.isLocked ? '🔓 Mở khóa' : '🔒 Khóa đợt'}</button>`;
                 
                 if(p.id !== 'default') {
                     actionHtml = lockBtnHtml + ` <button class="btn-small btn-del" onclick="deletePeriod('${p.id}')">Xóa</button>`;
@@ -784,13 +792,13 @@
                     actionHtml = lockBtnHtml;
                 }
                 
-                let statusHtml = p.isLocked ? `<span style="color:var(--danger); font-weight:bold;">Đã khóa</span>` : `<span style="color:var(--success); font-weight:bold;">Đang mở</span>`;
+                let statusHtml = p.isLocked ? `<span class="badge badge-danger">Đã khóa</span>` : `<span class="badge badge-success">Đang mở</span>`;
 
                 tbody.innerHTML += `
                     <tr>
-                        <td style="font-weight:600;">${p.name}</td>
-                        <td style="text-align:center;">${p.startWeek}</td>
-                        <td style="text-align:center;">--</td>
+                        <td style="font-weight:700; color:var(--dark);">${p.name}</td>
+                        <td style="text-align:center; font-weight:600;">${p.startWeek}</td>
+                        <td style="text-align:center; color:var(--text-muted);">--</td>
                         <td style="text-align:center;">${statusHtml}</td>
                         <td style="text-align:center;">${actionHtml}</td>
                     </tr>
@@ -801,7 +809,7 @@
                 let wStart = parseInt(dbPeriods[i].startWeek);
                 let wEnd = (i < dbPeriods.length - 1) ? parseInt(dbPeriods[i+1].startWeek) - 1 : 35;
                 let duration = wEnd - wStart + 1;
-                rows[i].querySelectorAll("td")[2].innerText = duration + " tuần";
+                rows[i].querySelectorAll("td")[2].innerHTML = `<b>${duration}</b> tuần`;
             }
         }
 
@@ -858,7 +866,7 @@
         }
 
         window.deletePeriod = async function(pid) {
-            if(!confirm("Chắc chắn xóa đợt này? Các dữ liệu đã phân công trong đợt sẽ bị mất.")) return;
+            if(!confirm("Chắc chắn xóa đợt này? Các dữ liệu đã phân công trong đợt sẽ bị mất vĩnh viễn.")) return;
             dbPeriods = dbPeriods.filter(p => p.id !== pid);
             
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -889,8 +897,7 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            // Xóa .gv-item khỏi Admin UI để không bị hiển thị lặp Menu của TTCM
-            
+            document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
@@ -1151,10 +1158,10 @@
                 let link = window.location.origin + window.location.pathname + "?unit=" + row[2];
                 
                 tr.innerHTML = `
-                    <td data-val="${row[0]}">${row[0]}</td>
+                    <td data-val="${row[0]}" style="font-weight:600;">${row[0]}</td>
                     <td data-val="${row[1]}">${row[1]}</td>
                     <td>
-                        <input type="text" value="${link}" readonly style="width:140px; font-size:11px; padding:4px; border:1px solid #ccc; border-radius:4px; cursor:pointer;" onclick="this.select(); document.execCommand('copy'); showToast('Đã copy link!');">
+                        <input type="text" value="${link}" readonly style="width:100%; box-sizing:border-box; font-size:12px; padding:8px; border:1px dashed var(--primary); border-radius:6px; cursor:pointer; background:var(--primary-light); color:var(--primary);" onclick="this.select(); document.execCommand('copy'); showToast('Đã copy link!');" title="Bấm để copy">
                     </td>
                     <td style="text-align:center;">
                         <button class="btn-small btn-edit" onclick="editSubAdminRow(this)">Sửa</button>
@@ -1304,8 +1311,8 @@
                         if (isNameColAdmin || isNameColTtcm) {
                             let maGv = tds[0].dataset.val !== undefined ? tds[0].dataset.val : tds[0].innerText.trim();
                             let homeroom = dbClasses.find(c => c && c[2] === maGv);
-                            if (homeroom) td.innerHTML = `${newVal} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
-                            else td.innerText = newVal;
+                            if (homeroom) td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${newVal}</span> <span style="color:var(--danger); font-size:12px; font-weight:700; background:var(--danger-light); padding:2px 6px; border-radius:4px;">(${homeroom[0]})</span>`;
+                            else td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${newVal}</span>`;
                         } else {
                             td.innerText = newVal;
                         }
@@ -1386,6 +1393,13 @@
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
+        function syncMemoryState(tabId, data) {
+            if(tabId === 'tab-giaovien') dbTeachers = data;
+            if(tabId === 'tab-lop') dbClasses = data;
+            if(tabId === 'tab-monhoc') dbSubjects = data;
+            if(tabId === 'tab-tohop') dbCombos = data;
+        }
+
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
             let expCols = tabId==='tab-giaovien' ? 10 : 3;
@@ -1406,8 +1420,8 @@
                     if (tabId === 'tab-giaovien' && j === 2) {
                         let maGv = data[i][0];
                         let homeroom = dbClasses.find(c => c && c[2] === maGv);
-                        if (homeroom) td.innerHTML = `${val} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
-                        else td.innerText = val;
+                        if (homeroom) td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${val}</span> <span style="color:var(--danger); font-size:12px; font-weight:700; background:var(--danger-light); padding:2px 6px; border-radius:4px;">(${homeroom[0]})</span>`;
+                        else td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${val}</span>`;
                     } else {
                         td.innerText = val; 
                     }
@@ -1427,7 +1441,7 @@
             const tbody = document.getElementById("table-admin-tonghop").querySelector("tbody");
             
             let duration = getPeriodDuration(currentPeriodId);
-            thead.innerHTML = `<tr><th>Tổ CM</th><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng tiết/tuần</th><th>Thừa/Thiếu</th><th>Tổng cả đợt (${duration} tuần)</th><th>Thừa/Thiếu cả đợt</th></tr>`;
+            thead.innerHTML = `<tr><th>Tổ CM</th><th>Giáo viên</th><th>Phân công dạy</th><th style="text-align:center;">Tiết chuẩn</th><th style="text-align:center;">Tiết kiêm nhiệm</th><th style="text-align:center;">Tổng tiết/tuần</th><th style="text-align:center;">Thừa/Thiếu</th><th style="text-align:center;">Tổng cả đợt (${duration} tuần)</th><th style="text-align:center;">Thừa/Thiếu cả đợt</th></tr>`;
             tbody.innerHTML = "";
             
             let hasData = false;
@@ -1469,11 +1483,11 @@
 
                 let resultStrings = [];
                 for (let mon in groupedByMon) {
-                    resultStrings.push(`<b>${mon}:</b> ${groupedByMon[mon].join(', ')}`);
+                    resultStrings.push(`<span style="display:inline-block; margin-bottom:4px;"><b>${mon}:</b> ${groupedByMon[mon].join(', ')}</span>`);
                 }
 
                 let tongTiet = tongTietDay + kiemNhiem;
-                let textPhanCong = resultStrings.length > 0 ? resultStrings.join("; ") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
+                let textPhanCong = resultStrings.length > 0 ? resultStrings.join("<br>") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
                 
                 let thuaThieu = tongTiet - tietChuan;
                 let thText = thuaThieu > 0 ? `+${thuaThieu}` : thuaThieu;
@@ -1486,15 +1500,15 @@
 
                 tbody.innerHTML += `
                     <tr>
-                        <td style="font-weight:600; color:var(--primary);">${tcm}</td>
-                        <td><div style="font-weight:600;">${tenGv}</div><div style="font-size:12px;color:var(--text-muted);">${maGv}</div></td>
-                        <td style="line-height: 1.8;">${textPhanCong}</td>
-                        <td style="text-align:center;">${tietChuan}</td>
-                        <td style="text-align:center;">${kiemNhiem}</td>
-                        <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongTiet}</td>
+                        <td style="font-weight:700; color:var(--primary);">${tcm}</td>
+                        <td><div style="font-weight:700; color:var(--dark);">${tenGv}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${maGv}</div></td>
+                        <td style="line-height: 1.6; font-size:13px;">${textPhanCong}</td>
+                        <td style="text-align:center; font-weight:500;">${tietChuan}</td>
+                        <td style="text-align:center; font-weight:500;">${kiemNhiem}</td>
+                        <td style="text-align:center; font-weight:700; color:var(--primary); font-size:15px;">${tongTiet}</td>
                         <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
-                        <td style="text-align:center; font-weight:700; font-size:16px;">${tongCaaDot}</td>
-                        <td style="text-align:center; font-weight:700; color:${thCaDotColor}; font-size:15px;">${thCaDotText}</td>
+                        <td style="text-align:center; font-weight:700; font-size:15px; background:#f8fafc;">${tongCaaDot}</td>
+                        <td style="text-align:center; font-weight:700; color:${thCaDotColor}; font-size:15px; background:#f8fafc;">${thCaDotText}</td>
                     </tr>
                 `;
             }
@@ -1540,7 +1554,7 @@
                 let thuaThieu = tongTiet - tietChuan;
                 let tongCaaDot = tongTiet * duration;
                 let thuaThieuCaDot = thuaThieu * duration;
-                let textPhanCong = resultStrings.length > 0 ? resultStrings.join("; ") : "Chưa phân công";
+                let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
                 
                 wsData.push([tcm, maGv, tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
             });
@@ -1611,7 +1625,7 @@
                     }
 
                     if (teacher) {
-                        td.innerText = `${teacher}(${hours})`;
+                        td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${teacher}</span><span style="color:var(--primary); font-size:12px; margin-left:4px;">(${hours})</span>`;
                     }
                     tr.appendChild(td);
                 });
@@ -1649,8 +1663,8 @@
                         
                         if (colIdx === 2) {
                             let homeroom = dbClasses.find(c => c && c[2] === dbTeachers[i][0]);
-                            if (homeroom) td.innerHTML = `${val} <span style="color:var(--danger); font-size:12px; font-weight:600;">(${homeroom[0]})</span>`;
-                            else td.innerText = val;
+                            if (homeroom) td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${val}</span> <span style="color:var(--danger); font-size:12px; font-weight:700; background:var(--danger-light); padding:2px 6px; border-radius:4px;">(${homeroom[0]})</span>`;
+                            else td.innerHTML = `<span style="font-weight:600; color:var(--dark);">${val}</span>`;
                         } else {
                             td.innerText = val;
                         }
@@ -1754,7 +1768,7 @@
             }
 
             if(validClasses.length === 0) {
-                container.innerHTML = `<span style="color:var(--danger); font-size:13px;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp.</span>`;
+                container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
                 updateUnsavedTotal();
                 return;
             }
@@ -1775,18 +1789,18 @@
                         isDisabled = true; 
                         let t = dbTeachers.find(x => x[0] === assigned.maGv);
                         let tName = t ? t[2] : assigned.maGv;
-                        noteStr = `<span class="class-note">(Giao: ${tName})</span>`;
+                        noteStr = `<span class="class-note">(Đã giao: ${tName})</span>`;
                     }
                 }
 
                 let isHomeroom = dbClasses.some(c => c[0] === tenLop && c[2] === maGv);
-                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : '';
+                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
 
                 let hasCD = checkChuyenDe(tenLop, tenMonFull);
-                let displayLop = hasCD ? `${tenLop} (${baseHours + 1})` : tenLop;
+                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${baseHours + 1})</span>` : tenLop;
 
                 container.innerHTML += `
-                    <label class="class-item" style="${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
+                    <label class="class-item" style="${isDisabled ? 'opacity:0.6; cursor:not-allowed; background:#f1f5f9;' : ''}">
                         <input type="checkbox" value="${tenLop}" onchange="updateUnsavedTotal()" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
                         <div style="display: flex; flex-direction: column;">
                             <span style="${nameStyle}">${displayLop}</span>
@@ -1849,12 +1863,12 @@
             let tong = tongTietDay + kiemNhiem;
             let thuaThieu = tong - tietChuan;
             let thText = thuaThieu > 0 ? `(Thừa ${thuaThieu})` : (thuaThieu < 0 ? `(Thiếu ${Math.abs(thuaThieu)})` : `(Đủ tiết)`);
-            let thColor = thuaThieu > 0 ? "var(--warning)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
+            let thColor = thuaThieu > 0 ? "var(--warning-hover)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
 
             document.getElementById("ttcm-total-val").innerText = tong;
             document.getElementById("ttcm-base-val").innerText = tietChuan;
-            document.getElementById("ttcm-diff-val").innerHTML = `<span style="color:${thColor};">${thText}</span>`;
-            totalContainer.style.display = 'block';
+            document.getElementById("ttcm-diff-val").innerHTML = `<span style="color:${thColor}; padding:4px 8px; background:#fff; border-radius:6px; font-size:13px; box-shadow:var(--shadow-sm);">${thText}</span>`;
+            totalContainer.style.display = 'flex';
         }
 
         window.savePhanCong = async function() {
@@ -1904,8 +1918,50 @@
         }
 
         window.exportTtcmTongHopToExcel = function() {
-            let table = document.getElementById("table-ttcm-tonghop");
-            let wb = XLSX.utils.table_to_book(table, {sheet: "Tong_Hop_To"});
+            let duration = getPeriodDuration(currentPeriodId);
+            let wb = XLSX.utils.book_new();
+            let wsData = [["Giáo viên", "Phân công dạy", "Tiết chuẩn", "Tiết kiêm nhiệm", "Tổng tiết/tuần", "Thừa/Thiếu", `Tổng cả đợt (${duration} tuần)`, "Thừa/Thiếu cả đợt"]];
+
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i][3] === currentUser.tcm) {
+                    let maGv = dbTeachers[i][0];
+                    let tenGv = dbTeachers[i][2];
+                    let tietChuan = parseInt(dbTeachers[i][5]) || 17;
+                    let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
+                    
+                    let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
+                    let tongTietDay = 0;
+                    let groupedByMon = {};
+
+                    teacherAssignments.forEach(a => {
+                        let tenMonFull = getTenMonByMa(a.maMon);
+                        let base = getBaseHours(a.maMon);
+                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
+                        let classHours = base + (hasCD ? 1 : 0);
+                        tongTietDay += classHours;
+                        
+                        if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
+                        groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${classHours})` : a.lop);
+                    });
+
+                    let resultStrings = [];
+                    for (let mon in groupedByMon) {
+                        resultStrings.push(`${mon}: ${groupedByMon[mon].join(', ')}`);
+                    }
+
+                    let tongTiet = tongTietDay + kiemNhiem;
+                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
+
+                    let thuaThieu = tongTiet - tietChuan;
+                    let tongCaaDot = tongTiet * duration;
+                    let thuaThieuCaDot = thuaThieu * duration;
+
+                    wsData.push([tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
+                }
+            }
+
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "Tong_Hop_To");
             XLSX.writeFile(wb, "Tong_Hop_PCCM_To.xlsx");
             showToast("Xuất file Excel thành công!");
         };
@@ -1915,7 +1971,7 @@
             const tbody = document.getElementById("table-ttcm-tonghop").querySelector("tbody");
             
             let duration = getPeriodDuration(currentPeriodId);
-            thead.innerHTML = `<tr><th>Giáo viên</th><th>Phân công dạy</th><th>Tiết chuẩn</th><th>Tiết kiêm nhiệm</th><th>Tổng tiết/tuần</th><th>Thừa/Thiếu</th><th>Tổng cả đợt (${duration} tuần)</th><th>Thừa/Thiếu cả đợt</th></tr>`;
+            thead.innerHTML = `<tr><th>Giáo viên</th><th>Phân công dạy</th><th style="text-align:center;">Tiết chuẩn</th><th style="text-align:center;">Tiết kiêm nhiệm</th><th style="text-align:center;">Tổng tiết/tuần</th><th style="text-align:center;">Thừa/Thiếu</th><th style="text-align:center;">Tổng cả đợt (${duration} tuần)</th><th style="text-align:center;">Thừa/Thiếu cả đợt</th></tr>`;
             tbody.innerHTML = "";
             let hasData = false;
 
@@ -1923,6 +1979,7 @@
                 if(dbTeachers[i][3] === currentUser.tcm) {
                     hasData = true;
                     let maGv = dbTeachers[i][0];
+                    let tenGv = dbTeachers[i][2];
                     let tietChuan = parseInt(dbTeachers[i][5]) || 17;
                     let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
                     
@@ -1947,11 +2004,11 @@
 
                     let resultStrings = [];
                     for (let mon in groupedByMon) {
-                        resultStrings.push(`<b>${mon}:</b> ${groupedByMon[mon].join(', ')}`);
+                        resultStrings.push(`<span style="display:inline-block; margin-bottom:4px;"><b>${mon}:</b> ${groupedByMon[mon].join(', ')}</span>`);
                     }
 
                     let tongTiet = tongTietDay + kiemNhiem;
-                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join("; ") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
+                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join("<br>") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
 
                     let thuaThieu = tongTiet - tietChuan;
                     let thText = thuaThieu > 0 ? `+${thuaThieu}` : thuaThieu;
@@ -1964,14 +2021,14 @@
 
                     tbody.innerHTML += `
                         <tr>
-                            <td><div style="font-weight:600;">${dbTeachers[i][2]}</div><div style="font-size:12px;color:var(--text-muted);">${maGv}</div></td>
-                            <td style="line-height: 1.8;">${textPhanCong}</td>
-                            <td style="text-align:center;">${tietChuan}</td>
-                            <td style="text-align:center;">${kiemNhiem}</td>
+                            <td><div style="font-weight:700; color:var(--dark);">${tenGv}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${maGv}</div></td>
+                            <td style="line-height: 1.6; font-size:13px;">${textPhanCong}</td>
+                            <td style="text-align:center; font-weight:500;">${tietChuan}</td>
+                            <td style="text-align:center; font-weight:500;">${kiemNhiem}</td>
                             <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongTiet}</td>
                             <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
-                            <td style="text-align:center; font-weight:700; font-size:16px;">${tongCaaDot}</td>
-                            <td style="text-align:center; font-weight:700; color:${thCaDotColor}; font-size:15px;">${thCaDotText}</td>
+                            <td style="text-align:center; font-weight:700; font-size:16px; background:#f8fafc;">${tongCaaDot}</td>
+                            <td style="text-align:center; font-weight:700; color:${thCaDotColor}; font-size:15px; background:#f8fafc;">${thCaDotText}</td>
                         </tr>
                     `;
                 }
@@ -2055,26 +2112,97 @@
                 
                 tbody.innerHTML += `
                     <tr>
-                        <td style="font-weight:600; color:var(--primary);">${d.tcm}</td>
-                        <td><div style="font-weight:600;">${d.ten}</div><div style="font-size:12px;color:var(--text-muted);">${d.maGv}</div></td>
-                        <td style="text-align:center;">${d.tongChuan}</td>
-                        <td style="text-align:center;">${d.tongDay}</td>
-                        <td style="text-align:center;">${d.tongKN}</td>
+                        <td style="font-weight:700; color:var(--primary);">${d.tcm}</td>
+                        <td><div style="font-weight:700; color:var(--dark);">${d.ten}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${d.maGv}</div></td>
+                        <td style="text-align:center; font-weight:500;">${d.tongChuan}</td>
+                        <td style="text-align:center; font-weight:500;">${d.tongDay}</td>
+                        <td style="text-align:center; font-weight:500;">${d.tongKN}</td>
                         <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongThucTe}</td>
                         <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
                     </tr>
                 `;
             });
             
-            if(!hasData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Chưa có dữ liệu</td></tr>`;
+            if(!hasData) tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        window.exportCaNamToExcel = function() {
-            let table = document.getElementById("table-tonghop-canam");
-            let wb = XLSX.utils.table_to_book(table, {sheet: "TongHop_CaNam"});
-            XLSX.writeFile(wb, "Tong_Hop_PCCM_Ca_Nam.xlsx");
-            showToast("Xuất file Excel thành công!");
+        window.exportCaNamToExcel = async function() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+            let yearlyData = {}; 
+            let periods = [...dbPeriods].sort((a,b) => a.startWeek - b.startWeek);
+            
+            for(let i=0; i<periods.length; i++) {
+                let p = periods[i];
+                let start = parseInt(p.startWeek);
+                let end = (i < periods.length - 1) ? parseInt(periods[i+1].startWeek) - 1 : 35;
+                let duration = end - start + 1;
+                if(duration <= 0) duration = 0; 
+
+                const [snapGv, snapLop, snapPc] = await Promise.all([
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-lop", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id)))
+                ]);
+                
+                let gvs = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
+                let lops = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
+                let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
+                
+                const checkCD = (lop, tenMonFull) => {
+                    let cl = lops.find(c => c && c[0] === lop);
+                    if(!cl) return false;
+                    let combo = dbCombos.find(c => c && c[0] === cl[1]);
+                    if(!combo || combo.length < 3) return false;
+                    return combo[2].split(',').map(s=>s.trim().toLowerCase()).includes(tenMonFull.toLowerCase());
+                };
+
+                for(let j=1; j<gvs.length; j++) {
+                    let gv = gvs[j];
+                    if(!gv || !gv[0]) continue;
+                    let maGv = gv[0];
+                    let ten = gv[2];
+                    let tcm = gv[3];
+                    let tietChuan = parseInt(gv[5]) || 17;
+                    let kiemNhiem = parseInt(gv[6]) || 0;
+                    
+                    if((currentUser.role === 'ttcm' || currentUser.role === 'gv') && tcm !== currentUser.tcm) continue;
+                    
+                    let myPcs = pcs.filter(a => a.maGv === maGv);
+                    let teachingHours = 0;
+                    myPcs.forEach(a => {
+                        let tm = getTenMonByMa(a.maMon);
+                        let base = getBaseHours(a.maMon);
+                        teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
+                    });
+                    
+                    if(!yearlyData[maGv]) {
+                        yearlyData[maGv] = { ten, tcm, tongChuan: 0, tongDay: 0, tongKN: 0 };
+                    }
+                    yearlyData[maGv].tongChuan += tietChuan * duration;
+                    yearlyData[maGv].tongDay += teachingHours * duration;
+                    yearlyData[maGv].tongKN += kiemNhiem * duration;
+                }
+            }
+            
+            let arr = Object.keys(yearlyData).map(k => ({maGv: k, ...yearlyData[k]}));
+            arr.sort((a,b) => a.tcm.localeCompare(b.tcm));
+
+            let wb = XLSX.utils.book_new();
+            let wsData = [["Tổ CM", "Mã GV", "Tên giáo viên", "Tổng Tiết Chuẩn", "Tổng Tiết Dạy", "Tổng Kiêm Nhiệm", "Tổng Thực Tế", "Thừa/Thiếu (Cả năm)"]];
+            
+            arr.forEach(d => {
+                let tongThucTe = d.tongDay + d.tongKN;
+                let diff = tongThucTe - d.tongChuan;
+                wsData.push([d.tcm, d.maGv, d.ten, d.tongChuan, d.tongDay, d.tongKN, tongThucTe, diff]);
+            });
+
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "TongHop_CaNam");
+            XLSX.writeFile(wb, "TongHop_PCCM_CaNam.xlsx");
+            
+            document.getElementById('loading-overlay').style.display = 'none';
+            showToast("Xuất file Excel Tổng hợp Cả năm thành công!");
         };
 
     </script>
