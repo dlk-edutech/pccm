@@ -158,7 +158,7 @@
             <div class="role-grid">
                 <div class="role-card" id="role-admin" onclick="selectRole('admin')">
                     <h4 id="lbl-admin-role">Quản trị viên (Admin)</h4>
-                    <p>Quản lý toàn bộ hệ thống, thiết lập dữ liệu, xuất báo cáo toàn trường.</p>
+                    <p>Quản lý toàn bộ hệ thống, thiết lập dữ liệu đầu năm, xuất báo cáo.</p>
                 </div>
                 <div class="role-card" id="role-ttcm" onclick="selectRole('ttcm')">
                     <h4>Ban Quản lý Tổ (TTCM/TPCM)</h4>
@@ -257,7 +257,7 @@
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <label>1. Tải file Excel:</label>
-                                <input type="file" id="excel-upload" accept=".xls,.xlsx" />
+                                <input type="file" id="excel-upload" accept=".xls,.xlsx" onchange="handleExcelUpload(event)" />
                             </div>
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <label>2. Chọn Sheet nạp đè:</label>
@@ -440,7 +440,6 @@
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Báo cáo Tổng số tiết Cả Năm Học (35 Tuần)</h3>
-                            <!-- LUÔN LUÔN HIỆN NÚT NÀY CHO TẤT CẢ CÁC ROLE KHI Ở TAB NÀY -->
                             <button class="btn btn-success" onclick="exportCaNamToExcel()">📥 Xuất Excel</button>
                         </div>
                         <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Dữ liệu tự động nội suy tính toán dựa trên tổng thời lượng của các đợt phân công chuyên môn cấu hình trong năm.</p>
@@ -764,6 +763,42 @@
             }
         };
 
+        window.handleExcelUpload = function(e) {
+            const file = e.target.files[0];
+            if (!file) {
+                const ss = document.getElementById('sheet-select');
+                if(ss) ss.disabled = true;
+                const ls = document.getElementById('load-sheet-btn');
+                if(ls) ls.disabled = true;
+                return;
+            }
+            
+            showToast("Đang đọc file Excel...", "info");
+            
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    workbook = XLSX.read(new Uint8Array(evt.target.result), {type: 'array'});
+                    const sheetSelect = document.getElementById('sheet-select');
+                    if(!sheetSelect) return;
+                    sheetSelect.innerHTML = "";
+                    workbook.SheetNames.forEach(name => {
+                        let opt = document.createElement('option');
+                        opt.value = name;
+                        opt.innerText = name;
+                        sheetSelect.appendChild(opt);
+                    });
+                    sheetSelect.disabled = false;
+                    const loadBtn = document.getElementById('load-sheet-btn');
+                    if(loadBtn) loadBtn.disabled = false;
+                    showToast("Đã nhận diện file. Vui lòng chọn Sheet và bấm Thực hiện nạp!");
+                } catch(err) {
+                    showToast("Lỗi đọc file: " + err.message, "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        };
+
         function updatePeriodDropdown() {
             document.querySelectorAll(".period-selector").forEach(selector => {
                 selector.innerHTML = "";
@@ -964,6 +999,7 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
+            document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
@@ -994,8 +1030,9 @@
             if(role === 'ttcm') {
                 document.querySelectorAll('.ttcm-item').forEach(el => el.style.display = 'block');
                 document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = '');
+                document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'none');
             } else {
-                document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'block');
                 document.querySelectorAll('.ttcm-action, .admin-action').forEach(el => el.style.display = 'none');
             }
             
@@ -1015,7 +1052,7 @@
                 const item = document.querySelector('.ttcm-item');
                 if(item) item.click();
             } else {
-                const item = document.querySelector('.gv-item');
+                const item = document.querySelector('.gv-item-only');
                 if(item) item.click();
             }
         }
@@ -1276,7 +1313,6 @@
             }
         }
 
-        // --- CÁC HÀM CHO ADMIN/SUB_ADMIN ---
         async function loadAdminTabData(tabId) {
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
@@ -1296,28 +1332,6 @@
             } catch (e) { console.error(e); }
             if(overlay) overlay.style.display = 'none';
         }
-
-        document.getElementById('excel-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                const sheetSelect = document.getElementById('sheet-select');
-                if(!sheetSelect) return;
-                sheetSelect.innerHTML = "";
-                workbook.SheetNames.forEach(name => {
-                    let opt = document.createElement('option');
-                    opt.value = name;
-                    opt.innerText = name;
-                    sheetSelect.appendChild(opt);
-                });
-                sheetSelect.disabled = false;
-                const loadBtn = document.getElementById('load-sheet-btn');
-                if(loadBtn) loadBtn.disabled = false;
-            };
-            reader.readAsArrayBuffer(file);
-        });
 
         window.loadSheetToTab = async function() {
             if (!workbook) return;
