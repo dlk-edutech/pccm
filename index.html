@@ -133,7 +133,7 @@
         .assign-container { display: flex; flex-direction: column; gap: 25px; max-width: 900px; }
         .assign-row { display: flex; gap: 20px; align-items: center; background: #f8fafc; padding: 15px 20px; border-radius: 10px; border: 1px solid var(--border); }
         .assign-row select { padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; flex-grow: 1; font-size: 15px; font-weight: 500; }
-        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 20px; background: #ffffff; border-radius: 10px; border: 1px solid var(--border); box-shadow: inner 0 2px 4px rgba(0,0,0,0.02); }
+        .class-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; padding: 20px; background: #ffffff; border-radius: 10px; border: 1px solid var(--border); box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
         .class-item { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; padding: 8px; border-radius: 6px; }
         .class-item:hover { background: #f1f5f9; }
         .class-item input { width: 18px; height: 18px; cursor: pointer; margin-top: 2px; accent-color: var(--primary); }
@@ -504,7 +504,6 @@
         let dbAssignments = []; 
         let currentUser = null; 
         let currentTabId = '';
-        let workbook = null; 
 
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -517,8 +516,8 @@
                 try {
                     const subSnap = await getDoc(doc(db, "pccm_config", "sub_admins"));
                     if (subSnap.exists()) {
-                        let subs = JSON.parse(subSnap.data().data);
-                        let sub = subs.find(s => s[2] === currentUnitId);
+                        let subs = JSON.parse(subSnap.data().data) || [];
+                        let sub = subs.find(s => s && s[2] === currentUnitId);
                         if (sub) {
                             currentUnitName = sub[0];
                             document.getElementById('unit-name-display').innerText = "Đơn vị: " + currentUnitName;
@@ -582,10 +581,14 @@
         };
 
         function migrateTeachersDb(teachersData) {
-            if (teachersData && teachersData.length > 1 && teachersData[1].length === 9) {
+            if (!teachersData || !Array.isArray(teachersData) || teachersData.length === 0) return teachersData;
+            
+            if (teachersData[0] && teachersData[0].length >= 6 && teachersData[0][5] === "Tiết kiêm nhiệm") {
                 teachersData.forEach((t, i) => {
-                    if(i===0) t.splice(5, 0, "Tiết chuẩn");
-                    else t.splice(5, 0, "17");
+                    if (Array.isArray(t)) {
+                        if(i===0) t.splice(5, 0, "Tiết chuẩn");
+                        else t.splice(5, 0, "17");
+                    }
                 });
             }
             return teachersData;
@@ -599,7 +602,11 @@
             }
 
             const input = document.getElementById("login-input").value.trim();
-            if (!input) return;
+            if (!input) {
+                document.getElementById("login-error").innerText = "Vui lòng nhập mã đăng nhập!";
+                document.getElementById("login-error").style.display = "block";
+                return;
+            }
             
             document.getElementById("login-error").style.display = "none";
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -608,7 +615,7 @@
                 try {
                     const subSnap = await getDoc(doc(db, "pccm_config", "sub_admins"));
                     if (subSnap.exists()) {
-                        dbSubAdmins = JSON.parse(subSnap.data().data);
+                        dbSubAdmins = JSON.parse(subSnap.data().data) || [];
                     } else {
                         dbSubAdmins = [["Tên đơn vị", "Mã đăng nhập", "unitId"]];
                     }
@@ -617,8 +624,8 @@
                 let isAdmin = false;
                 if (selectedLoginRole === 'admin') {
                     if (currentUnitId) {
-                        let foundSub = dbSubAdmins.find(s => s[2] === currentUnitId);
-                        if (foundSub && foundSub[1] === input) {
+                        let foundSub = dbSubAdmins.find(s => s && s[2] === currentUnitId);
+                        if (foundSub && foundSub[1] != null && String(foundSub[1]).trim() === input) {
                             currentUser = { role: 'sub_admin', ten: 'Admin Đơn vị - ' + foundSub[0], rowIndex: dbSubAdmins.indexOf(foundSub) };
                             isAdmin = true;
                         } else throw new Error("Mã Admin Đơn vị không chính xác!");
@@ -636,9 +643,14 @@
                     let foundIndex = -1;
                     let foundUnitId = '';
                     
-                    let unitsToCheck = [{ id: '', name: 'Main' }];
-                    for(let i=1; i<dbSubAdmins.length; i++) {
-                        if(dbSubAdmins[i][2]) unitsToCheck.push({ id: dbSubAdmins[i][2], name: dbSubAdmins[i][0] });
+                    let unitsToCheck = [];
+                    if (currentUnitId) {
+                        unitsToCheck.push({ id: currentUnitId, name: currentUnitName });
+                    } else {
+                        unitsToCheck.push({ id: '', name: 'Main' });
+                        for(let i=1; i<dbSubAdmins.length; i++) {
+                            if(dbSubAdmins[i] && dbSubAdmins[i][2]) unitsToCheck.push({ id: dbSubAdmins[i][2], name: dbSubAdmins[i][0] });
+                        }
                     }
                     
                     for(let u of unitsToCheck) {
@@ -648,8 +660,10 @@
                             const pSnap = await getDoc(doc(db, colName, "pccm_periods"));
                             if (pSnap.exists()) {
                                 let tmpPs = JSON.parse(pSnap.data().data);
-                                tmpPs.sort((a,b)=>a.startWeek - b.startWeek);
-                                pIdForLogin = tmpPs[tmpPs.length-1].id;
+                                if (Array.isArray(tmpPs) && tmpPs.length > 0) {
+                                    tmpPs.sort((a,b)=>a.startWeek - b.startWeek);
+                                    pIdForLogin = tmpPs[tmpPs.length-1].id;
+                                }
                             }
                         } catch(e) {}
 
@@ -657,14 +671,15 @@
                         if (docSnap.exists()) {
                             let rawData = docSnap.data().excelData;
                             let tList = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
-                            tList = migrateTeachersDb(tList);
-                            
-                            for(let i = 1; i < tList.length; i++) {
-                                if(tList[i][1] === input) {
-                                    foundUser = tList[i];
-                                    foundIndex = i;
-                                    foundUnitId = u.id;
-                                    break;
+                            if (Array.isArray(tList)) {
+                                tList = migrateTeachersDb(tList);
+                                for(let i = 1; i < tList.length; i++) {
+                                    if(tList[i] && tList[i][1] != null && String(tList[i][1]).trim() === input) {
+                                        foundUser = tList[i];
+                                        foundIndex = i;
+                                        foundUnitId = u.id;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -673,7 +688,7 @@
                     
                     if (foundUser) {
                         let isManager = (foundUser[4] === "TTCM" || foundUser[4] === "TPCM");
-                        if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền quản lý Tổ chuyên môn!");
+                        if (selectedLoginRole === 'ttcm' && !isManager) throw new Error("Bạn không có quyền truy cập của Ban quản lý Tổ chuyên môn!");
                         
                         let role = (isManager && selectedLoginRole === 'ttcm') ? "ttcm" : "gv";
                         currentUser = { role: role, maGv: foundUser[0], ten: foundUser[2], tcm: foundUser[3], rowIndex: foundIndex };
@@ -686,7 +701,9 @@
                 try {
                     const pSnap = await getDoc(doc(db, getCollectionName(), "pccm_periods"));
                     if(pSnap.exists()) {
-                        dbPeriods = JSON.parse(pSnap.data().data);
+                        let parsed = JSON.parse(pSnap.data().data);
+                        if (Array.isArray(parsed) && parsed.length > 0) dbPeriods = parsed;
+                        else dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
                     } else {
                         dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
                     }
@@ -705,7 +722,7 @@
 
                 document.getElementById("login-section").style.display = "none";
                 document.getElementById("app-layout").style.display = "flex";
-                showToast(`Xin chào ${currentUser.ten}! Đăng nhập thành công.`);
+                showToast(`Đăng nhập thành công! Xin chào ${currentUser.ten}.`);
             } catch (err) {
                 document.getElementById("login-error").innerText = err.message;
                 document.getElementById("login-error").style.display = "block";
@@ -897,7 +914,6 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
@@ -932,7 +948,7 @@
                 let selectGv = document.getElementById('ttcm-select-gv');
                 selectGv.innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
                 for(let i=1; i<dbTeachers.length; i++) {
-                    if(dbTeachers[i][3] === currentUser.tcm) {
+                    if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
                         selectGv.innerHTML += `<option value="${dbTeachers[i][0]}">${dbTeachers[i][2]} (${dbTeachers[i][0]})</option>`;
                     }
                 }
@@ -1019,40 +1035,6 @@
             }
         };
 
-        // --- HÀM TẢI MẪU EXCEL ---
-        window.downloadExcelTemplate = function() {
-            let wb = XLSX.utils.book_new();
-            
-            let ws1 = XLSX.utils.aoa_to_sheet([
-                ["Mã GV", "Mã đăng nhập", "Tên giáo viên", "TCM", "Chức vụ", "Tiết chuẩn", "Tiết kiêm nhiệm", "Môn 1", "Môn 2", "Môn 3"],
-                ["GV01", "1234", "Nguyễn Văn A", "Toán", "Gv", "17", "0", "Toán", "", ""]
-            ]);
-            XLSX.utils.book_append_sheet(wb, ws1, "Thông tin giáo viên");
-
-            let ws2 = XLSX.utils.aoa_to_sheet([
-                ["Lớp", "Mã TH môn", "Mã GVCN"],
-                ["10A1", "TH1", "GV01"]
-            ]);
-            XLSX.utils.book_append_sheet(wb, ws2, "Thông tin lớp");
-
-            let ws3 = XLSX.utils.aoa_to_sheet([
-                ["Mã môn", "Tên môn", "Số tiết/tuần"],
-                ["Toán", "Toán học", "3"],
-                ["SH", "Sinh hoạt", "1"]
-            ]);
-            XLSX.utils.book_append_sheet(wb, ws3, "Thông tin môn học");
-
-            let ws4 = XLSX.utils.aoa_to_sheet([
-                ["Mã TH môn", "Các môn trong tổ hợp", "Các môn có chuyên đề"],
-                ["TH1", "Toán, Vật lý, Hóa học, Sinh hoạt", "Toán"]
-            ]);
-            XLSX.utils.book_append_sheet(wb, ws4, "Thông tin TH môn");
-
-            XLSX.writeFile(wb, "Mau_Du_Lieu_PCCM.xlsx");
-            showToast("Đã tải file mẫu Excel!");
-        };
-
-        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN CHỈ CÓ) ---
         window.addNewSubAdminRow = function() {
             const tbody = document.getElementById("table-admin-sub").querySelector("tbody");
             if(tbody.querySelector("td[colspan]")) tbody.innerHTML = "";
@@ -1172,7 +1154,6 @@
             }
         }
 
-        // --- CÁC HÀM CHO ADMIN/SUB_ADMIN ---
         async function loadAdminTabData(tabId) {
             document.getElementById('loading-overlay').style.display = 'flex';
             try {
@@ -1191,49 +1172,6 @@
             } catch (e) { console.error(e); }
             document.getElementById('loading-overlay').style.display = 'none';
         }
-
-        document.getElementById('excel-upload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                workbook = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                const sheetSelect = document.getElementById('sheet-select');
-                sheetSelect.innerHTML = "";
-                workbook.SheetNames.forEach(name => sheetSelect.add(new Option(name, name)));
-                sheetSelect.disabled = false;
-                document.getElementById('load-sheet-btn').disabled = false;
-            };
-            reader.readAsArrayBuffer(file);
-        });
-
-        window.loadSheetToTab = async function() {
-            if (!workbook) return;
-            if (!confirm("CẢNH BÁO: Dữ liệu hiện tại của bảng này sẽ bị XÓA SẠCH và thay thế bằng file Excel. Bạn chắc chắn chứ?")) return;
-
-            const sheetName = document.getElementById('sheet-select').value;
-            let jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {header: 1, defval: ""});
-            if (jsonData.length <= 1) {
-                showToast("Sheet trống hoặc không hợp lệ!", "error");
-                return;
-            }
-
-            if (currentTabId === 'tab-giaovien') {
-                jsonData = migrateTeachersDb(jsonData);
-            }
-
-            const cleanData = JSON.parse(JSON.stringify(jsonData));
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                await setDoc(doc(db, getCollectionName(), getDocName(currentTabId, currentPeriodId)), { excelData: JSON.stringify(cleanData) });
-                syncMemoryState(currentTabId, cleanData);
-                renderAdminTable(currentTabId, cleanData);
-                showToast("Đã cập nhật dữ liệu từ Excel!");
-            } catch (e) { 
-                showToast("Lỗi Firebase: " + e.message, "error"); 
-            }
-            document.getElementById('loading-overlay').style.display = 'none';
-        };
 
         window.addNewRow = function(tableId) {
             const tbody = document.getElementById(tableId).querySelector("tbody");
@@ -1262,7 +1200,7 @@
                 for(let i=1; i<dbSubjects.length; i++) {
                     if(!dbSubjects[i][0]) continue;
                     let maMon = dbSubjects[i][0].trim();
-                    let selected = (maMon === currentVal) ? "selected" : "";
+                    let selected = (String(maMon) === String(currentVal)) ? "selected" : "";
                     optionsHtml += `<option value="${maMon}" ${selected}>${maMon}</option>`;
                 }
             }
@@ -1360,7 +1298,7 @@
             const tableId = "table-" + tabId.split('-')[1];
             
             document.getElementById(tableId).querySelectorAll(".btn-success").forEach(b => { 
-                if(b.innerText==="Lưu") window.editRow(b, tableId); 
+                if(b.innerText==="Lưu") window.editRow(b, tableId, true); 
             });
 
             const rows = document.getElementById(tableId).querySelectorAll("tr");
@@ -1393,13 +1331,6 @@
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        function syncMemoryState(tabId, data) {
-            if(tabId === 'tab-giaovien') dbTeachers = data;
-            if(tabId === 'tab-lop') dbClasses = data;
-            if(tabId === 'tab-monhoc') dbSubjects = data;
-            if(tabId === 'tab-tohop') dbCombos = data;
-        }
-
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
             let expCols = tabId==='tab-giaovien' ? 10 : 3;
@@ -1411,7 +1342,7 @@
             }
 
             for (let i = 1; i < data.length; i++) {
-                if (data[i].length === 0 || data[i].every(c => c === "")) continue;
+                if (!data[i] || data[i].length === 0 || data[i].every(c => c === "")) continue;
                 const tr = document.createElement("tr");
                 for (let j = 0; j < expCols; j++) {
                     let td = document.createElement("td"); 
@@ -1435,7 +1366,6 @@
             }
         }
 
-        // --- TỔNG HỢP PCCM TOÀN TRƯỜNG (ADMIN) ---
         window.renderAdminTongHop = function() {
             const thead = document.getElementById("table-admin-tonghop").querySelector("thead");
             const tbody = document.getElementById("table-admin-tonghop").querySelector("tbody");
@@ -1446,14 +1376,14 @@
             
             let hasData = false;
             let sortedTeachers = [...dbTeachers].slice(1).sort((a, b) => {
-                let tcmA = a[3] || "";
-                let tcmB = b[3] || "";
+                let tcmA = (a && a[3]) ? a[3] : "";
+                let tcmB = (b && b[3]) ? b[3] : "";
                 return tcmA.localeCompare(tcmB);
             });
 
             for(let i=0; i<sortedTeachers.length; i++) {
                 let teacher = sortedTeachers[i];
-                if (!teacher[0]) continue;
+                if (!teacher || !teacher[0]) continue;
 
                 hasData = true;
                 let maGv = teacher[0];
@@ -1523,7 +1453,7 @@
             let sortedTeachers = [...dbTeachers].slice(1).sort((a, b) => (a[3]||"").localeCompare(b[3]||""));
             
             sortedTeachers.forEach(teacher => {
-                if (!teacher[0]) return;
+                if (!teacher || !teacher[0]) return;
                 let maGv = teacher[0];
                 let tenGv = teacher[2];
                 let tcm = teacher[3];
@@ -1561,11 +1491,10 @@
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "Tong_Hop_PCCM");
-            XLSX.writeFile(wb, "Tong_Hop_PCCM_Toan_Truong.xlsx");
+            XLSX.writeFile(wb, "Tong_Hop_PCCM_TheoDot.xlsx");
             showToast("Xuất file Excel thành công!");
         };
 
-        // --- XUẤT MA TRẬN CHÉO PCCM ADMIN ---
         window.renderAdminMatrix = function() {
             const thead = document.getElementById("table-admin-matrix").querySelector("thead");
             const tbody = document.getElementById("table-admin-matrix").querySelector("tbody");
@@ -1584,7 +1513,7 @@
 
             let subjects = [];
             for(let i=1; i<dbSubjects.length; i++) {
-                if(!dbSubjects[i][0]) continue;
+                if(!dbSubjects[i] || !dbSubjects[i][0]) continue;
                 subjects.push({
                     maMon: dbSubjects[i][0].trim(),
                     tenMon: dbSubjects[i][1].trim(),
@@ -1598,7 +1527,7 @@
 
             let hasData = false;
             for(let i=1; i<dbClasses.length; i++) {
-                if(!dbClasses[i][0]) continue;
+                if(!dbClasses[i] || !dbClasses[i][0]) continue;
                 hasData = true;
                 let tenLop = dbClasses[i][0].trim();
                 let gvcn = dbClasses[i][2] ? dbClasses[i][2].trim() : "";
@@ -1607,7 +1536,7 @@
                 let tdLop = document.createElement("td");
                 tdLop.innerText = tenLop;
                 tdLop.style.fontWeight = "700";
-                tdLop.style.backgroundColor = "#ccfbf1"; 
+                tdLop.style.backgroundColor = "var(--primary-light)"; 
                 tr.appendChild(tdLop);
 
                 subjects.forEach(sub => {
@@ -1644,14 +1573,13 @@
             showToast("Xuất file Excel thành công!");
         };
 
-        // --- CÁC HÀM CHO TTCM ---
         function renderTtcmGvTable() {
             const tbody = document.getElementById("table-ttcm-gv").querySelector("tbody");
             tbody.innerHTML = "";
             let count = 0;
             
             for (let i = 1; i < dbTeachers.length; i++) {
-                if (dbTeachers[i][3] === currentUser.tcm) {
+                if (dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
                     count++;
                     const tr = document.createElement("tr");
                     tr.dataset.index = i; 
@@ -1687,7 +1615,7 @@
 
         window.saveTtcmGvTab = async function() {
             document.getElementById("table-ttcm-gv").querySelectorAll(".btn-success").forEach(b => { 
-                if(b.innerText==="Lưu") window.editRow(b, 'table-ttcm-gv'); 
+                if(b.innerText==="Lưu") window.editRow(b, 'table-ttcm-gv', true); 
             });
 
             const rows = document.getElementById("table-ttcm-gv").querySelectorAll("tbody tr");
@@ -1724,248 +1652,6 @@
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        window.ttcmGvChanged = function() {
-            const maGv = document.getElementById("ttcm-select-gv").value;
-            const selMon = document.getElementById("ttcm-select-mon");
-            document.getElementById("ttcm-classes-container").innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn Môn dạy...</span>";
-            selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
-            document.getElementById("ttcm-current-total").style.display = 'none';
-            
-            if(!maGv) { selMon.disabled = true; return; }
-            selMon.disabled = false;
-            let teacher = dbTeachers.find(t => t[0] === maGv);
-            if(teacher) {
-                if(teacher[7]) selMon.innerHTML += `<option value="${teacher[7]}">${teacher[7]}</option>`;
-                if(teacher[8]) selMon.innerHTML += `<option value="${teacher[8]}">${teacher[8]}</option>`;
-                if(teacher[9]) selMon.innerHTML += `<option value="${teacher[9]}">${teacher[9]}</option>`;
-            }
-            updateUnsavedTotal();
-        };
-
-        window.ttcmMonChanged = function() {
-            const maGv = document.getElementById("ttcm-select-gv").value;
-            const maMon = document.getElementById("ttcm-select-mon").value;
-            const container = document.getElementById("ttcm-classes-container");
-            
-            if(!maGv || !maMon) { 
-                container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Giáo viên và Môn...</span>"; 
-                updateUnsavedTotal();
-                return; 
-            }
-            
-            let tenMonFull = getTenMonByMa(maMon);
-            let validClasses = [];
-
-            for(let i=1; i<dbClasses.length; i++) {
-                if(dbClasses[i].length < 2) continue;
-                let tenLop = dbClasses[i][0];
-                let maTh = dbClasses[i][1];
-                let combo = dbCombos.find(c => c[0] === maTh);
-                if(combo && combo.length >= 2) {
-                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
-                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
-                }
-            }
-
-            if(validClasses.length === 0) {
-                container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
-                updateUnsavedTotal();
-                return;
-            }
-
-            container.innerHTML = "";
-            let baseHours = getBaseHours(maMon);
-
-            validClasses.forEach(tenLop => {
-                let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
-                let isChecked = false;
-                let isDisabled = false;
-                let noteStr = "";
-
-                if (assigned) {
-                    if (assigned.maGv === maGv) {
-                        isChecked = true; 
-                    } else {
-                        isDisabled = true; 
-                        let t = dbTeachers.find(x => x[0] === assigned.maGv);
-                        let tName = t ? t[2] : assigned.maGv;
-                        noteStr = `<span class="class-note">(Đã giao: ${tName})</span>`;
-                    }
-                }
-
-                let isHomeroom = dbClasses.some(c => c[0] === tenLop && c[2] === maGv);
-                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
-
-                let hasCD = checkChuyenDe(tenLop, tenMonFull);
-                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${baseHours + 1})</span>` : tenLop;
-
-                container.innerHTML += `
-                    <label class="class-item" style="${isDisabled ? 'opacity:0.6; cursor:not-allowed; background:#f1f5f9;' : ''}">
-                        <input type="checkbox" value="${tenLop}" onchange="updateUnsavedTotal()" ${isChecked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}>
-                        <div style="display: flex; flex-direction: column;">
-                            <span style="${nameStyle}">${displayLop}</span>
-                            ${noteStr}
-                        </div>
-                    </label>
-                `;
-            });
-
-            updateUnsavedTotal();
-            if(document.body.classList.contains('period-locked')) {
-                container.querySelectorAll('input').forEach(i => i.disabled = true);
-            }
-        };
-
-        window.updateUnsavedTotal = function() {
-            const maGv = document.getElementById("ttcm-select-gv").value;
-            const maMon = document.getElementById("ttcm-select-mon").value;
-            const totalContainer = document.getElementById("ttcm-current-total");
-            
-            if(!maGv) {
-                totalContainer.style.display = 'none';
-                return;
-            }
-            
-            let kiemNhiem = 0;
-            let tietChuan = 17;
-            let t = dbTeachers.find(x => x[0] === maGv);
-            if(t) {
-                tietChuan = parseInt(t[5]) || 17;
-                kiemNhiem = parseInt(t[6]) || 0;
-            }
-            
-            let tongTietDay = 0;
-
-            if (maMon) {
-                let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
-                otherAssignments.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
-                });
-
-                let currentSubBase = getBaseHours(maMon);
-                let currentTenMonF = getTenMonByMa(maMon);
-                let checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked");
-                
-                checkboxes.forEach(cb => {
-                    tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
-                });
-            } else {
-                let allAss = dbAssignments.filter(a => a.maGv === maGv);
-                allAss.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
-                });
-            }
-
-            let tong = tongTietDay + kiemNhiem;
-            let thuaThieu = tong - tietChuan;
-            let thText = thuaThieu > 0 ? `(Thừa ${thuaThieu})` : (thuaThieu < 0 ? `(Thiếu ${Math.abs(thuaThieu)})` : `(Đủ tiết)`);
-            let thColor = thuaThieu > 0 ? "var(--warning-hover)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
-
-            document.getElementById("ttcm-total-val").innerText = tong;
-            document.getElementById("ttcm-base-val").innerText = tietChuan;
-            document.getElementById("ttcm-diff-val").innerHTML = `<span style="color:${thColor}; padding:4px 8px; background:#fff; border-radius:6px; font-size:13px; box-shadow:var(--shadow-sm);">${thText}</span>`;
-            totalContainer.style.display = 'flex';
-        }
-
-        window.savePhanCong = async function() {
-            const maGv = document.getElementById("ttcm-select-gv").value;
-            const maMon = document.getElementById("ttcm-select-mon").value;
-            if(!maGv || !maMon) {
-                showToast("Vui lòng chọn Giáo viên và Môn dạy!", "warning");
-                return;
-            }
-            
-            dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
-            
-            const checkboxes = document.getElementById("ttcm-classes-container").querySelectorAll("input[type=checkbox]:checked:not(:disabled)");
-            checkboxes.forEach(cb => {
-                dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
-            });
-
-            document.getElementById('loading-overlay').style.display = 'flex';
-            try {
-                await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId)), { assignmentData: JSON.stringify(dbAssignments) });
-                showToast("Đã lưu Phân công chuyên môn!");
-            } catch(e) { 
-                showToast("Lỗi: " + e.message, "error"); 
-            }
-            document.getElementById('loading-overlay').style.display = 'none';
-        };
-
-        function getTenMonByMa(maMon) {
-            for(let i=1; i<dbSubjects.length; i++) {
-                if(dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return dbSubjects[i][1].trim();
-            }
-            return maMon.trim();
-        }
-        function getBaseHours(maMon) {
-            for(let i=1; i<dbSubjects.length; i++) {
-                if(dbSubjects[i][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return parseInt(dbSubjects[i][2]) || 0;
-            }
-            return 0;
-        }
-        function checkChuyenDe(lop, tenMonFull) {
-            let cl = dbClasses.find(c => c && c[0] === lop);
-            if(!cl) return false;
-            let combo = dbCombos.find(c => c && c[0] === cl[1]);
-            if(!combo || combo.length < 3) return false;
-            let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
-            return cdSubjects.includes(tenMonFull.toLowerCase());
-        }
-
-        window.exportTtcmTongHopToExcel = function() {
-            let duration = getPeriodDuration(currentPeriodId);
-            let wb = XLSX.utils.book_new();
-            let wsData = [["Giáo viên", "Phân công dạy", "Tiết chuẩn", "Tiết kiêm nhiệm", "Tổng tiết/tuần", "Thừa/Thiếu", `Tổng cả đợt (${duration} tuần)`, "Thừa/Thiếu cả đợt"]];
-
-            for(let i=1; i<dbTeachers.length; i++) {
-                if(dbTeachers[i][3] === currentUser.tcm) {
-                    let maGv = dbTeachers[i][0];
-                    let tenGv = dbTeachers[i][2];
-                    let tietChuan = parseInt(dbTeachers[i][5]) || 17;
-                    let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
-                    
-                    let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
-                    let tongTietDay = 0;
-                    let groupedByMon = {};
-
-                    teacherAssignments.forEach(a => {
-                        let tenMonFull = getTenMonByMa(a.maMon);
-                        let base = getBaseHours(a.maMon);
-                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
-                        let classHours = base + (hasCD ? 1 : 0);
-                        tongTietDay += classHours;
-                        
-                        if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
-                        groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${classHours})` : a.lop);
-                    });
-
-                    let resultStrings = [];
-                    for (let mon in groupedByMon) {
-                        resultStrings.push(`${mon}: ${groupedByMon[mon].join(', ')}`);
-                    }
-
-                    let tongTiet = tongTietDay + kiemNhiem;
-                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
-
-                    let thuaThieu = tongTiet - tietChuan;
-                    let tongCaaDot = tongTiet * duration;
-                    let thuaThieuCaDot = thuaThieu * duration;
-
-                    wsData.push([tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
-                }
-            }
-
-            let ws = XLSX.utils.aoa_to_sheet(wsData);
-            XLSX.utils.book_append_sheet(wb, ws, "Tong_Hop_To");
-            XLSX.writeFile(wb, "Tong_Hop_PCCM_To.xlsx");
-            showToast("Xuất file Excel thành công!");
-        };
-
         function renderTtcmTongHop() {
             const thead = document.getElementById("table-ttcm-tonghop").querySelector("thead");
             const tbody = document.getElementById("table-ttcm-tonghop").querySelector("tbody");
@@ -1976,7 +1662,7 @@
             let hasData = false;
 
             for(let i=1; i<dbTeachers.length; i++) {
-                if(dbTeachers[i][3] === currentUser.tcm) {
+                if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
                     hasData = true;
                     let maGv = dbTeachers[i][0];
                     let tenGv = dbTeachers[i][2];
@@ -2025,9 +1711,9 @@
                             <td style="line-height: 1.6; font-size:13px;">${textPhanCong}</td>
                             <td style="text-align:center; font-weight:500;">${tietChuan}</td>
                             <td style="text-align:center; font-weight:500;">${kiemNhiem}</td>
-                            <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongTiet}</td>
+                            <td style="text-align:center; font-weight:700; color:var(--primary); font-size:15px;">${tongTiet}</td>
                             <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
-                            <td style="text-align:center; font-weight:700; font-size:16px; background:#f8fafc;">${tongCaaDot}</td>
+                            <td style="text-align:center; font-weight:700; font-size:15px; background:#f8fafc;">${tongCaaDot}</td>
                             <td style="text-align:center; font-weight:700; color:${thCaDotColor}; font-size:15px; background:#f8fafc;">${thCaDotText}</td>
                         </tr>
                     `;
@@ -2035,6 +1721,54 @@
             }
             if(!hasData) tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 20px;">Không có giáo viên</td></tr>`;
         }
+
+        window.exportTtcmTongHopToExcel = function() {
+            let duration = getPeriodDuration(currentPeriodId);
+            let wb = XLSX.utils.book_new();
+            let wsData = [["Mã GV", "Tên giáo viên", "Phân công dạy", "Tiết chuẩn", "Tiết kiêm nhiệm", "Tổng tiết/tuần", "Thừa/Thiếu", `Tổng cả đợt (${duration} tuần)`, "Thừa/Thiếu cả đợt"]];
+
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
+                    let maGv = dbTeachers[i][0];
+                    let tenGv = dbTeachers[i][2];
+                    let tietChuan = parseInt(dbTeachers[i][5]) || 17;
+                    let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
+                    
+                    let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
+                    let tongTietDay = 0;
+                    let groupedByMon = {};
+
+                    teacherAssignments.forEach(a => {
+                        let tenMonFull = getTenMonByMa(a.maMon);
+                        let base = getBaseHours(a.maMon);
+                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
+                        let classHours = base + (hasCD ? 1 : 0);
+                        tongTietDay += classHours;
+                        
+                        if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
+                        groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${classHours})` : a.lop);
+                    });
+
+                    let resultStrings = [];
+                    for (let mon in groupedByMon) {
+                        resultStrings.push(`${mon}: ${groupedByMon[mon].join(', ')}`);
+                    }
+
+                    let tongTiet = tongTietDay + kiemNhiem;
+                    let thuaThieu = tongTiet - tietChuan;
+                    let tongCaaDot = tongTiet * duration;
+                    let thuaThieuCaDot = thuaThieu * duration;
+                    let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
+
+                    wsData.push([maGv, tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
+                }
+            }
+
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "Tong_Hop_To");
+            XLSX.writeFile(wb, "Tong_Hop_PCCM_To.xlsx");
+            showToast("Xuất file Excel thành công!");
+        };
 
         // --- TỔNG HỢP CẢ NĂM ---
         window.renderTongHopCaNam = async function() {
