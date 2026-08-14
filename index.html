@@ -805,7 +805,7 @@
         window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName) {
             if (cb.checked && otherTeacherId) {
                 cb.checked = false; // Revert visually until confirmed
-                window.showConfirm("Xác nhận giành lớp", `Lớp ${tenLop} đang được phân cho GV ${otherTeacherName}.\nBạn có muốn chuyển lớp này sang cho GV hiện tại và hủy của GV cũ không?`, () => {
+                window.showConfirm("Xác nhận chuyển lớp", `Lớp ${tenLop} đang được phân cho GV ${otherTeacherName}.\nBạn có muốn chuyển lớp này sang cho GV hiện tại và hủy của GV cũ không?`, () => {
                     cb.checked = true;
                     let noteContainer = cb.closest('.class-item').querySelector('.note-container');
                     if (noteContainer) noteContainer.innerHTML = `<span class="class-note" style="color:var(--warning);">(Sẽ lấy từ ${otherTeacherName})</span>`;
