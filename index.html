@@ -124,6 +124,7 @@
         .toast { min-width: 280px; padding: 16px 20px; border-radius: 10px; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 600; border-left: 6px solid; animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; pointer-events: auto; }
         .toast.success { border-left-color: var(--success); color: var(--success-hover); }
         .toast.error { border-left-color: var(--danger); color: var(--danger-hover); }
+        .toast.info { border-left-color: var(--info); color: var(--info-hover); }
         .toast.warning { border-left-color: var(--warning); color: var(--warning-hover); }
         @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
@@ -147,7 +148,7 @@
 <body>
 
     <div id="toast-container"></div>
-    <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
+    <div id="loading-overlay"><div class="spinner"></div><div>Đang xử lý dữ liệu với Firebase...</div></div>
 
     <!-- ĐĂNG NHẬP -->
     <div id="login-section">
@@ -522,6 +523,7 @@
         let dbAssignments = []; 
         let currentUser = null; 
         let currentTabId = '';
+        let workbook = null; 
 
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -579,6 +581,7 @@
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             let icon = type === 'success' ? '✅' : (type === 'error' ? '❌' : '⚠️');
+            if (type === 'info') icon = 'ℹ️';
             toast.innerHTML = `<span style="margin-right: 8px;">${icon}</span> <span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
@@ -999,7 +1002,6 @@
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'none');
             }
             
-            document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'none');
             document.querySelectorAll('.admin-action').forEach(el => el.style.display = '');
             document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = 'none');
 
@@ -1030,9 +1032,8 @@
             if(role === 'ttcm') {
                 document.querySelectorAll('.ttcm-item').forEach(el => el.style.display = 'block');
                 document.querySelectorAll('.ttcm-action').forEach(el => el.style.display = '');
-                document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'none');
             } else {
-                document.querySelectorAll('.gv-item-only').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.gv-item').forEach(el => el.style.display = 'block');
                 document.querySelectorAll('.ttcm-action, .admin-action').forEach(el => el.style.display = 'none');
             }
             
@@ -1052,7 +1053,7 @@
                 const item = document.querySelector('.ttcm-item');
                 if(item) item.click();
             } else {
-                const item = document.querySelector('.gv-item-only');
+                const item = document.querySelector('.gv-item');
                 if(item) item.click();
             }
         }
