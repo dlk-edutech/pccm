@@ -533,6 +533,18 @@
         
         window.workbook = null; 
 
+        // Helper functions for parsing numbers with comma decimals
+        window.parseFloatSafe = function(val) {
+            if (val === undefined || val === null || val === "") return 0;
+            let parsed = parseFloat(String(val).replace(',', '.'));
+            return isNaN(parsed) ? 0 : parsed;
+        };
+
+        window.formatNum = function(num) {
+            // Làm tròn 2 chữ số thập phân để tránh lỗi precision của JS
+            return Math.round(num * 100) / 100;
+        };
+
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
             const unitParam = urlParams.get('unit');
@@ -724,7 +736,6 @@
                                 let tmpPs = JSON.parse(pSnap.data().data);
                                 if (Array.isArray(tmpPs) && tmpPs.length > 0) {
                                     tmpPs.sort((a,b)=>a.startWeek - b.startWeek);
-                                    tmpPs.forEach((p, i) => p.name = "Đợt " + (i + 1));
                                     pIdForLogin = tmpPs[tmpPs.length-1].id;
                                 }
                             }
@@ -774,7 +785,6 @@
                     dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
                 }
                 dbPeriods.sort((a,b)=>a.startWeek - b.startWeek);
-                dbPeriods.forEach((p, i) => p.name = "Đợt " + (i + 1));
                 currentPeriodId = dbPeriods[dbPeriods.length-1].id;
                 updatePeriodDropdown();
 
@@ -802,7 +812,7 @@
         window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName) {
             if (cb.checked && otherTeacherId) {
                 cb.checked = false; 
-                window.showConfirm("Xác nhận chuyển lớp", `Lớp ${tenLop} đang được phân cho GV ${otherTeacherName}.\nBạn có muốn chuyển lớp này sang cho GV hiện tại và hủy của GV cũ không?`, () => {
+                window.showConfirm("Xác nhận giành lớp", `Lớp ${tenLop} đang được phân cho GV ${otherTeacherName}.\nBạn có muốn chuyển lớp này sang cho GV hiện tại và hủy của GV cũ không?`, () => {
                     cb.checked = true;
                     let noteContainer = cb.closest('.class-item').querySelector('.note-container');
                     if (noteContainer) noteContainer.innerHTML = `<span class="class-note" style="color:var(--warning-hover);">(Sẽ lấy từ ${otherTeacherName})</span>`;
@@ -1662,8 +1672,9 @@
                 let maGv = teacher[0];
                 let tenGv = teacher[2];
                 let tcm = teacher[3];
-                let tietChuan = parseInt(teacher[5]) || 17;
-                let kiemNhiem = parseInt(teacher[6]) || 0;
+                let tietChuan = window.parseFloatSafe(teacher[5]);
+                if(tietChuan === 0) tietChuan = 17;
+                let kiemNhiem = window.parseFloatSafe(teacher[6]);
                 
                 let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
                 let tongTietDay = 0;
@@ -1689,15 +1700,15 @@
                     resultStrings.push(`<span style="display:inline-block; margin-bottom:4px;"><b>${mon}:</b> ${groupedByMon[mon].join(', ')}</span>`);
                 }
 
-                let tongTiet = tongTietDay + kiemNhiem;
+                let tongTiet = window.formatNum(tongTietDay + kiemNhiem);
                 let textPhanCong = resultStrings.length > 0 ? resultStrings.join("<br>") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
                 
-                let thuaThieu = tongTiet - tietChuan;
+                let thuaThieu = window.formatNum(tongTiet - tietChuan);
                 let thText = thuaThieu > 0 ? `+${thuaThieu}` : thuaThieu;
                 let thColor = thuaThieu > 0 ? "var(--warning)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
 
-                let tongCaaDot = tongTiet * duration;
-                let thuaThieuCaDot = thuaThieu * duration;
+                let tongCaaDot = window.formatNum(tongTiet * duration);
+                let thuaThieuCaDot = window.formatNum(thuaThieu * duration);
                 let thCaDotText = thuaThieuCaDot > 0 ? `+${thuaThieuCaDot}` : thuaThieuCaDot;
                 let thCaDotColor = thuaThieuCaDot > 0 ? "var(--warning)" : (thuaThieuCaDot < 0 ? "var(--danger)" : "var(--success)");
 
@@ -1730,8 +1741,9 @@
                 let maGv = teacher[0];
                 let tenGv = teacher[2];
                 let tcm = teacher[3];
-                let tietChuan = parseInt(teacher[5]) || 17;
-                let kiemNhiem = parseInt(teacher[6]) || 0;
+                let tietChuan = window.parseFloatSafe(teacher[5]);
+                if(tietChuan === 0) tietChuan = 17;
+                let kiemNhiem = window.parseFloatSafe(teacher[6]);
                 
                 let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
                 let tongTietDay = 0;
@@ -1753,10 +1765,10 @@
                     resultStrings.push(`${mon}: ${groupedByMon[mon].join(', ')}`);
                 }
 
-                let tongTiet = tongTietDay + kiemNhiem;
-                let thuaThieu = tongTiet - tietChuan;
-                let tongCaaDot = tongTiet * duration;
-                let thuaThieuCaDot = thuaThieu * duration;
+                let tongTiet = window.formatNum(tongTietDay + kiemNhiem);
+                let thuaThieu = window.formatNum(tongTiet - tietChuan);
+                let tongCaaDot = window.formatNum(tongTiet * duration);
+                let thuaThieuCaDot = window.formatNum(thuaThieu * duration);
                 let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
                 
                 wsData.push([tcm, maGv, tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
@@ -2058,8 +2070,9 @@
             let tietChuan = 17;
             let t = dbTeachers.find(x => x && x[0] === maGv);
             if(t) {
-                tietChuan = parseInt(t[5]) || 17;
-                kiemNhiem = parseInt(t[6]) || 0;
+                tietChuan = window.parseFloatSafe(t[5]);
+                if(tietChuan === 0) tietChuan = 17;
+                kiemNhiem = window.parseFloatSafe(t[6]);
             }
             
             let tongTietDay = 0;
@@ -2090,8 +2103,8 @@
                 });
             }
 
-            let tong = tongTietDay + kiemNhiem;
-            let thuaThieu = tong - tietChuan;
+            let tong = window.formatNum(tongTietDay + kiemNhiem);
+            let thuaThieu = window.formatNum(tong - tietChuan);
             let thText = thuaThieu > 0 ? `(Thừa ${thuaThieu})` : (thuaThieu < 0 ? `(Thiếu ${Math.abs(thuaThieu)})` : `(Đủ tiết)`);
             let thColor = thuaThieu > 0 ? "var(--warning-hover)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
 
@@ -2178,8 +2191,9 @@
                     hasData = true;
                     let maGv = dbTeachers[i][0];
                     let tenGv = dbTeachers[i][2];
-                    let tietChuan = parseInt(dbTeachers[i][5]) || 17;
-                    let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
+                    let tietChuan = window.parseFloatSafe(dbTeachers[i][5]);
+                    if(tietChuan === 0) tietChuan = 17;
+                    let kiemNhiem = window.parseFloatSafe(dbTeachers[i][6]);
                     
                     let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
                     let tongTietDay = 0;
@@ -2205,15 +2219,15 @@
                         resultStrings.push(`<span style="display:inline-block; margin-bottom:4px;"><b>${mon}:</b> ${groupedByMon[mon].join(', ')}</span>`);
                     }
 
-                    let tongTiet = tongTietDay + kiemNhiem;
+                    let tongTiet = window.formatNum(tongTietDay + kiemNhiem);
                     let textPhanCong = resultStrings.length > 0 ? resultStrings.join("<br>") : "<i style='color:var(--text-muted);'>Chưa phân công</i>";
 
-                    let thuaThieu = tongTiet - tietChuan;
+                    let thuaThieu = window.formatNum(tongTiet - tietChuan);
                     let thText = thuaThieu > 0 ? `+${thuaThieu}` : thuaThieu;
                     let thColor = thuaThieu > 0 ? "var(--warning)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
 
-                    let tongCaaDot = tongTiet * duration;
-                    let thuaThieuCaDot = thuaThieu * duration;
+                    let tongCaaDot = window.formatNum(tongTiet * duration);
+                    let thuaThieuCaDot = window.formatNum(thuaThieu * duration);
                     let thCaDotText = thuaThieuCaDot > 0 ? `+${thuaThieuCaDot}` : thuaThieuCaDot;
                     let thCaDotColor = thuaThieuCaDot > 0 ? "var(--warning)" : (thuaThieuCaDot < 0 ? "var(--danger)" : "var(--success)");
 
@@ -2243,8 +2257,9 @@
                 if(dbTeachers[i] && dbTeachers[i][3] === currentUser.tcm) {
                     let maGv = dbTeachers[i][0];
                     let tenGv = dbTeachers[i][2];
-                    let tietChuan = parseInt(dbTeachers[i][5]) || 17;
-                    let kiemNhiem = parseInt(dbTeachers[i][6]) || 0;
+                    let tietChuan = window.parseFloatSafe(dbTeachers[i][5]);
+                    if(tietChuan === 0) tietChuan = 17;
+                    let kiemNhiem = window.parseFloatSafe(dbTeachers[i][6]);
                     
                     let teacherAssignments = dbAssignments.filter(a => a.maGv === maGv);
                     let tongTietDay = 0;
@@ -2266,10 +2281,10 @@
                         resultStrings.push(`${mon}: ${groupedByMon[mon].join(', ')}`);
                     }
 
-                    let tongTiet = tongTietDay + kiemNhiem;
-                    let thuaThieu = tongTiet - tietChuan;
-                    let tongCaaDot = tongTiet * duration;
-                    let thuaThieuCaDot = thuaThieu * duration;
+                    let tongTiet = window.formatNum(tongTietDay + kiemNhiem);
+                    let thuaThieu = window.formatNum(tongTiet - tietChuan);
+                    let tongCaaDot = window.formatNum(tongTiet * duration);
+                    let thuaThieuCaDot = window.formatNum(thuaThieu * duration);
                     let textPhanCong = resultStrings.length > 0 ? resultStrings.join("\n") : "Chưa phân công";
 
                     wsData.push([maGv, tenGv, textPhanCong, tietChuan, kiemNhiem, tongTiet, thuaThieu, tongCaaDot, thuaThieuCaDot]);
@@ -2321,8 +2336,9 @@
                     let maGv = gv[0];
                     let ten = gv[2];
                     let tcm = gv[3];
-                    let tietChuan = parseInt(gv[5]) || 17;
-                    let kiemNhiem = parseInt(gv[6]) || 0;
+                    let tietChuan = window.parseFloatSafe(gv[5]);
+                    if(tietChuan === 0) tietChuan = 17;
+                    let kiemNhiem = window.parseFloatSafe(gv[6]);
                     
                     if((currentUser.role === 'ttcm' || currentUser.role === 'gv') && tcm !== currentUser.tcm) continue;
                     
@@ -2355,8 +2371,8 @@
                     
                     arr.forEach(d => {
                         hasData = true;
-                        let tongThucTe = d.tongDay + d.tongKN;
-                        let diff = tongThucTe - d.tongChuan;
+                        let tongThucTe = window.formatNum(d.tongDay + d.tongKN);
+                        let diff = window.formatNum(tongThucTe - d.tongChuan);
                         let thColor = diff > 0 ? "var(--warning)" : (diff < 0 ? "var(--danger)" : "var(--success)");
                         let thText = diff > 0 ? `+${diff}` : diff;
                         
@@ -2364,9 +2380,9 @@
                             <tr>
                                 <td style="font-weight:700; color:var(--primary);">${d.tcm}</td>
                                 <td><div style="font-weight:700; color:var(--dark);">${d.ten}</div><div style="font-size:12px;color:var(--text-muted); margin-top:2px;">${d.maGv}</div></td>
-                                <td style="text-align:center; font-weight:500;">${d.tongChuan}</td>
-                                <td style="text-align:center; font-weight:500;">${d.tongDay}</td>
-                                <td style="text-align:center; font-weight:500;">${d.tongKN}</td>
+                                <td style="text-align:center; font-weight:500;">${window.formatNum(d.tongChuan)}</td>
+                                <td style="text-align:center; font-weight:500;">${window.formatNum(d.tongDay)}</td>
+                                <td style="text-align:center; font-weight:500;">${window.formatNum(d.tongKN)}</td>
                                 <td style="text-align:center; font-weight:700; color:var(--primary); font-size:16px;">${tongThucTe}</td>
                                 <td style="text-align:center; font-weight:700; color:${thColor}; font-size:15px;">${thText}</td>
                             </tr>
@@ -2416,8 +2432,9 @@
                     let maGv = gv[0];
                     let ten = gv[2];
                     let tcm = gv[3];
-                    let tietChuan = parseInt(gv[5]) || 17;
-                    let kiemNhiem = parseInt(gv[6]) || 0;
+                    let tietChuan = window.parseFloatSafe(gv[5]);
+                    if(tietChuan === 0) tietChuan = 17;
+                    let kiemNhiem = window.parseFloatSafe(gv[6]);
                     
                     if((currentUser.role === 'ttcm' || currentUser.role === 'gv') && tcm !== currentUser.tcm) continue;
                     
@@ -2445,9 +2462,9 @@
             let wsData = [["Tổ CM", "Mã GV", "Tên giáo viên", "Tổng Tiết Chuẩn", "Tổng Tiết Dạy", "Tổng Kiêm Nhiệm", "Tổng Thực Tế", "Thừa/Thiếu (Cả năm)"]];
             
             arr.forEach(d => {
-                let tongThucTe = d.tongDay + d.tongKN;
-                let diff = tongThucTe - d.tongChuan;
-                wsData.push([d.tcm, d.maGv, d.ten, d.tongChuan, d.tongDay, d.tongKN, tongThucTe, diff]);
+                let tongThucTe = window.formatNum(d.tongDay + d.tongKN);
+                let diff = window.formatNum(tongThucTe - d.tongChuan);
+                wsData.push([d.tcm, d.maGv, d.ten, window.formatNum(d.tongChuan), window.formatNum(d.tongDay), window.formatNum(d.tongKN), tongThucTe, diff]);
             });
 
             let ws = XLSX.utils.aoa_to_sheet(wsData);
