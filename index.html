@@ -92,7 +92,7 @@
 
         .tab-content { display: none; background: var(--surface); padding: 30px; border-radius: var(--radius); box-shadow: var(--shadow-sm); border: 1px solid var(--border); animation: fadeIn 0.3s ease-out; }
         .tab-content.active { display: block; }
-        .action-bar { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; }
+        .action-bar { margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
 
         /* Bảng dữ liệu chuyên nghiệp */
         .table-container { width: 100%; overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-sm); max-height: calc(100vh - 280px); }
@@ -106,10 +106,19 @@
         .edit-input, .edit-select { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid var(--primary); border-radius: 6px; font-family: inherit; font-size: 14px; color: var(--text-main); background-color: #ffffff; outline: none; box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1); transition: all 0.2s; }
         .edit-input:focus, .edit-select:focus { border-color: var(--primary-hover); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.25); }
 
-        #table-admin-matrix th { background-color: var(--primary-light); color: var(--primary-hover); text-align: center; }
-        #table-admin-matrix td { border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; }
+        #table-admin-matrix th, #table-kiemnhiem th { background-color: var(--primary-light); color: var(--primary-hover); text-align: center; }
+        #table-admin-matrix td, #table-kiemnhiem td { border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; }
+
+        /* Bảng Kiêm Nhiệm Riêng (Thu hẹp cột số) */
+        #table-kiemnhiem th, #table-kiemnhiem td { padding: 10px 8px; }
+        .kn-input { width: 55px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; text-align: center; outline: none; transition: 0.2s; font-size: 14px;}
+        .kn-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
+        .kn-col-header { display: flex; justify-content: center; align-items: center; gap: 6px; white-space: nowrap; }
+        .kn-del-col { cursor: pointer; color: var(--danger); font-size: 16px; opacity: 0.5; transition: 0.2s; }
+        .kn-del-col:hover { opacity: 1; transform: scale(1.1); }
 
         body.period-locked .lock-hidden { display: none !important; }
+        body.period-locked .kn-input { background-color: #e2e8f0; pointer-events: none; border-color: transparent; }
 
         /* Overlay Loading */
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); justify-content: center; align-items: center; flex-direction: column; z-index: 9999; color: var(--primary); font-weight: 600; font-size: 16px; }
@@ -206,6 +215,7 @@
 
                 <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
@@ -260,6 +270,33 @@
                         <div class="table-container">
                             <table id="table-periods">
                                 <thead><tr><th>Tên đợt</th><th style="text-align:center;">Bắt đầu từ (Tuần)</th><th style="text-align:center;">Kéo dài dự kiến</th><th style="text-align:center;">Trạng thái</th><th style="text-align:center;">Thao tác</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- TAB KIÊM NHIỆM (ADMIN MỚI) -->
+                    <div id="tab-kiemnhiem" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+                            <h3 style="margin:0; font-size:20px;">Quản lý Tiết Kiêm Nhiệm</h3>
+                            <div class="period-picker-container">
+                                <span>Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">
+                            Khai báo các đầu việc kiêm nhiệm cho giáo viên trong Đợt hiện tại. Sau khi chốt bảng, hãy bấm <b>Đồng bộ</b> để hệ thống tự động đẩy số liệu Tổng vào danh sách Giáo viên và các báo cáo thống kê.
+                        </p>
+                        <div class="action-bar">
+                            <button class="btn btn-info lock-hidden" onclick="document.getElementById('add-kn-col-modal').style.display='flex'">+ Thêm Nhiệm vụ</button>
+                            <button class="btn btn-outline lock-hidden" onclick="showAddKnRowModal()">+ Thêm Giáo viên</button>
+                            <button class="btn btn-success lock-hidden" onclick="saveKiemNhiemTab()">💾 Lưu Bảng</button>
+                            <button class="btn btn-outline" onclick="exportKiemNhiemToExcel()">📥 Xuất Excel</button>
+                            <button class="btn btn-warning lock-hidden" onclick="syncKiemNhiemToTeachers()" style="margin-left:auto;">🔄 Đồng bộ vào Hệ thống</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="table-kiemnhiem">
+                                <thead></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -488,7 +525,7 @@
     <div id="add-period-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Khởi tạo Đợt Mới</h3>
-            <p style="font-size:13px; color:var(--warning-hover); background:var(--warning-light); padding:10px; border-radius:6px; margin-bottom:20px;">Toàn bộ dữ liệu Lớp, Giáo viên, Phân công sẽ được <b>sao chép tự động</b> từ đợt hiện tại sang đợt mới. Tên đợt sẽ được <b>đánh số tự động</b> theo thứ tự tuần.</p>
+            <p style="font-size:13px; color:var(--warning-hover); background:var(--warning-light); padding:10px; border-radius:6px; margin-bottom:20px;">Toàn bộ dữ liệu Lớp, Giáo viên, Kiêm nhiệm, Phân công sẽ được <b>sao chép tự động</b> từ đợt hiện tại sang đợt mới.</p>
             
             <div style="text-align: left; margin-bottom: 25px;">
                 <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Áp dụng từ tuần thứ (1 - 35)</label>
@@ -498,6 +535,37 @@
             <div style="display:flex; gap:12px;">
                 <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('add-period-modal').style.display='none'">Hủy</button>
                 <button class="btn btn-primary" style="flex:1;" onclick="addPeriod()">Tạo đợt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm Cột Kiêm Nhiệm -->
+    <div id="add-kn-col-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:var(--dark);">Thêm Nhiệm vụ mới</h3>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Tên Nhiệm vụ (VD: Tổ trưởng, Bí thư...)</label>
+                <input type="text" id="new-kn-col-name" style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid var(--border); border-radius:8px; margin-top:8px; outline:none;">
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('add-kn-col-modal').style.display='none'">Hủy</button>
+                <button class="btn btn-info" style="flex:1;" onclick="submitAddKiemNhiemColumn()">Thêm cột</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Thêm GV vào Kiêm Nhiệm -->
+    <div id="add-kn-row-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 style="margin-top:0; color:var(--dark);">Thêm Giáo viên hưởng Kiêm nhiệm</h3>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Chọn Giáo viên từ danh sách</label>
+                <input list="kn-teachers-list" id="kn-gv-select-input" placeholder="Gõ tên hoặc mã GV..." style="width:100%; box-sizing:border-box; padding:10px 14px; border:1px solid var(--border); border-radius:8px; margin-top:8px; outline:none;">
+                <datalist id="kn-teachers-list"></datalist>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button class="btn btn-outline" style="flex:1;" onclick="document.getElementById('add-kn-row-modal').style.display='none'">Hủy</button>
+                <button class="btn btn-primary" style="flex:1;" onclick="submitAddKiemNhiemRow()">Thêm dòng</button>
             </div>
         </div>
     </div>
@@ -528,12 +596,13 @@
         let dbSubjects = [];
         let dbCombos = [];
         let dbAssignments = []; 
+        let dbKiemNhiem = []; 
+        
         let currentUser = null; 
         let currentTabId = '';
         
         window.workbook = null; 
 
-        // Helper functions for parsing numbers with comma decimals
         window.parseFloatSafe = function(val) {
             if (val === undefined || val === null || val === "") return 0;
             let parsed = parseFloat(String(val).replace(',', '.'));
@@ -541,7 +610,6 @@
         };
 
         window.formatNum = function(num) {
-            // Làm tròn 2 chữ số thập phân để tránh lỗi precision của JS
             return Math.round(num * 100) / 100;
         };
 
@@ -610,7 +678,6 @@
             }, 3000);
         };
 
-        // --- Custom Confirm Modal ---
         window.showConfirm = function(title, message, onConfirm) {
             const modal = document.getElementById('confirm-modal');
             if(!modal) return;
@@ -632,7 +699,6 @@
             const modal = document.getElementById('confirm-modal');
             if(modal) modal.style.display = 'none';
         };
-        // ----------------------------
         
         let selectedLoginRole = null; 
         window.selectRole = function(role) {
@@ -828,6 +894,18 @@
             }
         };
 
+        window.exportKiemNhiemToExcel = function() {
+            if(!dbKiemNhiem || dbKiemNhiem.length <= 1) {
+                showToast("Chưa có dữ liệu để xuất!", "warning");
+                return;
+            }
+            let wb = XLSX.utils.book_new();
+            let ws = XLSX.utils.aoa_to_sheet(dbKiemNhiem);
+            XLSX.utils.book_append_sheet(wb, ws, "Kiem_Nhiem");
+            XLSX.writeFile(wb, `Kiem_Nhiem_Dot_${currentPeriodId}.xlsx`);
+            showToast("Xuất file Excel thành công!");
+        };
+
         window.handleExcelUpload = function(e) {
             const file = e.target.files[0];
             if (!file) {
@@ -920,18 +998,25 @@
         };
 
         async function reloadMemoryForCurrentPeriod() {
-            const [snapLop, snapMon, snapToHop, snapPc, snapGv] = await Promise.all([
+            const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn] = await Promise.all([
                 getDoc(doc(db, getCollectionName(), getDocName("tab-lop", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), "tab-monhoc")),
                 getDoc(doc(db, getCollectionName(), "tab-tohop")),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)))
+                getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId))),
+                getDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId)))
             ]);
             dbClasses = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
             dbSubjects = snapMon.exists() ? JSON.parse(snapMon.data().excelData) : [];
             dbCombos = snapToHop.exists() ? JSON.parse(snapToHop.data().excelData) : [];
             dbAssignments = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
             dbTeachers = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
+            
+            if (snapKn.exists()) {
+                dbKiemNhiem = JSON.parse(snapKn.data().excelData);
+            } else {
+                dbKiemNhiem = [["Mã GV", "Tên giáo viên", "Tổng"]];
+            }
         }
 
         // --- HÀM QUẢN LÝ ĐỢT ---
@@ -1020,6 +1105,7 @@
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", newId)), { excelData: JSON.stringify(dbTeachers) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", newId)), { excelData: JSON.stringify(dbKiemNhiem) });
                 
                 currentPeriodId = newId;
                 updatePeriodDropdown();
@@ -1208,6 +1294,8 @@
                     renderPeriodsTable();
                 } else if(tabId === 'tab-tonghop-canam') {
                     renderTongHopCaNam();
+                } else if (tabId === 'tab-kiemnhiem') {
+                    renderKiemNhiemTable();
                 } else {
                     await loadAdminTabData(tabId);
                 }
@@ -1217,6 +1305,249 @@
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
             }
         };
+
+        // --- HÀM KIÊM NHIỆM (MỚI) ---
+        window.renderKiemNhiemTable = function() {
+            const tbl = document.getElementById("table-kiemnhiem");
+            if(!tbl) return;
+            const thead = tbl.querySelector("thead");
+            const tbody = tbl.querySelector("tbody");
+            
+            if(!dbKiemNhiem || dbKiemNhiem.length === 0) {
+                dbKiemNhiem = [["Mã GV", "Tên giáo viên", "Tổng"]];
+            }
+            
+            let headers = dbKiemNhiem[0];
+            let theadHtml = "<tr>";
+            for(let i=0; i<headers.length; i++) {
+                if (i === 0) {
+                    theadHtml += `<th style="width:1%; white-space:nowrap; text-align:center;">${headers[i]}</th>`;
+                } else if (i === 1) {
+                    theadHtml += `<th style="text-align:left; min-width:180px; width:100%;">${headers[i]}</th>`;
+                } else if (i >= 2 && i < headers.length - 1) {
+                    theadHtml += `<th style="width:1%; white-space:nowrap;"><div class="kn-col-header">${headers[i]} <span class="kn-del-col lock-hidden" onclick="deleteKiemNhiemCol(${i})" title="Xóa nhiệm vụ này">✖</span></div></th>`;
+                } else {
+                    theadHtml += `<th style="width:1%; white-space:nowrap; text-align:center;">${headers[i]}</th>`;
+                }
+            }
+            theadHtml += `<th style="width:1%; white-space:nowrap; text-align:center;" class="lock-hidden">Xóa</th></tr>`;
+            thead.innerHTML = theadHtml;
+            
+            tbody.innerHTML = "";
+            if (dbKiemNhiem.length <= 1) {
+                tbody.innerHTML = `<tr><td colspan="${headers.length + 1}" style="text-align:center; padding:20px; color:var(--text-muted);">Chưa có dữ liệu</td></tr>`;
+                return;
+            }
+            
+            for(let i=1; i<dbKiemNhiem.length; i++) {
+                let row = dbKiemNhiem[i];
+                let trHtml = `<tr>
+                    <td style="font-weight:600; color:var(--primary); text-align:center;">${row[0]}</td>
+                    <td style="font-weight:600; color:var(--dark); text-align:left;">${row[1]}</td>`;
+                
+                for(let j=2; j<headers.length-1; j++) {
+                    let val = row[j] || 0;
+                    trHtml += `<td style="text-align:center;"><input type="number" step="0.5" class="kn-input" value="${val}" onchange="updateKiemNhiemRowTotal(${i}, this.value, ${j})"></td>`;
+                }
+                
+                let sum = window.formatNum(window.parseFloatSafe(row[headers.length-1]));
+                trHtml += `<td style="font-weight:700; color:var(--primary); font-size:16px; text-align:center; background:#f8fafc;" id="kn-sum-${i}">${sum}</td>`;
+                trHtml += `<td class="lock-hidden" style="text-align:center;"><button class="btn-small btn-del" onclick="deleteKiemNhiemRow(${i})">Xóa</button></td></tr>`;
+                tbody.innerHTML += trHtml;
+            }
+        };
+
+        window.submitAddKiemNhiemColumn = function() {
+            let colName = document.getElementById("new-kn-col-name").value.trim();
+            if(!colName) { showToast("Vui lòng nhập tên nhiệm vụ!", "warning"); return; }
+            
+            let headers = dbKiemNhiem[0];
+            if(headers.includes(colName)) { showToast("Nhiệm vụ này đã tồn tại!", "error"); return; }
+            
+            headers.splice(headers.length - 1, 0, colName);
+            for(let i=1; i<dbKiemNhiem.length; i++) {
+                dbKiemNhiem[i].splice(dbKiemNhiem[i].length - 1, 0, 0);
+            }
+            
+            document.getElementById('add-kn-col-modal').style.display = 'none';
+            document.getElementById("new-kn-col-name").value = "";
+            renderKiemNhiemTable();
+        };
+
+        window.deleteKiemNhiemCol = function(colIndex) {
+            window.showConfirm("Xóa Nhiệm vụ", `Bạn có chắc chắn muốn xóa nhiệm vụ "${dbKiemNhiem[0][colIndex]}"?\nCác dữ liệu tiết liên quan đến nhiệm vụ này sẽ bị mất.`, () => {
+                for(let i=0; i<dbKiemNhiem.length; i++) {
+                    dbKiemNhiem[i].splice(colIndex, 1);
+                }
+                for(let i=1; i<dbKiemNhiem.length; i++) {
+                    let sum = 0;
+                    for(let j=2; j<dbKiemNhiem[0].length-1; j++) {
+                        sum += window.parseFloatSafe(dbKiemNhiem[i][j]);
+                    }
+                    dbKiemNhiem[i][dbKiemNhiem[0].length-1] = window.formatNum(sum);
+                }
+                renderKiemNhiemTable();
+            });
+        };
+
+        window.showAddKnRowModal = function() {
+            const dl = document.getElementById("kn-teachers-list");
+            dl.innerHTML = "";
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i] && dbTeachers[i][0]) {
+                    let option = document.createElement('option');
+                    option.value = dbTeachers[i][0];
+                    option.text = `${dbTeachers[i][2]} - ${dbTeachers[i][3]}`;
+                    dl.appendChild(option);
+                }
+            }
+            document.getElementById("kn-gv-select-input").value = "";
+            document.getElementById('add-kn-row-modal').style.display = 'flex';
+        };
+
+        window.submitAddKiemNhiemRow = function() {
+            let inputVal = document.getElementById("kn-gv-select-input").value.trim();
+            if(!inputVal) return;
+            
+            let t = dbTeachers.find(x => x && x[0] === inputVal);
+            if(!t) { showToast("Không tìm thấy giáo viên mang mã này!", "error"); return; }
+            
+            let exists = dbKiemNhiem.find(x => x[0] === inputVal);
+            if(exists) { showToast("Giáo viên này đã có trong danh sách kiêm nhiệm!", "warning"); return; }
+            
+            let newRow = [t[0], t[2]];
+            let headersLength = dbKiemNhiem[0].length;
+            for(let i=2; i<headersLength; i++) newRow.push(0);
+            
+            dbKiemNhiem.push(newRow);
+            document.getElementById('add-kn-row-modal').style.display = 'none';
+            renderKiemNhiemTable();
+        };
+
+        window.deleteKiemNhiemRow = function(rowIndex) {
+            window.showConfirm("Xóa Giáo viên", "Bạn có chắc chắn muốn xóa giáo viên này khỏi danh sách kiêm nhiệm?", () => {
+                dbKiemNhiem.splice(rowIndex, 1);
+                renderKiemNhiemTable();
+            });
+        };
+
+        window.updateKiemNhiemRowTotal = function(rowIndex, newVal, colIndex) {
+            dbKiemNhiem[rowIndex][colIndex] = window.parseFloatSafe(newVal);
+            let sum = 0;
+            let headersLength = dbKiemNhiem[0].length;
+            for(let j=2; j<headersLength-1; j++) {
+                sum += window.parseFloatSafe(dbKiemNhiem[rowIndex][j]);
+            }
+            dbKiemNhiem[rowIndex][headersLength-1] = window.formatNum(sum);
+            const sumCell = document.getElementById(`kn-sum-${rowIndex}`);
+            if(sumCell) sumCell.innerText = window.formatNum(sum);
+        };
+
+        window.saveKiemNhiemTab = async function() {
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId)), { excelData: JSON.stringify(dbKiemNhiem) });
+                showToast("Đã lưu bảng Quản lý Kiêm nhiệm!");
+            } catch (e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
+        window.syncKiemNhiemToTeachers = async function() {
+            window.showConfirm("Đồng bộ Hệ thống", "Hành động này sẽ chép tất cả số tiết ở cột TỔNG vào mục Tiết Kiêm Nhiệm của bảng Quản lý Giáo viên trong Đợt hiện tại. Các số liệu Thống kê sẽ được cập nhật.\nBạn chắc chắn chứ?", async () => {
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay) overlay.style.display = 'flex';
+                try {
+                    for(let i=1; i<dbTeachers.length; i++) {
+                        if(dbTeachers[i]) dbTeachers[i][6] = 0;
+                    }
+                    
+                    let headersLength = dbKiemNhiem[0].length;
+                    for(let i=1; i<dbKiemNhiem.length; i++) {
+                        let row = dbKiemNhiem[i];
+                        let maGv = row[0];
+                        let totalKN = window.parseFloatSafe(row[headersLength-1]);
+                        
+                        let tIndex = dbTeachers.findIndex(x => x && x[0] === maGv);
+                        if(tIndex > 0) {
+                            dbTeachers[tIndex][6] = window.formatNum(totalKN);
+                        }
+                    }
+                    
+                    await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId)), { excelData: JSON.stringify(dbKiemNhiem) });
+                    await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId)), { excelData: JSON.stringify(dbTeachers) });
+                    
+                    showToast("Đã đồng bộ số liệu thành công!");
+                } catch (e) { 
+                    showToast("Lỗi đồng bộ: " + e.message, "error"); 
+                }
+                if(overlay) overlay.style.display = 'none';
+            });
+        };
+        // -----------------------------
+
+        window.loadSheetToTab = async function() {
+            if (!window.workbook) return;
+            
+            window.showConfirm("Ghi đè Dữ liệu", "CẢNH BÁO: Dữ liệu hiện tại của bảng này sẽ bị XÓA SẠCH và thay thế bằng file Excel. Bạn chắc chắn chứ?", async () => {
+                const sheetSelect = document.getElementById('sheet-select');
+                if(!sheetSelect) return;
+                const sheetName = sheetSelect.value;
+                let jsonData = XLSX.utils.sheet_to_json(window.workbook.Sheets[sheetName], {header: 1, defval: ""});
+                if (jsonData.length <= 1) {
+                    showToast("Sheet trống hoặc không hợp lệ!", "error");
+                    return;
+                }
+
+                if (currentTabId === 'tab-giaovien') {
+                    jsonData = migrateTeachersDb(jsonData);
+                } else if (currentTabId === 'tab-kiemnhiem') {
+                    let headers = jsonData[0];
+                    if(headers[0] !== "Mã GV" || headers[1] !== "Tên giáo viên") {
+                        showToast("File Excel Kiêm nhiệm phải có 2 cột đầu là 'Mã GV' và 'Tên giáo viên'!", "error");
+                        return;
+                    }
+                    if(headers[headers.length-1] !== "Tổng") {
+                        headers.push("Tổng");
+                        for(let i=1; i<jsonData.length; i++) jsonData[i].push(0);
+                    }
+                    for(let i=1; i<jsonData.length; i++) {
+                        let sum = 0;
+                        for(let j=2; j<headers.length-1; j++) {
+                            sum += window.parseFloatSafe(jsonData[i][j]);
+                        }
+                        jsonData[i][headers.length-1] = window.formatNum(sum);
+                    }
+                }
+
+                const cleanData = JSON.parse(JSON.stringify(jsonData));
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay) overlay.style.display = 'flex';
+                try {
+                    await setDoc(doc(db, getCollectionName(), getDocName(currentTabId, currentPeriodId)), { excelData: JSON.stringify(cleanData) });
+                    syncMemoryState(currentTabId, cleanData);
+                    if (currentTabId === 'tab-kiemnhiem') {
+                        renderKiemNhiemTable();
+                    } else {
+                        renderAdminTable(currentTabId, cleanData);
+                    }
+                    showToast("Đã cập nhật dữ liệu từ Excel!");
+                } catch (e) { 
+                    showToast("Lỗi Firebase: " + e.message, "error"); 
+                }
+                if(overlay) overlay.style.display = 'none';
+            });
+        };
+
+        function syncMemoryState(tabId, data) {
+            if(tabId === 'tab-giaovien') dbTeachers = data;
+            if(tabId === 'tab-lop') dbClasses = data;
+            if(tabId === 'tab-monhoc') dbSubjects = data;
+            if(tabId === 'tab-tohop') dbCombos = data;
+            if(tabId === 'tab-kiemnhiem') dbKiemNhiem = data;
+        }
 
         // --- HÀM TẢI MẪU EXCEL ---
         window.downloadExcelTemplate = function() {
@@ -1246,6 +1577,13 @@
                 ["TH1", "Toán, Vật lý, Hóa học, Sinh hoạt", "Toán"]
             ]);
             XLSX.utils.book_append_sheet(wb, ws4, "Thông tin TH môn");
+            
+            let ws5 = XLSX.utils.aoa_to_sheet([
+                ["Mã GV", "Tên giáo viên", "Tổ trưởng", "Bí thư", "Công đoàn", "Tổng"],
+                ["GV01", "Nguyễn Văn A", 3, 0, 0, 3],
+                ["GV02", "Trần Thị B", 0, 2.5, 0, 2.5]
+            ]);
+            XLSX.utils.book_append_sheet(wb, ws5, "Thông tin kiêm nhiệm");
 
             XLSX.writeFile(wb, "Mau_Du_Lieu_PCCM.xlsx");
             showToast("Đã tải file mẫu Excel!");
@@ -1404,38 +1742,6 @@
             } catch (e) { console.error(e); }
             if(overlay) overlay.style.display = 'none';
         }
-
-        window.loadSheetToTab = async function() {
-            if (!window.workbook) return;
-            
-            window.showConfirm("Ghi đè Dữ liệu", "CẢNH BÁO: Dữ liệu hiện tại của bảng này sẽ bị XÓA SẠCH và thay thế bằng file Excel. Bạn chắc chắn chứ?", async () => {
-                const sheetSelect = document.getElementById('sheet-select');
-                if(!sheetSelect) return;
-                const sheetName = sheetSelect.value;
-                let jsonData = XLSX.utils.sheet_to_json(window.workbook.Sheets[sheetName], {header: 1, defval: ""});
-                if (jsonData.length <= 1) {
-                    showToast("Sheet trống hoặc không hợp lệ!", "error");
-                    return;
-                }
-
-                if (currentTabId === 'tab-giaovien') {
-                    jsonData = migrateTeachersDb(jsonData);
-                }
-
-                const cleanData = JSON.parse(JSON.stringify(jsonData));
-                const overlay = document.getElementById('loading-overlay');
-                if(overlay) overlay.style.display = 'flex';
-                try {
-                    await setDoc(doc(db, getCollectionName(), getDocName(currentTabId, currentPeriodId)), { excelData: JSON.stringify(cleanData) });
-                    syncMemoryState(currentTabId, cleanData);
-                    renderAdminTable(currentTabId, cleanData);
-                    showToast("Đã cập nhật dữ liệu từ Excel!");
-                } catch (e) { 
-                    showToast("Lỗi Firebase: " + e.message, "error"); 
-                }
-                if(overlay) overlay.style.display = 'none';
-            });
-        };
 
         window.addNewRow = function(tableId) {
             const tbl = document.getElementById(tableId);
@@ -1601,13 +1907,6 @@
             }
             if(overlay) overlay.style.display = 'none';
         };
-
-        function syncMemoryState(tabId, data) {
-            if(tabId === 'tab-giaovien') dbTeachers = data;
-            if(tabId === 'tab-lop') dbClasses = data;
-            if(tabId === 'tab-monhoc') dbSubjects = data;
-            if(tabId === 'tab-tohop') dbCombos = data;
-        }
 
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
