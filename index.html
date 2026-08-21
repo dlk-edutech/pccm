@@ -213,14 +213,14 @@
                 <!-- Master Admin Items -->
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
-                <!-- Admin Items -->
+                <!-- Admin Items (Reordered logically) -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-phancong')">⚙️ Điều chỉnh Phân công</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">🔗 Tổ hợp Môn</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-phancong')">⚙️ Điều chỉnh Phân công</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
                 
@@ -276,7 +276,7 @@
                         </div>
                     </div>
 
-                    <!-- TAB KIÊM NHIỆM (ADMIN MỚI) -->
+                    <!-- TAB KIÊM NHIỆM (ADMIN) -->
                     <div id="tab-kiemnhiem" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Quản lý Tiết Kiêm Nhiệm</h3>
@@ -2849,7 +2849,7 @@
                             groupedByMon[tenMonFull] = [];
                         }
                         
-                        let classText = hasCD ? `${a.lop} (${window.formatNum(classHours)})` : a.lop;
+                        let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
                         groupedByMon[tenMonFull].push(classText);
                     });
 
