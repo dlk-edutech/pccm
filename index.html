@@ -109,7 +109,7 @@
         #table-admin-matrix th, #table-kiemnhiem th { background-color: var(--primary-light); color: var(--primary-hover); text-align: center; }
         #table-admin-matrix td, #table-kiemnhiem td { border-left: 1px solid var(--border); border-right: 1px solid var(--border); text-align: center; }
 
-        /* Bảng Kiêm Nhiệm Riêng (Thu hẹp cột số) */
+        /* Bảng Kiêm Nhiệm Riêng */
         #table-kiemnhiem th, #table-kiemnhiem td { padding: 10px 8px; }
         .kn-input { width: 55px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; text-align: center; outline: none; transition: 0.2s; font-size: 14px;}
         .kn-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2); }
@@ -159,7 +159,7 @@
     <div id="toast-container"></div>
     <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
 
-    <!-- Modal Xác Nhận Chung (Custom Confirm) -->
+    <!-- Modal Xác Nhận Chung -->
     <div id="confirm-modal" class="modal-overlay" style="z-index: 10000;">
         <div class="modal-box">
             <h3 id="confirm-title" style="margin-top:0; color:var(--dark);">Xác nhận</h3>
@@ -216,6 +216,7 @@
                 <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
+                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-phancong')">⚙️ Điều chỉnh Phân công</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
@@ -299,6 +300,45 @@
                                 <thead></thead>
                                 <tbody></tbody>
                             </table>
+                        </div>
+                    </div>
+                    
+                    <!-- TAB ADMIN ĐIỀU CHỈNH PHÂN CÔNG -->
+                    <div id="tab-admin-phancong" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Điều chỉnh Phân công Toàn trường</h3>
+                            <div class="period-picker-container">
+                                <span>Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-top:5px; margin-bottom:20px;">Tính năng dành riêng cho Admin để can thiệp, giám sát và điều chỉnh phân công của bất kỳ tổ chuyên môn nào.</p>
+                        <div class="assign-container">
+                            <div class="assign-row">
+                                <label style="width: 100px; font-weight: 600;">Tổ CM:</label>
+                                <select id="admin-select-tcm" onchange="adminTcmChanged()"><option value="">-- Chọn Tổ CM --</option></select>
+                            </div>
+                            <div class="assign-row">
+                                <label style="width: 100px; font-weight: 600;">Giáo viên:</label>
+                                <select id="admin-select-gv" onchange="adminGvChanged()" disabled><option value="">-- Chọn Giáo viên --</option></select>
+                            </div>
+                            <div class="assign-row">
+                                <label style="width: 100px; font-weight: 600;">Môn dạy:</label>
+                                <select id="admin-select-mon" onchange="adminMonChanged()" disabled><option value="">-- Chọn Môn --</option></select>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <label style="font-weight: 700; display: block; margin-bottom: 15px; color: var(--dark);">Danh sách Lớp học (Tích chọn để phân công):</label>
+                                <div id="admin-classes-container" class="class-grid">
+                                    <span style="color: var(--text-muted); font-size: 14px;">Vui lòng chọn đầy đủ Tổ, Giáo viên và Môn dạy...</span>
+                                </div>
+                                <div id="admin-current-total" style="margin-top: 20px; font-size: 15px; font-weight: 600; color: var(--primary); display: none; background: var(--primary-light); padding: 15px 20px; border-radius: 8px; border: 1px dashed #a5b4fc; display:flex; justify-content:space-between; align-items:center;">
+                                    <div>Tiết chuẩn: <span id="admin-base-val">17</span> tiết/tuần</div>
+                                    <div style="font-size: 16px;">Dự kiến phân công: <span id="admin-total-val" style="font-size: 20px; font-weight:700;">0</span> tiết <span id="admin-diff-val" style="margin-left: 10px;"></span></div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;" class="admin-action lock-hidden">
+                                <button class="btn btn-warning" onclick="saveAdminPhanCong()" style="padding: 12px 25px; font-size:15px;">💾 Cập nhật Phân công</button>
+                            </div>
                         </div>
                     </div>
 
@@ -876,21 +916,24 @@
             }
         };
 
-        window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName) {
+        window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName, isAdmin = false) {
             if (cb.checked && otherTeacherId) {
                 cb.checked = false; 
                 window.showConfirm("Xác nhận chuyển lớp", `Lớp ${tenLop} đang được phân cho GV ${otherTeacherName}.\nBạn có muốn chuyển lớp này sang cho GV hiện tại và hủy của GV cũ không?`, () => {
                     cb.checked = true;
                     let noteContainer = cb.closest('.class-item').querySelector('.note-container');
                     if (noteContainer) noteContainer.innerHTML = `<span class="class-note" style="color:var(--warning-hover);">(Sẽ lấy từ ${otherTeacherName})</span>`;
-                    window.updateUnsavedTotal();
+                    if(isAdmin) window.updateAdminUnsavedTotal();
+                    else window.updateUnsavedTotal();
                 });
             } else if (!cb.checked && otherTeacherId) {
                 let noteContainer = cb.closest('.class-item').querySelector('.note-container');
                 if (noteContainer) noteContainer.innerHTML = `<span class="class-note">(Đã giao: ${otherTeacherName})</span>`;
-                window.updateUnsavedTotal();
+                if(isAdmin) window.updateAdminUnsavedTotal();
+                else window.updateUnsavedTotal();
             } else {
-                window.updateUnsavedTotal();
+                if(isAdmin) window.updateAdminUnsavedTotal();
+                else window.updateUnsavedTotal();
             }
         };
 
@@ -962,11 +1005,21 @@
             const selMon = document.getElementById('ttcm-select-mon');
             const inputs = document.querySelectorAll('#ttcm-classes-container input');
             
+            const adminSelTcm = document.getElementById('admin-select-tcm');
+            const adminSelGv = document.getElementById('admin-select-gv');
+            const adminSelMon = document.getElementById('admin-select-mon');
+            const adminInputs = document.querySelectorAll('#admin-classes-container input');
+            
             if (isLocked) {
                 document.body.classList.add('period-locked');
                 if(selGv) selGv.disabled = true;
                 if(selMon) selMon.disabled = true;
                 inputs.forEach(i => i.disabled = true);
+                
+                if(adminSelTcm) adminSelTcm.disabled = true;
+                if(adminSelGv) adminSelGv.disabled = true;
+                if(adminSelMon) adminSelMon.disabled = true;
+                adminInputs.forEach(i => i.disabled = true);
             } else {
                 document.body.classList.remove('period-locked');
                 if(selGv) selGv.disabled = false;
@@ -974,6 +1027,15 @@
                     selMon.disabled = false;
                 }
                 inputs.forEach(i => {
+                    if (i.parentElement && i.parentElement.style && !i.parentElement.style.opacity.includes('0.5')) {
+                        i.disabled = false;
+                    }
+                });
+                
+                if(adminSelTcm) adminSelTcm.disabled = false;
+                if (adminSelGv && adminSelTcm && adminSelTcm.value) adminSelGv.disabled = false;
+                if (adminSelMon && adminSelGv && adminSelGv.value) adminSelMon.disabled = false;
+                adminInputs.forEach(i => {
                     if (i.parentElement && i.parentElement.style && !i.parentElement.style.opacity.includes('0.5')) {
                         i.disabled = false;
                     }
@@ -1296,6 +1358,8 @@
                     renderTongHopCaNam();
                 } else if (tabId === 'tab-kiemnhiem') {
                     renderKiemNhiemTable();
+                } else if (tabId === 'tab-admin-phancong') {
+                    initAdminPhanCong();
                 } else {
                     await loadAdminTabData(tabId);
                 }
@@ -1305,6 +1369,276 @@
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
             }
         };
+
+        // --- HÀM ADMIN ĐIỀU CHỈNH PHÂN CÔNG (MỚI) ---
+        window.initAdminPhanCong = function() {
+            const selTcm = document.getElementById("admin-select-tcm");
+            if(!selTcm) return;
+            
+            let tcms = new Set();
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i] && dbTeachers[i][3]) {
+                    tcms.add(dbTeachers[i][3].trim());
+                }
+            }
+            
+            let currentVal = selTcm.value;
+            selTcm.innerHTML = '<option value="">-- Chọn Tổ CM --</option>';
+            Array.from(tcms).sort().forEach(tcm => {
+                selTcm.innerHTML += `<option value="${tcm}">${tcm}</option>`;
+            });
+            
+            if(currentVal && tcms.has(currentVal)) {
+                selTcm.value = currentVal;
+                adminTcmChanged();
+            } else {
+                document.getElementById("admin-select-gv").innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
+                document.getElementById("admin-select-gv").disabled = true;
+                document.getElementById("admin-select-mon").innerHTML = '<option value="">-- Chọn Môn --</option>';
+                document.getElementById("admin-select-mon").disabled = true;
+                document.getElementById("admin-classes-container").innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Tổ, Giáo viên và Môn dạy...</span>";
+                document.getElementById("admin-current-total").style.display = 'none';
+            }
+            
+            checkAndApplyLock();
+        };
+
+        window.adminTcmChanged = function() {
+            const tcm = document.getElementById("admin-select-tcm").value;
+            const selGv = document.getElementById("admin-select-gv");
+            const selMon = document.getElementById("admin-select-mon");
+            const container = document.getElementById("admin-classes-container");
+            const totalContainer = document.getElementById("admin-current-total");
+
+            selGv.innerHTML = '<option value="">-- Chọn Giáo viên --</option>';
+            selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
+            container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn Giáo viên và Môn dạy...</span>";
+            totalContainer.style.display = 'none';
+
+            if(!tcm) {
+                selGv.disabled = true;
+                selMon.disabled = true;
+                return;
+            }
+
+            selGv.disabled = false;
+            selMon.disabled = true;
+
+            for(let i=1; i<dbTeachers.length; i++) {
+                if(dbTeachers[i] && dbTeachers[i][3] === tcm) {
+                    selGv.innerHTML += `<option value="${dbTeachers[i][0]}">${dbTeachers[i][2]} (${dbTeachers[i][0]})</option>`;
+                }
+            }
+        };
+
+        window.adminGvChanged = function() {
+            const maGv = document.getElementById("admin-select-gv").value;
+            const selMon = document.getElementById("admin-select-mon");
+            const container = document.getElementById("admin-classes-container");
+            const totalContainer = document.getElementById("admin-current-total");
+
+            selMon.innerHTML = '<option value="">-- Chọn Môn --</option>';
+            container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn Môn dạy...</span>";
+            totalContainer.style.display = 'none';
+
+            if(!maGv) {
+                selMon.disabled = true;
+                return;
+            }
+
+            selMon.disabled = false;
+            let teacher = dbTeachers.find(t => t && t[0] === maGv);
+            if(teacher) {
+                if(teacher[7]) selMon.innerHTML += `<option value="${teacher[7]}">${teacher[7]}</option>`;
+                if(teacher[8]) selMon.innerHTML += `<option value="${teacher[8]}">${teacher[8]}</option>`;
+                if(teacher[9]) selMon.innerHTML += `<option value="${teacher[9]}">${teacher[9]}</option>`;
+            }
+            updateAdminUnsavedTotal();
+        };
+
+        window.adminMonChanged = function() {
+            const selectGv = document.getElementById("admin-select-gv");
+            const selMon = document.getElementById("admin-select-mon");
+            const container = document.getElementById("admin-classes-container");
+            if(!selectGv || !selMon || !container) return;
+
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            
+            if(!maGv || !maMon) { 
+                container.innerHTML = "<span style='color:var(--text-muted); font-size:13px;'>Vui lòng chọn đầy đủ Tổ, Giáo viên và Môn...</span>"; 
+                updateAdminUnsavedTotal();
+                return; 
+            }
+            
+            let tenMonFull = getTenMonByMa(maMon);
+            let validClasses = [];
+
+            for(let i=1; i<dbClasses.length; i++) {
+                if(!dbClasses[i] || dbClasses[i].length < 2) continue;
+                let tenLop = dbClasses[i][0];
+                let maTh = dbClasses[i][1];
+                let combo = dbCombos.find(c => c && c[0] === maTh);
+                if(combo && combo.length >= 2) {
+                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
+                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
+                }
+            }
+
+            if(validClasses.length === 0) {
+                container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
+                updateAdminUnsavedTotal();
+                return;
+            }
+
+            container.innerHTML = "";
+            let baseHours = getBaseHours(maMon);
+
+            validClasses.forEach(tenLop => {
+                let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
+                let isChecked = false;
+                let isDisabled = false;
+                let otherTeacherId = "";
+                let otherTeacherName = "";
+                let noteStr = "";
+
+                if (assigned) {
+                    let t = dbTeachers.find(x => x && x[0] === assigned.maGv);
+                    if (t) {
+                        if (assigned.maGv === maGv) {
+                            isChecked = true; 
+                        } else {
+                            otherTeacherId = assigned.maGv;
+                            otherTeacherName = t[2].replace(/'/g, "\\'");
+                            noteStr = `<span class="class-note">(Đã giao: ${otherTeacherName})</span>`;
+                        }
+                    }
+                }
+
+                let isHomeroom = dbClasses.some(c => c && c[0] === tenLop && c[2] === maGv);
+                let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
+
+                let hasCD = checkChuyenDe(tenLop, tenMonFull);
+                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${window.formatNum(baseHours + 1)})</span>` : tenLop;
+
+                container.innerHTML += `
+                    <label class="class-item" style="${(otherTeacherId && !isChecked) ? 'background:#f1f5f9;' : ''}">
+                        <input type="checkbox" value="${tenLop}" onchange="window.handleCheckboxChange(this, '${tenLop}', '${otherTeacherId}', '${otherTeacherName}', true)" ${isChecked ? 'checked' : ''}>
+                        <div style="display: flex; flex-direction: column;">
+                            <span style="${nameStyle}">${displayLop}</span>
+                            <span class="note-container">${noteStr}</span>
+                        </div>
+                    </label>
+                `;
+            });
+
+            updateAdminUnsavedTotal();
+            if(document.body.classList.contains('period-locked')) {
+                container.querySelectorAll('input').forEach(i => i.disabled = true);
+            }
+        };
+
+        window.updateAdminUnsavedTotal = function() {
+            const selectGv = document.getElementById("admin-select-gv");
+            const selMon = document.getElementById("admin-select-mon");
+            const totalContainer = document.getElementById("admin-current-total");
+            if(!selectGv || !selMon || !totalContainer) return;
+            
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            
+            if(!maGv) {
+                totalContainer.style.display = 'none';
+                return;
+            }
+            
+            let kiemNhiem = 0;
+            let tietChuan = 17;
+            let t = dbTeachers.find(x => x && x[0] === maGv);
+            if(t) {
+                tietChuan = window.parseFloatSafe(t[5]);
+                if(tietChuan === 0) tietChuan = 17;
+                kiemNhiem = window.parseFloatSafe(t[6]);
+            }
+            
+            let tongTietDay = 0;
+
+            if (maMon) {
+                let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
+                otherAssignments.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+
+                let currentSubBase = getBaseHours(maMon);
+                let currentTenMonF = getTenMonByMa(maMon);
+                let container = document.getElementById("admin-classes-container");
+                if(container) {
+                    let checkboxes = container.querySelectorAll("input[type=checkbox]:checked");
+                    checkboxes.forEach(cb => {
+                        tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
+                    });
+                }
+            } else {
+                let allAss = dbAssignments.filter(a => a.maGv === maGv);
+                allAss.forEach(a => {
+                    let tenMonF = getTenMonByMa(a.maMon);
+                    let base = getBaseHours(a.maMon);
+                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                });
+            }
+
+            let tong = window.formatNum(tongTietDay + kiemNhiem);
+            let thuaThieu = window.formatNum(tong - tietChuan);
+            let thText = thuaThieu > 0 ? `(Thừa ${thuaThieu})` : (thuaThieu < 0 ? `(Thiếu ${Math.abs(thuaThieu)})` : `(Đủ tiết)`);
+            let thColor = thuaThieu > 0 ? "var(--warning-hover)" : (thuaThieu < 0 ? "var(--danger)" : "var(--success)");
+
+            const ttVal = document.getElementById("admin-total-val");
+            const tbVal = document.getElementById("admin-base-val");
+            const tdfVal = document.getElementById("admin-diff-val");
+            
+            if(ttVal) ttVal.innerText = tong;
+            if(tbVal) tbVal.innerText = tietChuan;
+            if(tdfVal) tdfVal.innerHTML = `<span style="color:${thColor}; padding:4px 8px; background:#fff; border-radius:6px; font-size:13px; box-shadow:var(--shadow-sm);">${thText}</span>`;
+            totalContainer.style.display = 'flex';
+        };
+
+        window.saveAdminPhanCong = async function() {
+            const selectGv = document.getElementById("admin-select-gv");
+            const selMon = document.getElementById("admin-select-mon");
+            if(!selectGv || !selMon) return;
+            
+            const maGv = selectGv.value;
+            const maMon = selMon.value;
+            if(!maGv || !maMon) {
+                showToast("Vui lòng chọn đầy đủ Tổ, Giáo viên và Môn dạy!", "warning");
+                return;
+            }
+            
+            dbAssignments = dbAssignments.filter(a => !(a.maGv === maGv && a.maMon === maMon));
+            
+            const container = document.getElementById("admin-classes-container");
+            if(container) {
+                const checkboxes = container.querySelectorAll("input[type=checkbox]:checked:not(:disabled)");
+                checkboxes.forEach(cb => {
+                    dbAssignments = dbAssignments.filter(a => !(a.maMon === maMon && a.lop === cb.value));
+                    dbAssignments.push({ maGv: maGv, maMon: maMon, lop: cb.value });
+                });
+            }
+
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId)), { assignmentData: JSON.stringify(dbAssignments) });
+                showToast("Đã lưu Phân công chuyên môn!");
+                window.adminMonChanged(); 
+            } catch(e) { 
+                showToast("Lỗi: " + e.message, "error"); 
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+        // ---------------------------------------------
 
         // --- HÀM KIÊM NHIỆM (MỚI) ---
         window.renderKiemNhiemTable = function() {
