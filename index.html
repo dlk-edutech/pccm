@@ -135,9 +135,32 @@
         .toast.error { border-left-color: var(--danger); color: var(--danger-hover); }
         .toast.info { border-left-color: var(--info); color: var(--info-hover); }
         .toast.warning { border-left-color: var(--warning); color: var(--warning-hover); }
+        
+        /* Chức năng Filter Cải tiến */
+        .filter-popup { position: absolute; background: white; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); padding: 12px; z-index: 10000; min-width: 200px; max-height: 300px; display: none; flex-direction: column; font-size: 13px; font-weight: normal; color: var(--text-main); }
+        .filter-popup-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: 700; color: var(--dark); border-bottom: 1px solid var(--border); padding-bottom: 6px;}
+        .filter-search { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; font-size: 13px; outline:none; transition: 0.2s;}
+        .filter-search:focus { border-color: var(--primary); }
+        .filter-list { overflow-y: auto; max-height: 150px; display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+        .filter-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 500; }
+        .filter-item input { accent-color: var(--primary); cursor: pointer; width: 14px; height: 14px;}
+        .filter-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .filter-btn { padding: 6px 12px; font-size: 13px; border-radius: 6px; cursor: pointer; border: none; font-weight:600; transition: 0.2s;}
+        .filter-btn-ok { background: var(--primary); color: white; }
+        .filter-btn-ok:hover { background: var(--primary-hover); }
+        .filter-btn-clear { background: #e2e8f0; color: var(--text-main); }
+        .filter-btn-clear:hover { background: #cbd5e1; }
+        
+        th[data-has-filter="true"] { cursor: pointer; transition: background-color 0.2s, color 0.2s; user-select: none; }
+        th[data-has-filter="true"]:hover { background-color: #e2e8f0; color: var(--primary); }
+        th.active-filter { color: var(--primary) !important; background-color: var(--primary-light) !important; }
+        th.active-filter::after { content: " 🔻"; font-size: 10px; margin-left: 4px; vertical-align: middle; }
+
         @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         /* Assign Grid */
         .assign-container { display: flex; flex-direction: column; gap: 25px; max-width: 900px; }
@@ -150,8 +173,6 @@
         .class-note { display: block; font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 4px; }
 
         .footer { text-align: center; padding: 20px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); flex-shrink: 0; font-weight: 500; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -213,7 +234,7 @@
                 <!-- Master Admin Items -->
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
-                <!-- Admin Items (Reordered logically) -->
+                <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">🔗 Tổ hợp Môn</div>
@@ -642,6 +663,7 @@
         let currentTabId = '';
         
         window.workbook = null; 
+        window.tableFilters = {};
 
         window.parseFloatSafe = function(val) {
             if (val === undefined || val === null || val === "") return 0;
@@ -2244,6 +2266,10 @@
 
         function renderAdminTable(tabId, data) {
             let tableId = "table-" + tabId.split('-')[1];
+            
+            if(!window.tableFilters) window.tableFilters = {};
+            window.tableFilters[tableId] = {}; // Reset filter state
+
             const tbl = document.getElementById(tableId);
             if(!tbl) return;
             let expCols = tabId==='tab-giaovien' ? 10 : 3;
@@ -2252,7 +2278,8 @@
             tbody.innerHTML = ""; 
 
             if (!data || data.length <= 1) {
-                tbody.innerHTML = `<tr><td colspan="${expCols + 1}" style="text-align:center; padding: 20px; color:var(--text-muted);">Chưa có dữ liệu</td></tr>`; return;
+                tbody.innerHTML = `<tr><td colspan="${expCols + 1}" style="text-align:center; padding: 20px; color:var(--text-muted);">Chưa có dữ liệu</td></tr>`; 
+                return;
             }
 
             for (let i = 1; i < data.length; i++) {
@@ -2278,10 +2305,18 @@
                 tdAction.innerHTML = `<button class="btn-small btn-edit" onclick="editRow(this, '${tableId}')">Sửa</button><button class="btn-small btn-del" onclick="deleteRow(this)">Xóa</button>`;
                 tr.appendChild(tdAction); tbody.appendChild(tr);
             }
+
+            if (tabId === 'tab-giaovien') {
+                setTimeout(() => addExcelFilters(tableId), 50);
+            }
         }
 
         window.renderAdminTongHop = function() {
-            const tbl = document.getElementById("table-admin-tonghop");
+            let tableId = "table-admin-tonghop";
+            if(!window.tableFilters) window.tableFilters = {};
+            window.tableFilters[tableId] = {}; // Reset filter state
+
+            const tbl = document.getElementById(tableId);
             if(!tbl) return;
             const thead = tbl.querySelector("thead");
             const tbody = tbl.querySelector("tbody");
@@ -2361,6 +2396,8 @@
                 `;
             }
             if(!hasData) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 20px;">Chưa có dữ liệu</td></tr>`;
+
+            setTimeout(() => addExcelFilters(tableId), 50);
         }
 
         window.exportAdminTongHopToExcel = function() {
@@ -2938,6 +2975,10 @@
 
         // --- TỔNG HỢP CẢ NĂM ---
         window.renderTongHopCaNam = async function() {
+            let tableId = "table-tonghop-canam";
+            if(!window.tableFilters) window.tableFilters = {};
+            window.tableFilters[tableId] = {}; // Reset filter state
+
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
             let yearlyData = {}; 
@@ -2998,7 +3039,7 @@
                 }
             }
             
-            const tbl = document.getElementById("table-tonghop-canam");
+            const tbl = document.getElementById(tableId);
             if(tbl) {
                 const tbody = tbl.querySelector("tbody");
                 if(tbody) {
@@ -3032,6 +3073,8 @@
                 }
             }
             if(overlay) overlay.style.display = 'none';
+
+            setTimeout(() => addExcelFilters(tableId), 50);
         }
 
         window.exportCaNamToExcel = async function() {
@@ -3112,6 +3155,197 @@
             
             if(overlay) overlay.style.display = 'none';
             showToast("Xuất file Excel Tổng hợp Cả năm thành công!");
+        };
+
+        // --- CÁC HÀM XỬ LÝ LỌC DỮ LIỆU (FILTER) ---
+        let currentFilterPopup = null;
+
+        function addExcelFilters(tableId) {
+            const tbl = document.getElementById(tableId);
+            if (!tbl) return;
+            const thead = tbl.querySelector('thead');
+            if (!thead) return;
+
+            const ths = thead.querySelectorAll('th');
+            ths.forEach((th, index) => {
+                let text = th.innerText.trim().toLowerCase();
+                if (text === 'thao tác' || text === 'xóa') return; 
+                
+                if (th.dataset.hasFilter === "true") return; 
+
+                th.dataset.hasFilter = "true";
+                th.title = "Click vào tên cột để lọc";
+                th.onclick = function(e) {
+                    toggleFilter(e, tableId, index);
+                };
+            });
+        }
+
+        window.toggleFilter = function(e, tableId, colIndex) {
+            e.stopPropagation();
+            
+            if (currentFilterPopup) {
+                const samePopup = currentFilterPopup.dataset.col === colIndex.toString() && currentFilterPopup.dataset.table === tableId;
+                currentFilterPopup.remove();
+                currentFilterPopup = null;
+                if (samePopup) return;
+            }
+
+            const tbl = document.getElementById(tableId);
+            const tbody = tbl.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            let uniqueValues = new Set();
+            rows.forEach(tr => {
+                if (tr.querySelector('td[colspan]')) return; 
+                let td = tr.querySelectorAll('td')[colIndex];
+                if (td) {
+                    let val = td.innerText.trim();
+                    uniqueValues.add(val);
+                }
+            });
+
+            let valuesArr = Array.from(uniqueValues).sort((a, b) => a.localeCompare(b, 'vi', {numeric: true}));
+            let activeFilters = window.tableFilters[tableId] ? window.tableFilters[tableId][colIndex] : null;
+
+            const popup = document.createElement('div');
+            popup.className = 'filter-popup';
+            popup.dataset.table = tableId;
+            popup.dataset.col = colIndex;
+
+            let listHtml = valuesArr.map(val => {
+                let isChecked = activeFilters ? activeFilters.includes(val) : true;
+                return `<label class="filter-item"><input type="checkbox" value="${val.replace(/"/g, '&quot;')}" ${isChecked ? 'checked' : ''}> <span>${val || '(Trống)'}</span></label>`;
+            }).join('');
+
+            popup.innerHTML = `
+                <div class="filter-popup-header">Lọc dữ liệu</div>
+                <input type="text" class="filter-search" placeholder="Tìm kiếm..." onkeyup="filterSearchValues(this)">
+                <div class="filter-list">
+                    <label class="filter-item" style="border-bottom:1px solid #eee; padding-bottom:6px; margin-bottom:4px;"><input type="checkbox" onchange="toggleAllFilters(this)" checked> <span style="font-weight:700;">(Chọn tất cả)</span></label>
+                    ${listHtml}
+                </div>
+                <div class="filter-actions">
+                    <button class="filter-btn filter-btn-clear" onclick="clearFilter('${tableId}', ${colIndex})">Bỏ lọc</button>
+                    <button class="filter-btn filter-btn-ok" onclick="applyFilter('${tableId}', ${colIndex})">Đồng ý</button>
+                </div>
+            `;
+
+            document.body.appendChild(popup);
+            
+            // Positioning based on TH 
+            const thRect = e.currentTarget.getBoundingClientRect();
+            popup.style.top = (thRect.bottom + window.scrollY + 5) + 'px';
+            
+            let leftPos = thRect.left + window.scrollX;
+            popup.style.display = 'flex';
+            if (leftPos + popup.offsetWidth > window.innerWidth) {
+                leftPos = window.innerWidth - popup.offsetWidth - 15;
+            }
+            popup.style.left = leftPos + 'px';
+
+            currentFilterPopup = popup;
+            document.addEventListener('click', closeFilterPopupOutside);
+        };
+
+        window.filterSearchValues = function(input) {
+            let term = input.value.toLowerCase();
+            let list = input.nextElementSibling.querySelectorAll('.filter-item:not(:first-child)');
+            list.forEach(label => {
+                let txt = label.innerText.toLowerCase();
+                label.style.display = txt.includes(term) ? 'flex' : 'none';
+            });
+        };
+
+        window.toggleAllFilters = function(cb) {
+            let container = cb.closest('.filter-list');
+            let checkboxes = container.querySelectorAll('.filter-item:not([style*="display: none"]) input[type="checkbox"]');
+            checkboxes.forEach(c => c.checked = cb.checked);
+        };
+
+        window.applyFilter = function(tableId, colIndex) {
+            if (!currentFilterPopup) return;
+            const checkboxes = currentFilterPopup.querySelectorAll('.filter-list .filter-item:not(:first-child) input[type="checkbox"]');
+            
+            let selectedVals = [];
+            let allSelected = true;
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    selectedVals.push(cb.value);
+                } else {
+                    allSelected = false;
+                }
+            });
+
+            if (!window.tableFilters[tableId]) window.tableFilters[tableId] = {};
+
+            if (allSelected && selectedVals.length === checkboxes.length) {
+                delete window.tableFilters[tableId][colIndex];
+            } else {
+                window.tableFilters[tableId][colIndex] = selectedVals;
+            }
+
+            executeTableFilter(tableId);
+            closeFilterPopup();
+        };
+
+        window.clearFilter = function(tableId, colIndex) {
+            if (window.tableFilters[tableId]) {
+                delete window.tableFilters[tableId][colIndex];
+            }
+            executeTableFilter(tableId);
+            closeFilterPopup();
+        };
+
+        window.executeTableFilter = function(tableId) {
+            const tbl = document.getElementById(tableId);
+            const tbody = tbl.querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+            
+            const ths = tbl.querySelectorAll('thead th');
+            ths.forEach((th, idx) => {
+                if (th.dataset.hasFilter === "true") {
+                    if (window.tableFilters[tableId] && window.tableFilters[tableId][idx]) {
+                        th.classList.add('active-filter');
+                    } else {
+                        th.classList.remove('active-filter');
+                    }
+                }
+            });
+
+            rows.forEach(tr => {
+                if (tr.querySelector('td[colspan]')) return;
+                
+                let isVisible = true;
+                let filters = window.tableFilters[tableId] || {};
+                
+                for (let colIdx in filters) {
+                    let allowedVals = filters[colIdx];
+                    let td = tr.querySelectorAll('td')[colIdx];
+                    if (td) {
+                        let val = td.innerText.trim();
+                        if (!allowedVals.includes(val)) {
+                            isVisible = false;
+                            break;
+                        }
+                    }
+                }
+                tr.style.display = isVisible ? '' : 'none';
+            });
+        };
+
+        window.closeFilterPopup = function() {
+            if (currentFilterPopup) {
+                currentFilterPopup.remove();
+                currentFilterPopup = null;
+            }
+            document.removeEventListener('click', closeFilterPopupOutside);
+        };
+
+        window.closeFilterPopupOutside = function(e) {
+            if (currentFilterPopup && !currentFilterPopup.contains(e.target) && !e.target.closest('th[data-has-filter="true"]')) {
+                closeFilterPopup();
+            }
         };
 
     </script>
