@@ -186,7 +186,6 @@
     <div id="toast-container"></div>
     <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
 
-    <!-- Modal Xác Nhận Chung -->
     <div id="confirm-modal" class="modal-overlay" style="z-index: 10000;">
         <div class="modal-box">
             <h3 id="confirm-title" style="margin-top:0; color:var(--dark);">Xác nhận</h3>
@@ -198,7 +197,6 @@
         </div>
     </div>
 
-    <!-- ĐĂNG NHẬP -->
     <div id="login-section">
         <div class="login-box">
             <h2>Hệ Thống PCCM</h2>
@@ -235,7 +233,6 @@
         </div>
     </div>
 
-    <!-- LAYOUT CHÍNH -->
     <div id="app-layout">
         <div class="sidebar">
             <div class="sidebar-header">
@@ -243,10 +240,8 @@
                 <p id="sidebar-user-role">Đang tải...</p>
             </div>
             <div class="menu" id="sidebar-menu">
-                <!-- Master Admin Items -->
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
-                <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tkb')">🗓️ Nạp Thời Khóa Biểu</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
@@ -258,15 +253,12 @@
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
                 
-                <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">👥 Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">✍️ Phân công Giảng dạy</div>
                 
-                <!-- Chung (TTCM & GV) -->
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-gv-tkb')">🗓 Tra Thời Khóa Biểu</div>
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">📋 Tổng hợp Tổ CM</div>
                 
-                <!-- Chung Tất cả (Cả năm) -->
                 <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
             </div>
         </div>
@@ -283,7 +275,6 @@
             <div class="content-area">
                 <div class="content-inner">
                     
-                    <!-- TAB QUẢN LÝ ĐỢN VỊ (Master Admin) -->
                     <div id="tab-admin-sub" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
@@ -298,7 +289,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB QUẢN LÝ ĐỢT PCCM -->
                     <div id="tab-admin-periods" class="tab-content">
                         <h3 style="margin:0 0 5px 0; font-size:20px;">Quản lý Đợt Phân Công (Khung 35 tuần)</h3>
                         <p style="font-size: 14px; color: var(--text-muted); margin-top:0; margin-bottom:20px;">Quản lý các lần thay đổi PCCM trong năm học. Khi <b>Khóa đợt</b>, mọi dữ liệu trong đợt đó sẽ bị đóng băng (không cho phép sửa/xóa).</p>
@@ -311,7 +301,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN NẠP TKB -->
                     <div id="tab-admin-tkb" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Nạp Dữ liệu Thời Khóa Biểu (Excel)</h3>
@@ -341,7 +330,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB GV/TTCM TRA TKB -->
                     <div id="tab-gv-tkb" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Thời Khóa Biểu Cá Nhân</h3>
@@ -351,8 +339,9 @@
                             </div>
                         </div>
                         
+                        <div id="tkb-period-notice" style="display:none; color: var(--warning-hover); background: var(--warning-light); padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 20px; font-weight: 600; border: 1px dashed var(--warning);"></div>
+                        
                         <div id="tkb-display-container">
-                            <!-- Bảng Sáng -->
                             <div class="tkb-box">
                                 <h4>Buổi Sáng</h4>
                                 <div class="table-container">
@@ -361,13 +350,11 @@
                                             <tr><th>Tiết</th><th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th></tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Được render bằng JS -->
-                                        </tbody>
+                                            </tbody>
                                     </table>
                                 </div>
                             </div>
 
-                            <!-- Bảng Chiều -->
                             <div class="tkb-box">
                                 <h4>Buổi Chiều</h4>
                                 <div class="table-container">
@@ -376,15 +363,13 @@
                                             <tr><th>Tiết</th><th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th></tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Được render bằng JS -->
-                                        </tbody>
+                                            </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- TAB KIÊM NHIỆM (ADMIN) -->
                     <div id="tab-kiemnhiem" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Quản lý Tiết Kiêm Nhiệm</h3>
@@ -411,7 +396,6 @@
                         </div>
                     </div>
                     
-                    <!-- TAB ADMIN ĐIỀU CHỈNH PHÂN CÔNG -->
                     <div id="tab-admin-phancong" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Điều chỉnh Phân công Toàn trường</h3>
@@ -450,7 +434,6 @@
                         </div>
                     </div>
 
-                    <!-- Vùng Upload Excel & Tải Mẫu Chung -->
                     <div class="control-panel admin-only" id="excel-panel" style="display: none;">
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -466,7 +449,6 @@
                         <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
                     </div>
 
-                    <!-- TABS ADMIN: GIÁO VIÊN -->
                     <div id="tab-giaovien" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
@@ -483,7 +465,6 @@
                         </div>
                     </div>
                     
-                    <!-- TABS ADMIN: LỚP -->
                     <div id="tab-lop" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
@@ -500,7 +481,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS ADMIN: MÔN HỌC (Global) -->
                     <div id="tab-monhoc" class="tab-content">
                         <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
@@ -511,7 +491,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS ADMIN: TỔ HỢP MÔN (Global) -->
                     <div id="tab-tohop" class="tab-content">
                         <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
@@ -522,7 +501,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN MATRIX -->
                     <div id="tab-admin-matrix" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Bảng Ma trận Phân công chuyên môn Toàn trường</h3>
@@ -542,7 +520,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
                     <div id="tab-admin-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Danh sách Tổng hợp Phân công Toàn trường</h3>
@@ -562,7 +539,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM: GIÁO VIÊN -->
                     <div id="tab-ttcm-gv" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Danh sách Giáo viên (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
@@ -580,7 +556,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM: PHÂN CÔNG -->
                     <div id="tab-ttcm-phancong" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Phân công Giảng dạy theo Đợt</h3>
@@ -614,7 +589,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM / GV: TỔNG HỢP TỔ -->
                     <div id="tab-ttcm-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Bảng Tổng hợp Chuyên môn (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
@@ -634,7 +608,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB TỔNG HỢP CẢ NĂM -->
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Báo cáo Tổng số tiết Cả Năm Học (35 Tuần)</h3>
@@ -656,7 +629,6 @@
         </div>
     </div>
 
-    <!-- Modal Đổi Mã Đăng Nhập -->
     <div id="pw-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 id="pw-modal-title" style="margin-top:0; color:var(--dark);">Đổi mã cá nhân</h3>
@@ -669,7 +641,6 @@
         </div>
     </div>
 
-    <!-- Modal Thêm Đợt Mới -->
     <div id="add-period-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Khởi tạo Đợt Mới</h3>
@@ -687,7 +658,6 @@
         </div>
     </div>
 
-    <!-- Modal Thêm Cột Kiêm Nhiệm -->
     <div id="add-kn-col-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Thêm Nhiệm vụ mới</h3>
@@ -702,7 +672,6 @@
         </div>
     </div>
 
-    <!-- Modal Thêm GV vào Kiêm Nhiệm -->
     <div id="add-kn-row-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Thêm Giáo viên hưởng Kiêm nhiệm</h3>
@@ -745,15 +714,16 @@
         let dbCombos = [];
         let dbAssignments = []; 
         let dbKiemNhiem = []; 
-        let dbTkbSang = []; // Biến chứa dữ liệu TKB Sáng
-        let dbTkbChieu = []; // Biến chứa dữ liệu TKB Chiều
+        let dbTkbSang = []; 
+        let dbTkbChieu = []; 
         
         let currentUser = null; 
         let currentTabId = '';
         
         window.workbook = null; 
-        window.tkbWorkbook = null; // Excel file for TKB
+        window.tkbWorkbook = null; 
         window.tableFilters = {};
+        window.currentTkbPeriodId = null; // Biến tracking TKB hiện hành
 
         window.parseFloatSafe = function(val) {
             if (val === undefined || val === null || val === "") return 0;
@@ -1124,6 +1094,8 @@
                     
                     if(sessionMode === 'sang') dbTkbSang = cleanData;
                     else dbTkbChieu = cleanData;
+                    
+                    window.currentTkbPeriodId = currentPeriodId; // Update local tracker
 
                     showToast(`Đã nạp thành công ${titleStr}!`);
                 } catch (e) { 
@@ -1245,16 +1217,15 @@
         };
 
         async function reloadMemoryForCurrentPeriod() {
-            const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn, snapTkbS, snapTkbC] = await Promise.all([
+            const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn] = await Promise.all([
                 getDoc(doc(db, getCollectionName(), getDocName("tab-lop", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), "tab-monhoc")),
                 getDoc(doc(db, getCollectionName(), "tab-tohop")),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", currentPeriodId)))
+                getDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId)))
             ]);
+            
             dbClasses = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
             dbSubjects = snapMon.exists() ? JSON.parse(snapMon.data().excelData) : [];
             dbCombos = snapToHop.exists() ? JSON.parse(snapToHop.data().excelData) : [];
@@ -1267,8 +1238,36 @@
                 dbKiemNhiem = [["Mã GV", "Tên giáo viên", "Tổng"]];
             }
 
-            dbTkbSang = snapTkbS.exists() ? JSON.parse(snapTkbS.data().excelData) : [];
-            dbTkbChieu = snapTkbC.exists() ? JSON.parse(snapTkbC.data().excelData) : [];
+            // --- Logic fallback tự động TKB về đợt có dữ liệu ---
+            let snapTkbS = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", currentPeriodId)));
+            let snapTkbC = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", currentPeriodId)));
+            
+            window.currentTkbPeriodId = currentPeriodId;
+            let tkbSData = snapTkbS.exists() ? JSON.parse(snapTkbS.data().excelData) : [];
+            let tkbCData = snapTkbC.exists() ? JSON.parse(snapTkbC.data().excelData) : [];
+
+            // Nếu đợt hiện tại trống trơn, tự động dò ngược lại đợt gần nhất có data
+            if (tkbSData.length <= 1 && tkbCData.length <= 1 && dbPeriods.length > 1) {
+                let sortedPeriods = [...dbPeriods].sort((a,b) => b.startWeek - a.startWeek); // Mới nhất lên trên
+                for (let p of sortedPeriods) {
+                    if (p.id === currentPeriodId) continue;
+                    let s = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", p.id)));
+                    let c = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", p.id)));
+                    
+                    let tempS = s.exists() ? JSON.parse(s.data().excelData) : [];
+                    let tempC = c.exists() ? JSON.parse(c.data().excelData) : [];
+
+                    if (tempS.length > 1 || tempC.length > 1) {
+                        tkbSData = tempS;
+                        tkbCData = tempC;
+                        window.currentTkbPeriodId = p.id;
+                        break;
+                    }
+                }
+            }
+
+            dbTkbSang = tkbSData;
+            dbTkbChieu = tkbCData;
         }
 
         // --- HÀM QUẢN LÝ ĐỢT ---
@@ -1358,6 +1357,8 @@
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", newId)), { excelData: JSON.stringify(dbKiemNhiem) });
+                
+                // Mặc định copy TKB của đợt hiện hành sang đợt mới. Với cơ chế fallback thì dbTkbSang sẽ đang chứa đợt gần nhất.
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", newId)), { excelData: JSON.stringify(dbTkbSang) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", newId)), { excelData: JSON.stringify(dbTkbChieu) });
                 
@@ -1596,6 +1597,18 @@
         window.renderTeacherTkb = function() {
             if (!currentUser || !currentUser.maGv) return;
             const maGv = currentUser.maGv;
+
+            // Xử lý thông báo chuyển ngầm TKB
+            const noticeEl = document.getElementById('tkb-period-notice');
+            if (noticeEl) {
+                if (window.currentTkbPeriodId && window.currentTkbPeriodId !== currentPeriodId) {
+                    let pInfo = dbPeriods.find(p => p.id === window.currentTkbPeriodId);
+                    noticeEl.innerHTML = `ℹ️ Đợt hiện tại chưa có dữ liệu TKB. Hệ thống tự động hiển thị TKB của <b>${pInfo ? pInfo.name : 'đợt gần nhất'}</b>.`;
+                    noticeEl.style.display = 'block';
+                } else {
+                    noticeEl.style.display = 'none';
+                }
+            }
 
             const tbodySang = document.querySelector('#table-tkb-sang tbody');
             const tbodyChieu = document.querySelector('#table-tkb-chieu tbody');
