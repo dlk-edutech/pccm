@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu Thời Khóa Biểu - THPT Số 1 Trần Phú</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5; --primary-hover: #4338ca; --primary-light: #e0e7ff;
+            --success: #10b981; --success-hover: #059669;
+            --surface: #ffffff; --bg-color: #f8fafc;
+            --text-main: #334155; --text-muted: #64748b; --dark: #0f172a;
+            --border: #e2e8f0; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); }
+        
+        /* Header & Navigation */
+        .header { background: var(--surface); padding: 15px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; gap: 15px; }
+        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .header-title { margin: 0; font-size: 20px; color: var(--dark); font-weight: 700; }
+        
+        .controls { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
+        .select-box { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: var(--surface); min-width: 150px; font-family: inherit; font-weight: 500; color: var(--primary); cursor: pointer; }
+        .select-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        .btn-success { background-color: var(--success); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
+
+        .tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { padding: 10px 20px; border: none; background: #f1f5f9; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow); }
+        
+        /* Content Area */
+        .container { padding: 20px; max-width: 100vw; box-sizing: border-box; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        
+        /* Bảng hiển thị chung */
+        .table-wrapper { width: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); max-height: calc(100vh - 160px); position: relative; }
+        table { border-collapse: collapse; width: 100%; text-align: center; min-width: 800px; }
+        th, td { padding: 12px 8px; border: 1px solid var(--border); font-size: 13px; }
+        
+        /* Sticky Header */
+        thead th { position: sticky; top: 0; background-color: var(--primary-light); color: var(--primary-hover); font-weight: 700; z-index: 10; box-shadow: inset 0 -1px 0 var(--border), inset 0 1px 0 var(--border); }
+        
+        /* Sticky Cột đầu tiên (Tên GV hoặc Tiết) */
+        tbody th, td.sticky-col { position: sticky; left: 0; background-color: #f8fafc; font-weight: 600; color: var(--dark); z-index: 5; box-shadow: inset -1px 0 0 var(--border); text-align: left; padding-left: 15px; }
+        thead th.sticky-col { left: 0; z-index: 11; text-align: left; padding-left: 15px; }
+        
+        tbody tr:hover { background-color: #f1f5f9; }
+        tbody tr:hover td.sticky-col { background-color: #e2e8f0; }
+
+        /* Phân tách các Thứ trong TKB Toàn trường */
+        th.day-divider, td.day-divider { border-right: 2px solid var(--primary) !important; }
+        
+        /* Styling TKB Học sinh */
+        .subject-name { font-weight: 700; color: var(--primary); font-size: 14px; display: block; }
+        .class-header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+        .class-title { font-size: 18px; font-weight: 700; color: var(--dark); margin: 0; border-left: 4px solid var(--primary); padding-left: 10px; }
+        
+        .loading { display: flex; justify-content: center; align-items: center; height: 200px; font-weight: 600; color: var(--primary); }
+        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 500; }
+
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 25px; right: 25px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
+        .toast { min-width: 250px; padding: 16px 20px; border-radius: 10px; background: white; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15); display: flex; align-items: center; font-size: 14px; font-weight: 600; border-left: 6px solid; animation: slideInRight 0.4s forwards; pointer-events: auto; }
+        .toast.success { border-left-color: var(--success); color: var(--success-hover); }
+        .toast.warning { border-left-color: #f59e0b; color: #d97706; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(20px); } }
+
+        /* Tối ưu riêng cho Mobile */
+        @media (max-width: 768px) {
+            .header { padding: 12px 15px; }
+            .container { padding: 15px 10px; }
+            .tab-btn { padding: 8px 16px; font-size: 13px; }
+            th, td { padding: 10px 5px; font-size: 12px; }
+            .subject-name { font-size: 13px; }
+            .select-box, .btn-success { width: 100%; flex: 1; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-container"></div>
+
+    <div class="header">
+        <div class="header-top">
+            <h1 class="header-title">Tra cứu TKB - THPT Số 1 Trần Phú</h1>
+            <div class="controls">
+                <select id="period-selector" class="select-box" onchange="loadData()"><option>Đang tải dữ liệu...</option></select>
+                <button class="btn-success" onclick="exportExcel()">📥 Xuất Excel</button>
+            </div>
+        </div>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-lop')">TKB Lớp Học</button>
+            <button class="tab-btn" onclick="switchTab('tab-toantruong-sang')">Toàn trường (Sáng)</button>
+            <button class="tab-btn" onclick="switchTab('tab-toantruong-chieu')">Toàn trường (Chiều)</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loader" class="loading">Đang kết nối cơ sở dữ liệu...</div>
+
+        <!-- TAB 3: TKB HỌC SINH (Lớp) -->
+        <div id="tab-lop" class="tab-content active" style="display: none;">
+            <div class="class-header-info">
+                <h2 class="class-title" id="class-display-name">Vui lòng chọn lớp</h2>
+                <select id="class-selector" class="select-box" onchange="renderClassTkb()"><option value="">-- Chọn Lớp --</option></select>
+            </div>
+            
+            <!-- TKB Lớp Sáng -->
+            <div id="class-sang-container" style="margin-bottom: 30px; display: none;">
+                <h3 style="margin-top:0; font-size:16px; color:var(--dark);">Ca Sáng</h3>
+                <div class="table-wrapper"><table id="table-class-sang"><thead></thead><tbody></tbody></table></div>
+            </div>
+
+            <!-- TKB Lớp Chiều -->
+            <div id="class-chieu-container" style="display: none;">
+                <h3 style="margin-top:0; font-size:16px; color:var(--dark);">Ca Chiều</h3>
+                <div class="table-wrapper"><table id="table-class-chieu"><thead></thead><tbody></tbody></table></div>
+            </div>
+            
+            <div id="class-empty" class="empty-state">Vui lòng chọn lớp để xem Thời khóa biểu.</div>
+        </div>
+
+        <!-- TAB 1: TKB TOÀN TRƯỜNG SÁNG -->
+        <div id="tab-toantruong-sang" class="tab-content">
+            <div class="table-wrapper"><table id="table-tts"><thead></thead><tbody></tbody></table></div>
+        </div>
+
+        <!-- TAB 2: TKB TOÀN TRƯỜNG CHIỀU -->
+        <div id="tab-toantruong-chieu" class="tab-content">
+            <div class="table-wrapper"><table id="table-ttc"><thead></thead><tbody></tbody></table></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDnV-T3tUt_2eJ5JLIpHO3S-nQfS7oDTVE",
+            authDomain: "pccm-s1trp.firebaseapp.com",
+            projectId: "pccm-s1trp",
+            storageBucket: "pccm-s1trp.firebasestorage.app",
+            messagingSenderId: "1074542861397",
+            appId: "1:1074542861397:web:357f16713ef58d7b8c08dc"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // State variables
+        let dbPeriods = [];
+        let currentPeriodId = '';
+        let rawTkbSang = [];
+        let rawTkbChieu = [];
+        let dictTeachers = {}; // maGv -> Ten GV
+        let dictTcm = {};      // maGv -> Tổ Chuyên Môn
+        let dictSubjects = {}; // maMon -> Ten Mon
+        let listClasses = [];
+
+        // Lấy UnitID từ URL nếu hệ thống đang dùng bản Sub-Admin
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUnitId = urlParams.get('unit') || ''; 
+        const colName = currentUnitId ? "pccm_data_" + currentUnitId : "pccm_data";
+
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            let icon = type === 'success' ? '✅' : '⚠️';
+            toast.innerHTML = `<span style="margin-right: 8px;">${icon}</span> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.4s forwards';
+                setTimeout(() => toast.remove(), 400);
+            }, 3000);
+        };
+
+        function getDocName(baseName) { return currentPeriodId === 'default' ? baseName : baseName + "_" + currentPeriodId; }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+            });
+            document.getElementById(tabId).style.display = 'block';
+            setTimeout(() => document.getElementById(tabId).classList.add('active'), 10);
+        }
+
+        async function init() {
+            try {
+                const pSnap = await getDoc(doc(db, colName, "pccm_periods"));
+                if(pSnap.exists()) {
+                    let parsed = JSON.parse(pSnap.data().data);
+                    if (Array.isArray(parsed) && parsed.length > 0) dbPeriods = parsed;
+                    else dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
+                } else {
+                    dbPeriods = [{id: 'default', name: 'Đợt 1', startWeek: 1}];
+                }
+                
+                dbPeriods.sort((a,b) => a.startWeek - b.startWeek);
+                
+                // Tìm đợt CŨ NHẤT có dữ liệu
+                let checks = dbPeriods.map(async (p) => {
+                    let docS = p.id === 'default' ? "tab-tkbsang" : "tab-tkbsang_" + p.id;
+                    let docC = p.id === 'default' ? "tab-tkbchieu" : "tab-tkbchieu_" + p.id;
+                    let [snapS, snapC] = await Promise.all([getDoc(doc(db, colName, docS)), getDoc(doc(db, colName, docC))]);
+                    
+                    let hasData = (snapS.exists() && JSON.parse(snapS.data().excelData).length > 1) || 
+                                  (snapC.exists() && JSON.parse(snapC.data().excelData).length > 1);
+                    return { id: p.id, hasData: hasData };
+                });
+                
+                let results = await Promise.all(checks);
+                let targetPeriodId = dbPeriods[0].id; 
+                for (let i = 0; i < results.length; i++) {
+                    if (results[i].hasData) {
+                        targetPeriodId = results[i].id;
+                        break; 
+                    }
+                }
+
+                const selector = document.getElementById('period-selector');
+                selector.innerHTML = '';
+                dbPeriods.forEach((p, idx) => {
+                    let name = `Đợt ${idx + 1} (Từ tuần ${p.startWeek})`;
+                    let selected = (p.id === targetPeriodId) ? 'selected' : '';
+                    selector.innerHTML += `<option value="${p.id}" ${selected}>${name}</option>`;
+                });
+                
+                currentPeriodId = targetPeriodId;
+                await loadData();
+            } catch (error) {
+                document.getElementById('loader').innerText = "Lỗi kết nối CSDL: " + error.message;
+            }
+        }
+
+        window.loadData = async function() {
+            currentPeriodId = document.getElementById('period-selector').value;
+            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('tab-lop').style.display = 'none';
+
+            try {
+                const [snapGv, snapMon, snapS, snapC] = await Promise.all([
+                    getDoc(doc(db, colName, getDocName("tab-giaovien"))),
+                    getDoc(doc(db, colName, "tab-monhoc")),
+                    getDoc(doc(db, colName, getDocName("tab-tkbsang"))),
+                    getDoc(doc(db, colName, getDocName("tab-tkbchieu")))
+                ]);
+
+                // Khởi tạo Dictionaries
+                dictTeachers = {};
+                dictTcm = {};
+                if(snapGv.exists()) {
+                    let data = JSON.parse(snapGv.data().excelData);
+                    for(let i=1; i<data.length; i++) {
+                        if(data[i] && data[i][0]) {
+                            let maGv = data[i][0].trim();
+                            dictTeachers[maGv] = data[i][2];
+                            dictTcm[maGv] = data[i][3] || "Chưa xếp tổ"; // Mapping TCM
+                        }
+                    }
+                }
+
+                dictSubjects = {};
+                if(snapMon.exists()) {
+                    let data = JSON.parse(snapMon.data().excelData);
+                    for(let i=1; i<data.length; i++) if(data[i] && data[i][0]) dictSubjects[data[i][0].trim().toLowerCase()] = data[i][1];
+                }
+
+                rawTkbSang = snapS.exists() ? JSON.parse(snapS.data().excelData) : [];
+                rawTkbChieu = snapC.exists() ? JSON.parse(snapC.data().excelData) : [];
+
+                let classSet = new Set();
+                if(rawTkbSang.length > 0) rawTkbSang[0].slice(1).forEach(c => { if(c) classSet.add(c.trim()); });
+                if(rawTkbChieu.length > 0) rawTkbChieu[0].slice(1).forEach(c => { if(c) classSet.add(c.trim()); });
+                listClasses = Array.from(classSet).sort();
+
+                let classSel = document.getElementById('class-selector');
+                let curClass = classSel.value;
+                classSel.innerHTML = '<option value="">-- Chọn Lớp --</option>';
+                listClasses.forEach(c => classSel.innerHTML += `<option value="${c}">${c}</option>`);
+                if(curClass && listClasses.includes(curClass)) classSel.value = curClass;
+
+                renderSchoolWide(rawTkbSang, 'table-tts');
+                renderSchoolWide(rawTkbChieu, 'table-ttc');
+                
+                if(classSel.value) renderClassTkb();
+                else {
+                    document.getElementById('class-sang-container').style.display = 'none';
+                    document.getElementById('class-chieu-container').style.display = 'none';
+                    document.getElementById('class-empty').style.display = 'block';
+                }
+
+            } catch (e) {
+                console.error(e);
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                let activeTab = document.querySelector('.tab-btn.active');
+                if(activeTab) {
+                    if(activeTab.innerText.includes('Lớp')) document.getElementById('tab-lop').style.display = 'block';
+                    else if(activeTab.innerText.includes('Sáng')) document.getElementById('tab-toantruong-sang').style.display = 'block';
+                    else document.getElementById('tab-toantruong-chieu').style.display = 'block';
+                }
+            }
+        }
+
+        // --- RENDER TKB TOÀN TRƯỜNG (Sắp xếp theo TCM) ---
+        function renderSchoolWide(rawTkb, tableId) {
+            const table = document.getElementById(tableId);
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = ''; tbody.innerHTML = '';
+
+            if(!rawTkb || rawTkb.length < 31) {
+                tbody.innerHTML = `<tr><td style="padding: 30px;">Nhà trường chưa nạp TKB cho buổi này.</td></tr>`;
+                return;
+            }
+
+            let teacherSchedule = {}; 
+            let usedColumns = new Set(); 
+            const classes = rawTkb[0];
+
+            for(let d = 0; d < 6; d++) {
+                for(let p = 0; p < 5; p++) {
+                    let r = 1 + d*5 + p;
+                    if(!rawTkb[r]) continue;
+                    
+                    let periodHasData = false;
+                    for(let c = 1; c < classes.length; c++) {
+                        let cell = String(rawTkb[r][c] || "").trim();
+                        if(!cell) continue;
+
+                        let parts = cell.split('-');
+                        let maGv = "";
+                        let tenLop = classes[c];
+
+                        if (parts.length > 1) {
+                            maGv = parts[parts.length - 1].trim();
+                        } else if (cell.toLowerCase().includes('chào cờ') || cell.toLowerCase().includes('sh')) {
+                            continue; 
+                        }
+
+                        if (maGv) {
+                            if(!teacherSchedule[maGv]) teacherSchedule[maGv] = {};
+                            teacherSchedule[maGv][`${d}_${p}`] = tenLop;
+                            periodHasData = true;
+                        }
+                    }
+                    if(periodHasData) usedColumns.add(`${d}_${p}`);
+                }
+            }
+
+            // Lọc danh sách GV và Sắp xếp: Ưu tiên Tổ CM -> Tên GV
+            let activeTeachers = Object.keys(teacherSchedule).sort((a,b) => {
+                let tcmA = dictTcm[a] || "Z_Chưa xếp";
+                let tcmB = dictTcm[b] || "Z_Chưa xếp";
+                
+                // Nếu khác TCM thì xếp theo TCM
+                if (tcmA !== tcmB) return tcmA.localeCompare(tcmB);
+                
+                // Nếu cùng TCM thì xếp theo Tên
+                let nameA = dictTeachers[a] || a;
+                let nameB = dictTeachers[b] || b;
+                return nameA.localeCompare(nameB);
+            });
+
+            if (activeTeachers.length === 0) {
+                tbody.innerHTML = `<tr><td style="padding: 30px;">Dữ liệu trống.</td></tr>`;
+                return;
+            }
+
+            let days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            let trHeadDay = document.createElement('tr');
+            let trHeadPeriod = document.createElement('tr');
+            
+            let thGv = document.createElement('th');
+            thGv.rowSpan = 2; thGv.innerText = "Giáo viên"; thGv.className = "sticky-col day-divider";
+            trHeadDay.appendChild(thGv);
+
+            for (let d = 0; d < 6; d++) {
+                let periodsInDay = [];
+                for(let p=0; p<5; p++) if(usedColumns.has(`${d}_${p}`)) periodsInDay.push(p);
+                
+                if (periodsInDay.length > 0) {
+                    let thDay = document.createElement('th');
+                    thDay.colSpan = periodsInDay.length;
+                    thDay.innerText = days[d];
+                    thDay.className = "day-divider";
+                    trHeadDay.appendChild(thDay);
+
+                    periodsInDay.forEach((p, idx) => {
+                        let thP = document.createElement('th');
+                        thP.innerText = `T${p+1}`;
+                        if(idx === periodsInDay.length - 1) thP.className = "day-divider";
+                        trHeadPeriod.appendChild(thP);
+                    });
+                }
+            }
+            thead.appendChild(trHeadDay);
+            thead.appendChild(trHeadPeriod);
+
+            activeTeachers.forEach(maGv => {
+                let tr = document.createElement('tr');
+                let tdName = document.createElement('td');
+                // Bổ sung hiển thị Tổ CM
+                let tenGvStr = dictTeachers[maGv] || maGv;
+                let tcmStr = dictTcm[maGv] || '';
+                
+                tdName.innerHTML = `<span style="font-weight:700; color:var(--primary);">${tenGvStr}</span><br>
+                                    <span style="font-size:11px; color:var(--text-muted);">${maGv}</span><br>
+                                    <span style="font-size:11px; color:#c2410c; font-weight:600;">(${tcmStr})</span>`;
+                tdName.className = "sticky-col day-divider";
+                tr.appendChild(tdName);
+
+                for (let d = 0; d < 6; d++) {
+                    let periodsInDay = [];
+                    for(let p=0; p<5; p++) if(usedColumns.has(`${d}_${p}`)) periodsInDay.push(p);
+
+                    periodsInDay.forEach((p, idx) => {
+                        let td = document.createElement('td');
+                        let lop = teacherSchedule[maGv][`${d}_${p}`] || "";
+                        td.innerText = lop;
+                        if (lop) { td.style.color = "var(--dark)"; td.style.fontWeight = "600"; }
+                        if(idx === periodsInDay.length - 1) td.className = "day-divider";
+                        tr.appendChild(td);
+                    });
+                }
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- RENDER TKB LỚP (Ẩn Tên GV) ---
+        window.renderClassTkb = function() {
+            const className = document.getElementById('class-selector').value;
+            const containerSang = document.getElementById('class-sang-container');
+            const containerChieu = document.getElementById('class-chieu-container');
+            const emptyState = document.getElementById('class-empty');
+            const title = document.getElementById('class-display-name');
+
+            if (!className) {
+                containerSang.style.display = 'none'; containerChieu.style.display = 'none';
+                emptyState.style.display = 'block'; title.innerText = "Vui lòng chọn lớp";
+                return;
+            }
+
+            title.innerText = "Thời Khóa Biểu: Lớp " + className;
+            emptyState.style.display = 'none';
+
+            let hasSang = buildSingleClassTable(rawTkbSang, className, 'table-class-sang');
+            let hasChieu = buildSingleClassTable(rawTkbChieu, className, 'table-class-chieu');
+
+            containerSang.style.display = hasSang ? 'block' : 'none';
+            containerChieu.style.display = hasChieu ? 'block' : 'none';
+
+            if(!hasSang && !hasChieu) {
+                emptyState.style.display = 'block';
+                emptyState.innerText = `Lớp ${className} hiện chưa có dữ liệu TKB.`;
+            }
+        }
+
+        function buildSingleClassTable(rawTkb, className, tableId) {
+            const table = document.getElementById(tableId);
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = ''; tbody.innerHTML = '';
+
+            if(!rawTkb || rawTkb.length < 31) return false;
+
+            let colIndex = -1;
+            for(let c=1; c<rawTkb[0].length; c++) {
+                if (String(rawTkb[0][c]).trim() === className) { colIndex = c; break; }
+            }
+            if (colIndex === -1) return false;
+
+            let hasClass = false;
+            for(let r=1; r<=30; r++) { if(rawTkb[r] && rawTkb[r][colIndex]) { hasClass = true; break; } }
+            if(!hasClass) return false;
+
+            let days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            thead.innerHTML = `<tr><th class="sticky-col" style="width: 80px;">Tiết</th><th>${days.join('</th><th>')}</th></tr>`;
+
+            for (let p = 0; p < 5; p++) {
+                let tr = document.createElement('tr');
+                let tdPeriod = document.createElement('td');
+                tdPeriod.innerText = `Tiết ${p+1}`;
+                tdPeriod.className = "sticky-col";
+                tr.appendChild(tdPeriod);
+
+                for (let d = 0; d < 6; d++) {
+                    let td = document.createElement('td');
+                    let r = 1 + d*5 + p;
+                    let cell = rawTkb[r] ? String(rawTkb[r][colIndex] || "").trim() : "";
+                    
+                    if (cell) {
+                        if (cell.toLowerCase().includes("chào cờ")) {
+                            td.innerHTML = `<span class="subject-name" style="color:#e11d48;">CHÀO CỜ</span>`;
+                        } else {
+                            let parts = cell.split('-');
+                            let maMon = parts.slice(0, parts.length-1).join('-').trim() || parts[0].trim();
+                            let tenMon = dictSubjects[maMon.toLowerCase()] || maMon;
+                            
+                            // Chỉ hiển thị tên môn, ẨN TÊN GV
+                            td.innerHTML = `<span class="subject-name">${tenMon}</span>`;
+                        }
+                    } else {
+                        td.innerText = "-";
+                        td.style.color = "var(--border)";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+            return true;
+        }
+
+        // --- XUẤT EXCEL THEO TAB ĐANG MỞ ---
+        window.exportExcel = function() {
+            let activeTabBtn = document.querySelector('.tab-btn.active');
+            if(!activeTabBtn) return;
+            let tabName = activeTabBtn.innerText;
+            let wb = XLSX.utils.book_new();
+
+            if (tabName.includes('Lớp')) {
+                let className = document.getElementById('class-selector').value;
+                if (!className) return showToast("Vui lòng chọn lớp để xuất Excel!", "warning");
+                
+                let tbSang = document.getElementById('table-class-sang');
+                let tbChieu = document.getElementById('table-class-chieu');
+                let hasData = false;
+
+                if (tbSang.querySelector('tbody').innerHTML !== "") {
+                    let wsS = XLSX.utils.table_to_sheet(tbSang);
+                    XLSX.utils.book_append_sheet(wb, wsS, `Sang_${className}`);
+                    hasData = true;
+                }
+                if (tbChieu.querySelector('tbody').innerHTML !== "") {
+                    let wsC = XLSX.utils.table_to_sheet(tbChieu);
+                    XLSX.utils.book_append_sheet(wb, wsC, `Chieu_${className}`);
+                    hasData = true;
+                }
+                
+                if (!hasData) return showToast("Không có dữ liệu TKB để xuất!", "warning");
+                XLSX.writeFile(wb, `TKB_Lop_${className}.xlsx`);
+                showToast(`Đã tải xuống TKB Lớp ${className}!`);
+
+            } else if (tabName.includes('Sáng')) {
+                let tbl = document.getElementById('table-tts');
+                if (tbl.querySelector('tbody').innerText.includes('trống')) return showToast("Không có dữ liệu để xuất!", "warning");
+                
+                let ws = XLSX.utils.table_to_sheet(tbl);
+                XLSX.utils.book_append_sheet(wb, ws, "TKB_ToanTruong_Sang");
+                XLSX.writeFile(wb, `TKB_ToanTruong_Sang.xlsx`);
+                showToast("Đã tải xuống TKB Toàn trường (Sáng)!");
+
+            } else if (tabName.includes('Chiều')) {
+                let tbl = document.getElementById('table-ttc');
+                if (tbl.querySelector('tbody').innerText.includes('trống')) return showToast("Không có dữ liệu để xuất!", "warning");
+                
+                let ws = XLSX.utils.table_to_sheet(tbl);
+                XLSX.utils.book_append_sheet(wb, ws, "TKB_ToanTruong_Chieu");
+                XLSX.writeFile(wb, `TKB_ToanTruong_Chieu.xlsx`);
+                showToast("Đã tải xuống TKB Toàn trường (Chiều)!");
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
