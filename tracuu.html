@@ -12,58 +12,90 @@
             --success: #10b981; --success-hover: #059669;
             --surface: #ffffff; --bg-color: #f8fafc;
             --text-main: #334155; --text-muted: #64748b; --dark: #0f172a;
-            --border: #e2e8f0; --shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --border: #e2e8f0; --shadow: 0 4px 15px rgba(0,0,0,0.05);
         }
 
-        body { font-family: 'Inter', sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main); }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            margin: 0; padding: 0; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+        }
         
         /* Header & Navigation */
-        .header { background: var(--surface); padding: 15px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; gap: 15px; }
+        .header { background: var(--surface); padding: 15px 25px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); position: sticky; top: 0; z-index: 100; display: flex; flex-direction: column; gap: 15px; border-bottom: 1px solid var(--border); }
         .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .header-title { margin: 0; font-size: 20px; color: var(--dark); font-weight: 700; }
+        .header-title { margin: 0; font-size: 20px; color: var(--dark); font-weight: 700; letter-spacing: -0.5px; }
         
-        .controls { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; }
-        .select-box { padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: var(--surface); min-width: 150px; font-family: inherit; font-weight: 500; color: var(--primary); cursor: pointer; }
-        .select-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+        .select-box { padding: 9px 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; outline: none; background: var(--surface); min-width: 160px; font-family: inherit; font-weight: 600; color: var(--primary); cursor: pointer; transition: all 0.2s ease; }
+        .select-box:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15); }
         
-        .btn-success { background-color: var(--success); color: white; border: none; padding: 10px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); box-shadow: var(--shadow); }
+        .btn-success { background-color: var(--success); color: white; border: none; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.1); }
+        .btn-success:hover { background-color: var(--success-hover); transform: translateY(-1px); box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); }
 
-        .tabs { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .tabs::-webkit-scrollbar { display: none; }
-        .tab-btn { padding: 10px 20px; border: none; background: #f1f5f9; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .tab-btn.active { background: var(--primary); color: white; box-shadow: var(--shadow); }
+        .tab-btn { padding: 10px 24px; border: none; background: transparent; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+        .tab-btn:hover { background: #f1f5f9; color: var(--text-main); }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2); }
         
         /* Content Area */
-        .container { padding: 20px; max-width: 100vw; box-sizing: border-box; }
+        .container { padding: 25px; flex: 1; max-width: 100vw; box-sizing: border-box; }
         .tab-content { display: none; animation: fadeIn 0.3s ease; }
         .tab-content.active { display: block; }
         
         /* Bảng hiển thị chung */
-        .table-wrapper { width: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); max-height: calc(100vh - 160px); position: relative; }
-        table { border-collapse: collapse; width: 100%; text-align: center; min-width: 800px; }
-        th, td { padding: 12px 8px; border: 1px solid var(--border); font-size: 13px; }
+        .table-wrapper { width: 100%; overflow-x: auto; background: var(--surface); border-radius: 12px; box-shadow: var(--shadow); border: 1px solid var(--border); max-height: calc(100vh - 200px); position: relative; }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; text-align: center; min-width: 800px; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); font-size: 13px; }
+        th:last-child, td:last-child { border-right: none; }
+        
+        /* Tối ưu CỰC ĐẠI cho TKB Toàn trường (Ép nhỏ font, nét mảnh, thu hẹp padding) */
+        #table-tts, #table-ttc {
+            width: max-content; 
+            min-width: auto;
+        }
+        #table-tts th, #table-tts td, #table-ttc th, #table-ttc td {
+            padding: 1px 3px; 
+            font-size: 11px; 
+            line-height: 1.2;
+            white-space: nowrap; 
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #e2e8f0;
+            width: 1%; 
+            transition: background-color 0.1s ease;
+        }
         
         /* Sticky Header */
-        thead th { position: sticky; top: 0; background-color: var(--primary-light); color: var(--primary-hover); font-weight: 700; z-index: 10; box-shadow: inset 0 -1px 0 var(--border), inset 0 1px 0 var(--border); }
+        thead th { position: sticky; top: 0; background-color: #f8fafc; color: var(--dark); font-weight: 700; z-index: 10; box-shadow: inset 0 -1px 0 var(--border), inset 0 1px 0 var(--border); }
         
-        /* Sticky Cột đầu tiên (Tên GV hoặc Tiết) */
-        tbody th, td.sticky-col { position: sticky; left: 0; background-color: #f8fafc; font-weight: 600; color: var(--dark); z-index: 5; box-shadow: inset -1px 0 0 var(--border); text-align: left; padding-left: 15px; }
-        thead th.sticky-col { left: 0; z-index: 11; text-align: left; padding-left: 15px; }
+        /* Sticky Cột đầu tiên */
+        tbody th, td.sticky-col { position: sticky; left: 0; font-weight: 600; color: var(--dark); z-index: 5; box-shadow: inset -1px 0 0 var(--border); text-align: left; padding-left: 15px; }
+        thead th.sticky-col { left: 0; z-index: 11; text-align: left; padding-left: 15px; background-color: #f8fafc; }
         
-        tbody tr:hover { background-color: #f1f5f9; }
-        tbody tr:hover td.sticky-col { background-color: #e2e8f0; }
+        #table-tts td.sticky-col, #table-ttc td.sticky-col { padding-left: 5px; padding-right: 5px; }
+
+        /* Hiệu ứng hover nổi bật ô thay vì cả hàng */
+        #table-tts tbody td:not(.sticky-col):hover, #table-ttc tbody td:not(.sticky-col):hover { filter: brightness(0.95); cursor: default; }
 
         /* Phân tách các Thứ trong TKB Toàn trường */
-        th.day-divider, td.day-divider { border-right: 2px solid var(--primary) !important; }
+        th.day-divider, td.day-divider { border-right: 1px solid var(--primary) !important; }
         
         /* Styling TKB Học sinh */
         .subject-name { font-weight: 700; color: var(--primary); font-size: 14px; display: block; }
-        .class-header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .class-title { font-size: 18px; font-weight: 700; color: var(--dark); margin: 0; border-left: 4px solid var(--primary); padding-left: 10px; }
+        .class-header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .class-title { font-size: 20px; font-weight: 700; color: var(--dark); margin: 0; display: inline-flex; align-items: center; gap: 10px; }
+        .class-title::before { content: ''; display: block; width: 6px; height: 24px; background: var(--primary); border-radius: 4px; }
         
         .loading { display: flex; justify-content: center; align-items: center; height: 200px; font-weight: 600; color: var(--primary); }
-        .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 500; }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-weight: 500; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
+
+        /* Footer Bản quyền */
+        .footer { text-align: center; padding: 20px; background-color: var(--surface); color: var(--text-muted); font-size: 13px; border-top: 1px solid var(--border); font-weight: 500; letter-spacing: 0.2px; }
 
         /* Toast Notifications */
         #toast-container { position: fixed; top: 25px; right: 25px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; pointer-events: none; }
@@ -117,17 +149,17 @@
             
             <!-- TKB Lớp Sáng -->
             <div id="class-sang-container" style="margin-bottom: 30px; display: none;">
-                <h3 style="margin-top:0; font-size:16px; color:var(--dark);">Ca Sáng</h3>
+                <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Sáng</h3>
                 <div class="table-wrapper"><table id="table-class-sang"><thead></thead><tbody></tbody></table></div>
             </div>
 
             <!-- TKB Lớp Chiều -->
             <div id="class-chieu-container" style="display: none;">
-                <h3 style="margin-top:0; font-size:16px; color:var(--dark);">Ca Chiều</h3>
+                <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Chiều</h3>
                 <div class="table-wrapper"><table id="table-class-chieu"><thead></thead><tbody></tbody></table></div>
             </div>
             
-            <div id="class-empty" class="empty-state">Vui lòng chọn lớp để xem Thời khóa biểu.</div>
+            <div id="class-empty" class="empty-state">Vui lòng chọn lớp để xem Thời khóa biểu chi tiết.</div>
         </div>
 
         <!-- TAB 1: TKB TOÀN TRƯỜNG SÁNG -->
@@ -139,6 +171,10 @@
         <div id="tab-toantruong-chieu" class="tab-content">
             <div class="table-wrapper"><table id="table-ttc"><thead></thead><tbody></tbody></table></div>
         </div>
+    </div>
+
+    <div class="footer">
+        Bản quyền: Dlk Edu Tech - Phát triển bởi tranhongdan@tranphudlk.edu.vn
     </div>
 
     <script type="module">
@@ -318,7 +354,7 @@
             }
         }
 
-        // --- RENDER TKB TOÀN TRƯỜNG (Sắp xếp theo TCM) ---
+        // --- RENDER TKB TOÀN TRƯỜNG (Có màu nền xen kẽ Trắng - Xám theo TCM) ---
         function renderSchoolWide(rawTkb, tableId) {
             const table = document.getElementById(tableId);
             const thead = table.querySelector('thead');
@@ -369,10 +405,8 @@
                 let tcmA = dictTcm[a] || "Z_Chưa xếp";
                 let tcmB = dictTcm[b] || "Z_Chưa xếp";
                 
-                // Nếu khác TCM thì xếp theo TCM
                 if (tcmA !== tcmB) return tcmA.localeCompare(tcmB);
                 
-                // Nếu cùng TCM thì xếp theo Tên
                 let nameA = dictTeachers[a] || a;
                 let nameB = dictTeachers[b] || b;
                 return nameA.localeCompare(nameB);
@@ -413,17 +447,29 @@
             thead.appendChild(trHeadDay);
             thead.appendChild(trHeadPeriod);
 
+            // Gán màu xen kẽ Trắng và Xám nhạt cho từng Tổ CM
+            const altColors = ["#ffffff", "#f1f5f9"];
+            let currentColorIdx = 0;
+            let lastTcm = null;
+
             activeTeachers.forEach(maGv => {
                 let tr = document.createElement('tr');
                 let tdName = document.createElement('td');
-                // Bổ sung hiển thị Tổ CM
-                let tenGvStr = dictTeachers[maGv] || maGv;
-                let tcmStr = dictTcm[maGv] || '';
                 
-                tdName.innerHTML = `<span style="font-weight:700; color:var(--primary);">${tenGvStr}</span><br>
-                                    <span style="font-size:11px; color:var(--text-muted);">${maGv}</span><br>
-                                    <span style="font-size:11px; color:#c2410c; font-weight:600;">(${tcmStr})</span>`;
+                let tenGvStr = dictTeachers[maGv] || maGv;
+                let tcmStr = dictTcm[maGv] || 'Chưa xếp tổ';
+                
+                // Thuật toán đảo màu xen kẽ
+                if (tcmStr !== lastTcm) {
+                    currentColorIdx = 1 - currentColorIdx; // Đảo qua lại giữa 0 và 1
+                    lastTcm = tcmStr;
+                }
+                let rowBgColor = altColors[currentColorIdx];
+
+                tdName.innerHTML = `<div style="font-weight:700; color:var(--primary); font-size:12px;">${tenGvStr}</div>
+                                    <div style="font-size:10px; color:var(--text-muted); margin-top:1px;">${maGv} <span style="color:#c2410c; font-weight:600;">(${tcmStr})</span></div>`;
                 tdName.className = "sticky-col day-divider";
+                tdName.style.backgroundColor = rowBgColor;
                 tr.appendChild(tdName);
 
                 for (let d = 0; d < 6; d++) {
@@ -434,7 +480,8 @@
                         let td = document.createElement('td');
                         let lop = teacherSchedule[maGv][`${d}_${p}`] || "";
                         td.innerText = lop;
-                        if (lop) { td.style.color = "var(--dark)"; td.style.fontWeight = "600"; }
+                        td.style.backgroundColor = rowBgColor; // Áp dụng màu nền cho từng ô
+                        if (lop) { td.style.color = "var(--dark)"; td.style.fontWeight = "700"; }
                         if(idx === periodsInDay.length - 1) td.className = "day-divider";
                         tr.appendChild(td);
                     });
@@ -498,6 +545,7 @@
                 let tdPeriod = document.createElement('td');
                 tdPeriod.innerText = `Tiết ${p+1}`;
                 tdPeriod.className = "sticky-col";
+                tdPeriod.style.backgroundColor = "#f8fafc";
                 tr.appendChild(tdPeriod);
 
                 for (let d = 0; d < 6; d++) {
@@ -513,7 +561,6 @@
                             let maMon = parts.slice(0, parts.length-1).join('-').trim() || parts[0].trim();
                             let tenMon = dictSubjects[maMon.toLowerCase()] || maMon;
                             
-                            // Chỉ hiển thị tên môn, ẨN TÊN GV
                             td.innerHTML = `<span class="subject-name">${tenMon}</span>`;
                         }
                     } else {
