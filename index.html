@@ -351,8 +351,6 @@
                             </div>
                         </div>
                         
-                        <div id="tkb-info-message" style="margin-bottom: 20px; font-size: 14px; color: var(--info-hover); background: var(--primary-light); padding: 10px 15px; border-radius: 8px; border: 1px dashed var(--primary); display: none;"></div>
-
                         <div id="tkb-display-container">
                             <!-- Bảng Sáng -->
                             <div class="tkb-box" id="box-tkb-sang">
@@ -1634,23 +1632,14 @@
             const boxSang = document.getElementById('box-tkb-sang');
             const boxChieu = document.getElementById('box-tkb-chieu');
             const boxEmpty = document.getElementById('box-tkb-empty');
-            const infoMsg = document.getElementById('tkb-info-message');
 
             const tbodySang = document.querySelector('#table-tkb-sang tbody');
             const tbodyChieu = document.querySelector('#table-tkb-chieu tbody');
             
-            if (tbodySang) tbodySang.innerHTML = "";
-            if (tbodyChieu) tbodyChieu.innerHTML = "";
-            
-            let tkbSangToUse = dbTkbSang;
-            let tkbChieuToUse = dbTkbChieu;
-            let foundPeriodId = currentPeriodId;
-            let usingFallback = false;
+            let schoolEmptySang = isTkbEmpty(dbTkbSang);
+            let schoolEmptyChieu = isTkbEmpty(dbTkbChieu);
 
-            let schoolEmptySang = isTkbEmpty(tkbSangToUse);
-            let schoolEmptyChieu = isTkbEmpty(tkbChieuToUse);
-
-            // LOGIC TỰ ĐỘNG TÌM ĐỢT GẦN NHẤT: Nếu đợt hiện tại KHÔNG có dữ liệu Sáng/Chiều cho TOÀN TRƯỜNG
+            // LOGIC TỰ ĐỘNG CHUYỂN ĐỢT GẦN NHẤT: Nếu đợt hiện tại KHÔNG có dữ liệu Sáng/Chiều
             if (schoolEmptySang && schoolEmptyChieu) {
                 const overlay = document.getElementById('loading-overlay');
                 if (overlay) overlay.style.display = 'flex';
@@ -1672,15 +1661,16 @@
                             let sEmpty = isTkbEmpty(dataS);
                             let cEmpty = isTkbEmpty(dataC);
 
-                            // Nếu tìm thấy đợt có dữ liệu, gán nó làm fallback và ngưng vòng lặp
+                            // Nếu tìm thấy đợt có dữ liệu, chuyển thẳng toàn bộ tab sang đợt này
                             if (!sEmpty || !cEmpty) {
-                                tkbSangToUse = dataS;
-                                tkbChieuToUse = dataC;
-                                foundPeriodId = pid;
-                                usingFallback = true;
-                                schoolEmptySang = sEmpty;
-                                schoolEmptyChieu = cEmpty;
-                                break;
+                                let selectedPeriodName = dbPeriods.find(p => p.id === currentPeriodId)?.name || 'Đợt này';
+                                let foundPeriodName = dbPeriods.find(p => p.id === pid)?.name || 'Đợt cũ';
+                                
+                                if (overlay) overlay.style.display = 'none';
+                                showToast(`${selectedPeriodName} chưa có TKB. Tự động hiển thị ${foundPeriodName}!`, 'info');
+                                
+                                await window.changePeriod(pid);
+                                return; // changePeriod sẽ tự trigger render lại
                             }
                         }
                     }
@@ -1689,20 +1679,12 @@
                 if (overlay) overlay.style.display = 'none';
             }
 
-            // Kiểm tra xem BẢN THÂN GIÁO VIÊN này có tiết ở buổi đó không
-            let teacherHasSang = teacherHasClasses(tkbSangToUse, maGv);
-            let teacherHasChieu = teacherHasClasses(tkbChieuToUse, maGv);
+            if (tbodySang) tbodySang.innerHTML = "";
+            if (tbodyChieu) tbodyChieu.innerHTML = "";
 
-            // Xử lý hiện thanh Thông báo
-            if (infoMsg) {
-                if (usingFallback && (!schoolEmptySang || !schoolEmptyChieu)) {
-                    let pName = dbPeriods.find(p => p.id === foundPeriodId)?.name || 'Đợt trước';
-                    infoMsg.innerHTML = `ℹ️ Đợt này chưa nạp dữ liệu TKB. Đang hiển thị lịch của <b>${pName}</b> (đợt gần nhất).`;
-                    infoMsg.style.display = 'block';
-                } else {
-                    infoMsg.style.display = 'none';
-                }
-            }
+            // Kiểm tra xem BẢN THÂN GIÁO VIÊN này có tiết ở buổi đó không
+            let teacherHasSang = teacherHasClasses(dbTkbSang, maGv);
+            let teacherHasChieu = teacherHasClasses(dbTkbChieu, maGv);
 
             // ẨN / HIỆN Bảng Sáng hoặc Chiều phụ thuộc việc GV CÓ TIẾT HAY KHÔNG
             if (boxSang) boxSang.style.display = teacherHasSang ? 'block' : 'none';
@@ -1711,7 +1693,7 @@
             // Xử lý Box Trống nếu GV không có bất kỳ tiết nào
             if (boxEmpty) {
                 if (!teacherHasSang && !teacherHasChieu) {
-                    if (usingFallback || (!schoolEmptySang || !schoolEmptyChieu)) {
+                    if (!schoolEmptySang || !schoolEmptyChieu) {
                         boxEmpty.innerHTML = `📭 Bạn chưa có lịch dạy (hoặc chưa được phân công) trong Thời khóa biểu đợt này.`;
                     } else {
                         boxEmpty.innerHTML = `📭 Hệ thống hiện chưa có bất kỳ dữ liệu Thời khóa biểu nào.`;
@@ -1745,7 +1727,7 @@
                 for (let d = 0; d < 6; d++) {
                     if (teacherHasSang) {
                         let tdS = document.createElement('td');
-                        let classSang = getTeacherClassForTkb(tkbSangToUse, d, p, maGv);
+                        let classSang = getTeacherClassForTkb(dbTkbSang, d, p, maGv);
                         tdS.innerText = classSang;
                         tdS.style.color = classSang ? 'var(--primary-hover)' : 'var(--text-muted)';
                         trSang.appendChild(tdS);
@@ -1753,7 +1735,7 @@
 
                     if (teacherHasChieu) {
                         let tdC = document.createElement('td');
-                        let classChieu = getTeacherClassForTkb(tkbChieuToUse, d, p, maGv);
+                        let classChieu = getTeacherClassForTkb(dbTkbChieu, d, p, maGv);
                         tdC.innerText = classChieu;
                         tdC.style.color = classChieu ? 'var(--primary-hover)' : 'var(--text-muted)';
                         trChieu.appendChild(tdC);
