@@ -351,9 +351,11 @@
                             </div>
                         </div>
                         
+                        <div id="tkb-info-message" style="margin-bottom: 20px; font-size: 14px; color: var(--info-hover); background: var(--primary-light); padding: 10px 15px; border-radius: 8px; border: 1px dashed var(--primary); display: none;"></div>
+
                         <div id="tkb-display-container">
                             <!-- Bảng Sáng -->
-                            <div class="tkb-box">
+                            <div class="tkb-box" id="box-tkb-sang">
                                 <h4>Buổi Sáng</h4>
                                 <div class="table-container">
                                     <table class="tkb-table" id="table-tkb-sang">
@@ -368,7 +370,7 @@
                             </div>
 
                             <!-- Bảng Chiều -->
-                            <div class="tkb-box">
+                            <div class="tkb-box" id="box-tkb-chieu">
                                 <h4>Buổi Chiều</h4>
                                 <div class="table-container">
                                     <table class="tkb-table" id="table-tkb-chieu">
@@ -380,6 +382,10 @@
                                         </tbody>
                                     </table>
                                 </div>
+                            </div>
+
+                            <div id="box-tkb-empty" style="display: none; text-align: center; padding: 40px; background: white; border-radius: 12px; border: 1px dashed var(--border); color: var(--text-muted); font-size: 15px;">
+                                📭 Hiện chưa có dữ liệu Thời khóa biểu nào được nạp cho hệ thống.
                             </div>
                         </div>
                     </div>
@@ -750,7 +756,6 @@
         
         let currentUser = null; 
         let currentTabId = '';
-        let isSearchingTkb = false; // Thêm biến cờ kiểm tra tìm TKB
         
         window.workbook = null; 
         window.tkbWorkbook = null; // Excel file for TKB
@@ -1562,56 +1567,7 @@
                 if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
-                if (tabId === 'tab-gv-tkb') {
-                    // Thêm logic: tự động chuyển về đợt có dữ liệu TKB gần nhất nếu đợt hiện tại trống
-                    if (!window.isSearchingTkb && (!dbTkbSang || dbTkbSang.length <= 1) && (!dbTkbChieu || dbTkbChieu.length <= 1)) {
-                        window.isSearchingTkb = true;
-                        const overlay = document.getElementById('loading-overlay');
-                        if(overlay) overlay.style.display = 'flex';
-                        
-                        let sortedPeriods = [...dbPeriods].sort((a,b) => b.startWeek - a.startWeek);
-                        let checks = sortedPeriods.map(async (p) => {
-                            try {
-                                let [snapS, snapC] = await Promise.all([
-                                    getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", p.id))),
-                                    getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", p.id)))
-                                ]);
-                                let hasS = false, hasC = false;
-                                if(snapS.exists()) {
-                                    let d = JSON.parse(snapS.data().excelData);
-                                    hasS = Array.isArray(d) && d.length > 1;
-                                }
-                                if(snapC.exists()) {
-                                    let d = JSON.parse(snapC.data().excelData);
-                                    hasC = Array.isArray(d) && d.length > 1;
-                                }
-                                return { id: p.id, hasData: hasS || hasC };
-                            } catch(e) { return { id: p.id, hasData: false }; }
-                        });
-                        
-                        let results = await Promise.all(checks);
-                        let latestTkbPeriodId = null;
-                        for (let p of sortedPeriods) {
-                            let res = results.find(r => r.id === p.id);
-                            if (res && res.hasData) {
-                                latestTkbPeriodId = p.id;
-                                break;
-                            }
-                        }
-                        
-                        if (latestTkbPeriodId && latestTkbPeriodId !== currentPeriodId) {
-                            currentPeriodId = latestTkbPeriodId;
-                            document.querySelectorAll(".period-selector").forEach(s => s.value = currentPeriodId);
-                            await reloadMemoryForCurrentPeriod();
-                            checkAndApplyLock();
-                            showToast("Đã tự động chuyển sang TKB đợt có dữ liệu gần nhất!", "info");
-                        }
-                        
-                        if(overlay) overlay.style.display = 'none';
-                        window.isSearchingTkb = false;
-                    }
-                    renderTeacherTkb();
-                }
+                if (tabId === 'tab-gv-tkb') renderTeacherTkb();
             }
         };
 
@@ -1643,15 +1599,69 @@
             return "";
         }
 
-        window.renderTeacherTkb = function() {
+        window.renderTeacherTkb = async function() {
             if (!currentUser || !currentUser.maGv) return;
             const maGv = currentUser.maGv;
+
+            const boxSang = document.getElementById('box-tkb-sang');
+            const boxChieu = document.getElementById('box-tkb-chieu');
+            const boxEmpty = document.getElementById('box-tkb-empty');
+            const infoMsg = document.getElementById('tkb-info-message');
 
             const tbodySang = document.querySelector('#table-tkb-sang tbody');
             const tbodyChieu = document.querySelector('#table-tkb-chieu tbody');
             
             if (tbodySang) tbodySang.innerHTML = "";
             if (tbodyChieu) tbodyChieu.innerHTML = "";
+            
+            let tkbSangToUse = dbTkbSang;
+            let tkbChieuToUse = dbTkbChieu;
+            let foundPeriodId = currentPeriodId;
+            let usingFallback = false;
+
+            // Truy xuất lùi đợt gần nhất có TKB nếu đợt hiện tại trống
+            if ((!tkbSangToUse || tkbSangToUse.length <= 1) && (!tkbChieuToUse || tkbChieuToUse.length <= 1)) {
+                let sortedPeriods = [...dbPeriods].sort((a,b) => b.startWeek - a.startWeek);
+                let currentIndex = sortedPeriods.findIndex(p => p.id === currentPeriodId);
+                
+                if (currentIndex !== -1) {
+                    for (let i = currentIndex + 1; i < sortedPeriods.length; i++) {
+                        let pid = sortedPeriods[i].id;
+                        let snapS = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", pid)));
+                        let snapC = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", pid)));
+                        
+                        let dataS = snapS.exists() ? JSON.parse(snapS.data().excelData) : [];
+                        let dataC = snapC.exists() ? JSON.parse(snapC.data().excelData) : [];
+                        
+                        if ((dataS && dataS.length > 1) || (dataC && dataC.length > 1)) {
+                            tkbSangToUse = dataS;
+                            tkbChieuToUse = dataC;
+                            foundPeriodId = pid;
+                            usingFallback = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let hasSang = tkbSangToUse && tkbSangToUse.length > 1;
+            let hasChieu = tkbChieuToUse && tkbChieuToUse.length > 1;
+
+            if (infoMsg) {
+                if (usingFallback && (hasSang || hasChieu)) {
+                    let pName = dbPeriods.find(p => p.id === foundPeriodId)?.name || 'Đợt cũ';
+                    infoMsg.innerHTML = `ℹ️ Đợt này chưa cập nhật TKB. Đang hiển thị thời khóa biểu của <b>${pName}</b> (đợt gần nhất).`;
+                    infoMsg.style.display = 'block';
+                } else {
+                    infoMsg.style.display = 'none';
+                }
+            }
+
+            if (boxSang) boxSang.style.display = hasSang ? 'block' : 'none';
+            if (boxChieu) boxChieu.style.display = hasChieu ? 'block' : 'none';
+            if (boxEmpty) boxEmpty.style.display = (!hasSang && !hasChieu) ? 'block' : 'none';
+
+            if (!hasSang && !hasChieu) return;
 
             for (let p = 0; p < 5; p++) {
                 let trSang = document.createElement('tr');
@@ -1670,21 +1680,25 @@
                 trChieu.appendChild(tdTitleC);
 
                 for (let d = 0; d < 6; d++) {
-                    let tdS = document.createElement('td');
-                    let classSang = getTeacherClassForTkb(dbTkbSang, d, p, maGv);
-                    tdS.innerText = classSang;
-                    tdS.style.color = classSang ? 'var(--primary-hover)' : 'var(--text-muted)';
-                    trSang.appendChild(tdS);
+                    if (hasSang) {
+                        let tdS = document.createElement('td');
+                        let classSang = getTeacherClassForTkb(tkbSangToUse, d, p, maGv);
+                        tdS.innerText = classSang;
+                        tdS.style.color = classSang ? 'var(--primary-hover)' : 'var(--text-muted)';
+                        trSang.appendChild(tdS);
+                    }
 
-                    let tdC = document.createElement('td');
-                    let classChieu = getTeacherClassForTkb(dbTkbChieu, d, p, maGv);
-                    tdC.innerText = classChieu;
-                    tdC.style.color = classChieu ? 'var(--primary-hover)' : 'var(--text-muted)';
-                    trChieu.appendChild(tdC);
+                    if (hasChieu) {
+                        let tdC = document.createElement('td');
+                        let classChieu = getTeacherClassForTkb(tkbChieuToUse, d, p, maGv);
+                        tdC.innerText = classChieu;
+                        tdC.style.color = classChieu ? 'var(--primary-hover)' : 'var(--text-muted)';
+                        trChieu.appendChild(tdC);
+                    }
                 }
 
-                if (tbodySang) tbodySang.appendChild(trSang);
-                if (tbodyChieu) tbodyChieu.appendChild(trChieu);
+                if (tbodySang && hasSang) tbodySang.appendChild(trSang);
+                if (tbodyChieu && hasChieu) tbodyChieu.appendChild(trChieu);
             }
         };
         // ----------------------------------------
