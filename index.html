@@ -186,7 +186,6 @@
     <div id="toast-container"></div>
     <div id="loading-overlay"><div class="spinner"></div><div>Đang đồng bộ dữ liệu...</div></div>
 
-    <!-- Modal Xác Nhận Chung -->
     <div id="confirm-modal" class="modal-overlay" style="z-index: 10000;">
         <div class="modal-box">
             <h3 id="confirm-title" style="margin-top:0; color:var(--dark);">Xác nhận</h3>
@@ -198,7 +197,6 @@
         </div>
     </div>
 
-    <!-- ĐĂNG NHẬP -->
     <div id="login-section">
         <div class="login-box">
             <h2>Hệ Thống PCCM</h2>
@@ -235,7 +233,6 @@
         </div>
     </div>
 
-    <!-- LAYOUT CHÍNH -->
     <div id="app-layout">
         <div class="sidebar">
             <div class="sidebar-header">
@@ -243,10 +240,8 @@
                 <p id="sidebar-user-role">Đang tải...</p>
             </div>
             <div class="menu" id="sidebar-menu">
-                <!-- Master Admin Items -->
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
-                <!-- Admin Items -->
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tkb')">🗓️ Nạp Thời Khóa Biểu</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
@@ -258,15 +253,12 @@
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
                 <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
                 
-                <!-- TTCM Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">👥 Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">✍️ Phân công Giảng dạy</div>
                 
-                <!-- Chung (TTCM & GV) -->
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-gv-tkb')">🗓 Tra Thời Khóa Biểu</div>
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">📋 Tổng hợp Tổ CM</div>
                 
-                <!-- Chung Tất cả (Cả năm) -->
                 <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
             </div>
         </div>
@@ -283,7 +275,6 @@
             <div class="content-area">
                 <div class="content-inner">
                     
-                    <!-- TAB QUẢN LÝ ĐỢN VỊ (Master Admin) -->
                     <div id="tab-admin-sub" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Quản lý Tài khoản Đơn vị (Sub Admin)</h3>
@@ -298,7 +289,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB QUẢN LÝ ĐỢT PCCM -->
                     <div id="tab-admin-periods" class="tab-content">
                         <h3 style="margin:0 0 5px 0; font-size:20px;">Quản lý Đợt Phân Công (Khung 35 tuần)</h3>
                         <p style="font-size: 14px; color: var(--text-muted); margin-top:0; margin-bottom:20px;">Quản lý các lần thay đổi PCCM trong năm học. Khi <b>Khóa đợt</b>, mọi dữ liệu trong đợt đó sẽ bị đóng băng (không cho phép sửa/xóa).</p>
@@ -311,7 +301,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN NẠP TKB -->
                     <div id="tab-admin-tkb" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Nạp Dữ liệu Thời Khóa Biểu (Excel)</h3>
@@ -341,7 +330,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB GV/TTCM TRA TKB -->
                     <div id="tab-gv-tkb" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Thời Khóa Biểu Cá Nhân</h3>
@@ -352,7 +340,6 @@
                         </div>
                         
                         <div id="tkb-display-container">
-                            <!-- Bảng Sáng -->
                             <div class="tkb-box" id="box-tkb-sang">
                                 <h4>Buổi Sáng</h4>
                                 <div class="table-container">
@@ -361,13 +348,11 @@
                                             <tr><th>Tiết</th><th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th></tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Được render bằng JS -->
-                                        </tbody>
+                                            </tbody>
                                     </table>
                                 </div>
                             </div>
 
-                            <!-- Bảng Chiều -->
                             <div class="tkb-box" id="box-tkb-chieu">
                                 <h4>Buổi Chiều</h4>
                                 <div class="table-container">
@@ -376,8 +361,7 @@
                                             <tr><th>Tiết</th><th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th></tr>
                                         </thead>
                                         <tbody>
-                                            <!-- Được render bằng JS -->
-                                        </tbody>
+                                            </tbody>
                                     </table>
                                 </div>
                             </div>
@@ -388,7 +372,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB KIÊM NHIỆM (ADMIN) -->
                     <div id="tab-kiemnhiem" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Quản lý Tiết Kiêm Nhiệm</h3>
@@ -415,7 +398,6 @@
                         </div>
                     </div>
                     
-                    <!-- TAB ADMIN ĐIỀU CHỈNH PHÂN CÔNG -->
                     <div id="tab-admin-phancong" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Điều chỉnh Phân công Toàn trường</h3>
@@ -454,7 +436,6 @@
                         </div>
                     </div>
 
-                    <!-- Vùng Upload Excel & Tải Mẫu Chung -->
                     <div class="control-panel admin-only" id="excel-panel" style="display: none;">
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -470,7 +451,6 @@
                         <button class="btn btn-outline" onclick="downloadExcelTemplate()">📥 Tải file Mẫu Excel</button>
                     </div>
 
-                    <!-- TABS ADMIN: GIÁO VIÊN -->
                     <div id="tab-giaovien" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-giaovien')">+ Thêm dòng mới</button>
@@ -487,7 +467,6 @@
                         </div>
                     </div>
                     
-                    <!-- TABS ADMIN: LỚP -->
                     <div id="tab-lop" class="tab-content">
                         <div class="action-bar" style="justify-content: space-between;">
                             <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-lop')">+ Thêm dòng mới</button>
@@ -504,9 +483,14 @@
                         </div>
                     </div>
 
-                    <!-- TABS ADMIN: MÔN HỌC (Global) -->
                     <div id="tab-monhoc" class="tab-content">
-                        <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button></div>
+                        <div class="action-bar" style="justify-content: space-between;">
+                            <button class="btn btn-success admin-action lock-hidden" onclick="addNewRow('table-monhoc')">+ Thêm dòng mới</button>
+                            <div class="period-picker-container">
+                                <span>Chọn Đợt:</span>
+                                <select class="period-selector" onchange="changePeriod(this.value)"><option value="default">Đang tải...</option></select>
+                            </div>
+                        </div>
                         <div class="table-container">
                             <table id="table-monhoc">
                                 <thead><tr><th>Mã môn</th><th>Tên môn</th><th>Số tiết/tuần</th><th style="width:120px;text-align:center;" class="admin-action lock-hidden">Thao tác</th></tr></thead>
@@ -515,7 +499,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS ADMIN: TỔ HỢP MÔN (Global) -->
                     <div id="tab-tohop" class="tab-content">
                         <div class="action-bar admin-action lock-hidden"><button class="btn btn-success" onclick="addNewRow('table-tohop')">+ Thêm dòng mới</button></div>
                         <div class="table-container">
@@ -526,7 +509,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN MATRIX -->
                     <div id="tab-admin-matrix" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Bảng Ma trận Phân công chuyên môn Toàn trường</h3>
@@ -546,7 +528,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB ADMIN TỔNG HỢP TOÀN TRƯỜNG -->
                     <div id="tab-admin-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Danh sách Tổng hợp Phân công Toàn trường</h3>
@@ -566,7 +547,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM: GIÁO VIÊN -->
                     <div id="tab-ttcm-gv" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Danh sách Giáo viên (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
@@ -584,7 +564,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM: PHÂN CÔNG -->
                     <div id="tab-ttcm-phancong" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Phân công Giảng dạy theo Đợt</h3>
@@ -618,7 +597,6 @@
                         </div>
                     </div>
 
-                    <!-- TABS TTCM / GV: TỔNG HỢP TỔ -->
                     <div id="tab-ttcm-tonghop" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
                             <h3 style="margin:0; font-size:20px;">Bảng Tổng hợp Chuyên môn (Tổ <span class="lbl-tcm" style="color:var(--primary);"></span>)</h3>
@@ -638,7 +616,6 @@
                         </div>
                     </div>
 
-                    <!-- TAB TỔNG HỢP CẢ NĂM -->
                     <div id="tab-tonghop-canam" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
                             <h3 style="margin:0; font-size:20px;">Báo cáo Tổng số tiết Cả Năm Học (35 Tuần)</h3>
@@ -660,7 +637,6 @@
         </div>
     </div>
 
-    <!-- Modal Đổi Mã Đăng Nhập -->
     <div id="pw-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 id="pw-modal-title" style="margin-top:0; color:var(--dark);">Đổi mã cá nhân</h3>
@@ -673,11 +649,10 @@
         </div>
     </div>
 
-    <!-- Modal Thêm Đợt Mới -->
     <div id="add-period-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Khởi tạo Đợt Mới</h3>
-            <p style="font-size:13px; color:var(--warning-hover); background:var(--warning-light); padding:10px; border-radius:6px; margin-bottom:20px;">Toàn bộ dữ liệu Lớp, Giáo viên, Kiêm nhiệm, Phân công sẽ được <b>sao chép tự động</b> từ đợt hiện tại sang đợt mới.</p>
+            <p style="font-size:13px; color:var(--warning-hover); background:var(--warning-light); padding:10px; border-radius:6px; margin-bottom:20px;">Toàn bộ dữ liệu Lớp, Môn học, Giáo viên, Kiêm nhiệm, Phân công sẽ được <b>sao chép tự động</b> từ đợt hiện tại sang đợt mới.</p>
             
             <div style="text-align: left; margin-bottom: 25px;">
                 <label style="font-size: 13px; font-weight: 600; color:var(--text-main);">Áp dụng từ tuần thứ (1 - 35)</label>
@@ -691,7 +666,6 @@
         </div>
     </div>
 
-    <!-- Modal Thêm Cột Kiêm Nhiệm -->
     <div id="add-kn-col-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Thêm Nhiệm vụ mới</h3>
@@ -706,7 +680,6 @@
         </div>
     </div>
 
-    <!-- Modal Thêm GV vào Kiêm Nhiệm -->
     <div id="add-kn-row-modal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="margin-top:0; color:var(--dark);">Thêm Giáo viên hưởng Kiêm nhiệm</h3>
@@ -829,7 +802,7 @@
         }
 
         function getDocName(baseName, pId) {
-            if(baseName === 'tab-monhoc' || baseName === 'tab-tohop') return baseName; 
+            if(baseName === 'tab-tohop') return baseName; // Môn học giờ đã phân theo đợt, chỉ có tổ hợp là global
             if(pId === 'default') return baseName;
             return baseName + "_" + pId;
         }
@@ -1277,7 +1250,7 @@
         async function reloadMemoryForCurrentPeriod() {
             const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn, snapTkbS, snapTkbC] = await Promise.all([
                 getDoc(doc(db, getCollectionName(), getDocName("tab-lop", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), "tab-monhoc")),
+                getDoc(doc(db, getCollectionName(), getDocName("tab-monhoc", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), "tab-tohop")),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId))),
@@ -1285,8 +1258,15 @@
                 getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", currentPeriodId)))
             ]);
+
+            // Xử lý Cơ chế Fallback Môn học (dành cho đơn vị cũ chưa update file môn học theo đợt)
+            let finalSnapMon = snapMon;
+            if (!finalSnapMon.exists() && currentPeriodId !== 'default') {
+                finalSnapMon = await getDoc(doc(db, getCollectionName(), "tab-monhoc"));
+            }
+
             dbClasses = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
-            dbSubjects = snapMon.exists() ? JSON.parse(snapMon.data().excelData) : [];
+            dbSubjects = finalSnapMon.exists() ? JSON.parse(finalSnapMon.data().excelData) : [];
             dbCombos = snapToHop.exists() ? JSON.parse(snapToHop.data().excelData) : [];
             dbAssignments = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
             dbTeachers = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
@@ -1386,12 +1366,9 @@
                 
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", newId)), { excelData: JSON.stringify(dbTeachers) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-monhoc", newId)), { excelData: JSON.stringify(dbSubjects) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", newId)), { excelData: JSON.stringify(dbKiemNhiem) });
-                
-                // KHÔNG COPY TKB SANG ĐỢT MỚI: Để TKB luôn rỗng, hệ thống sẽ tự fallback về đợt cũ.
-                // await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", newId)), { excelData: JSON.stringify(dbTkbSang) });
-                // await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", newId)), { excelData: JSON.stringify(dbTkbChieu) });
                 
                 currentPeriodId = newId;
                 updatePeriodDropdown();
@@ -2440,8 +2417,15 @@
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
             try {
-                const docRef = doc(db, getCollectionName(), getDocName(tabId, currentPeriodId));
-                const docSnap = await getDoc(docRef);
+                let docRef = doc(db, getCollectionName(), getDocName(tabId, currentPeriodId));
+                let docSnap = await getDoc(docRef);
+
+                // Cơ chế fallback đặc biệt cho tab-monhoc để tương thích ngược
+                if (!docSnap.exists() && tabId === 'tab-monhoc' && currentPeriodId !== 'default') {
+                    docRef = doc(db, getCollectionName(), "tab-monhoc");
+                    docSnap = await getDoc(docRef);
+                }
+
                 let data = [];
                 if (docSnap.exists()) {
                     data = JSON.parse(docSnap.data().excelData);
@@ -3349,16 +3333,37 @@
                 let duration = end - start + 1;
                 if(duration <= 0) duration = 0; 
 
-                const [snapGv, snapLop, snapPc] = await Promise.all([
+                const [snapGv, snapLop, snapPc, snapMon] = await Promise.all([
                     getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", p.id))),
                     getDoc(doc(db, getCollectionName(), getDocName("tab-lop", p.id))),
-                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id)))
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-monhoc", p.id)))
                 ]);
+
+                let finalSnapMon = snapMon;
+                if (!finalSnapMon.exists() && p.id !== 'default') {
+                    finalSnapMon = await getDoc(doc(db, getCollectionName(), "tab-monhoc"));
+                }
                 
                 let gvs = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
                 let lops = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
                 let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
+                let periodSubjects = finalSnapMon.exists() ? JSON.parse(finalSnapMon.data().excelData) : [];
                 
+                const getPeriodBaseHours = (maMon) => {
+                    for(let k=1; k<periodSubjects.length; k++) {
+                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return window.parseFloatSafe(periodSubjects[k][2]) || 0;
+                    }
+                    return 0;
+                };
+
+                const getPeriodTenMonByMa = (maMon) => {
+                    for(let k=1; k<periodSubjects.length; k++) {
+                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return periodSubjects[k][1].trim();
+                    }
+                    return maMon.trim();
+                };
+
                 const checkCD = (lop, tenMonFull) => {
                     let cl = lops.find(c => c && c[0] === lop);
                     if(!cl) return false;
@@ -3382,8 +3387,8 @@
                     let myPcs = pcs.filter(a => a.maGv === maGv);
                     let teachingHours = 0;
                     myPcs.forEach(a => {
-                        let tm = getTenMonByMa(a.maMon);
-                        let base = getBaseHours(a.maMon);
+                        let tm = getPeriodTenMonByMa(a.maMon);
+                        let base = getPeriodBaseHours(a.maMon);
                         teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
                     });
                     
@@ -3447,16 +3452,37 @@
                 let duration = end - start + 1;
                 if(duration <= 0) duration = 0; 
 
-                const [snapGv, snapLop, snapPc] = await Promise.all([
+                const [snapGv, snapLop, snapPc, snapMon] = await Promise.all([
                     getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", p.id))),
                     getDoc(doc(db, getCollectionName(), getDocName("tab-lop", p.id))),
-                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id)))
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-phancong", p.id))),
+                    getDoc(doc(db, getCollectionName(), getDocName("tab-monhoc", p.id)))
                 ]);
+
+                let finalSnapMon = snapMon;
+                if (!finalSnapMon.exists() && p.id !== 'default') {
+                    finalSnapMon = await getDoc(doc(db, getCollectionName(), "tab-monhoc"));
+                }
                 
                 let gvs = snapGv.exists() ? migrateTeachersDb(JSON.parse(snapGv.data().excelData)) : [];
                 let lops = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
                 let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
+                let periodSubjects = finalSnapMon.exists() ? JSON.parse(finalSnapMon.data().excelData) : [];
                 
+                const getPeriodBaseHours = (maMon) => {
+                    for(let k=1; k<periodSubjects.length; k++) {
+                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return window.parseFloatSafe(periodSubjects[k][2]) || 0;
+                    }
+                    return 0;
+                };
+
+                const getPeriodTenMonByMa = (maMon) => {
+                    for(let k=1; k<periodSubjects.length; k++) {
+                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return periodSubjects[k][1].trim();
+                    }
+                    return maMon.trim();
+                };
+
                 const checkCD = (lop, tenMonFull) => {
                     let cl = lops.find(c => c && c[0] === lop);
                     if(!cl) return false;
@@ -3480,8 +3506,8 @@
                     let myPcs = pcs.filter(a => a.maGv === maGv);
                     let teachingHours = 0;
                     myPcs.forEach(a => {
-                        let tm = getTenMonByMa(a.maMon);
-                        let base = getBaseHours(a.maMon);
+                        let tm = getPeriodTenMonByMa(a.maMon);
+                        let base = getPeriodBaseHours(a.maMon);
                         teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
                     });
                     
