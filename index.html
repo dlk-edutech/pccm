@@ -761,6 +761,32 @@
         window.tkbWorkbook = null; // Excel file for TKB
         window.tableFilters = {};
 
+        // === CÁC HÀM TIỆN ÍCH MỚI KIỂM TRA TKB ===
+        // 1. Kiểm tra xem file TKB có thực sự rỗng không (không có dữ liệu lớp)
+        window.isTkbEmpty = function(tkbData) {
+            if (!tkbData || !Array.isArray(tkbData) || tkbData.length <= 1) return true;
+            for (let i = 1; i < tkbData.length; i++) {
+                if (tkbData[i] && tkbData[i].length > 1) {
+                    for(let j = 1; j < tkbData[i].length; j++) {
+                        if (tkbData[i][j] && String(tkbData[i][j]).trim() !== "") return false;
+                    }
+                }
+            }
+            return true;
+        };
+
+        // 2. Kiểm tra bản thân giáo viên đó có lớp trong buổi đó không
+        window.teacherHasClasses = function(dbTkb, maGv) {
+            if (!dbTkb || dbTkb.length < 31) return false; // Cần đủ dòng từ Tiết 1 thứ 2 -> Tiết 5 thứ 7 (30 dòng + 1 header)
+            for (let d = 0; d < 6; d++) {
+                for (let p = 0; p < 5; p++) {
+                    if (getTeacherClassForTkb(dbTkb, d, p, maGv) !== "") return true;
+                }
+            }
+            return false;
+        };
+        // ==========================================
+
         window.parseFloatSafe = function(val) {
             if (val === undefined || val === null || val === "") return 0;
             let parsed = parseFloat(String(val).replace(',', '.'));
@@ -1364,8 +1390,10 @@
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-lop", newId)), { excelData: JSON.stringify(dbClasses) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-phancong", newId)), { assignmentData: JSON.stringify(dbAssignments) });
                 await setDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", newId)), { excelData: JSON.stringify(dbKiemNhiem) });
-                await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", newId)), { excelData: JSON.stringify(dbTkbSang) });
-                await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", newId)), { excelData: JSON.stringify(dbTkbChieu) });
+                
+                // KHÔNG COPY TKB SANG ĐỢT MỚI: Để TKB luôn rỗng, hệ thống sẽ tự fallback về đợt cũ.
+                // await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", newId)), { excelData: JSON.stringify(dbTkbSang) });
+                // await setDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", newId)), { excelData: JSON.stringify(dbTkbChieu) });
                 
                 currentPeriodId = newId;
                 updatePeriodDropdown();
@@ -1567,7 +1595,7 @@
                 if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
-                if (tabId === 'tab-gv-tkb') renderTeacherTkb();
+                if (tabId === 'tab-gv-tkb') await renderTeacherTkb(); // Updated to await
             }
         };
 
@@ -1619,50 +1647,85 @@
             let foundPeriodId = currentPeriodId;
             let usingFallback = false;
 
-            // Truy xuất lùi đợt gần nhất có TKB nếu đợt hiện tại trống
-            if ((!tkbSangToUse || tkbSangToUse.length <= 1) && (!tkbChieuToUse || tkbChieuToUse.length <= 1)) {
-                let sortedPeriods = [...dbPeriods].sort((a,b) => b.startWeek - a.startWeek);
-                let currentIndex = sortedPeriods.findIndex(p => p.id === currentPeriodId);
-                
-                if (currentIndex !== -1) {
-                    for (let i = currentIndex + 1; i < sortedPeriods.length; i++) {
-                        let pid = sortedPeriods[i].id;
-                        let snapS = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", pid)));
-                        let snapC = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", pid)));
-                        
-                        let dataS = snapS.exists() ? JSON.parse(snapS.data().excelData) : [];
-                        let dataC = snapC.exists() ? JSON.parse(snapC.data().excelData) : [];
-                        
-                        if ((dataS && dataS.length > 1) || (dataC && dataC.length > 1)) {
-                            tkbSangToUse = dataS;
-                            tkbChieuToUse = dataC;
-                            foundPeriodId = pid;
-                            usingFallback = true;
-                            break;
+            let schoolEmptySang = isTkbEmpty(tkbSangToUse);
+            let schoolEmptyChieu = isTkbEmpty(tkbChieuToUse);
+
+            // LOGIC TỰ ĐỘNG TÌM ĐỢT GẦN NHẤT: Nếu đợt hiện tại KHÔNG có dữ liệu Sáng/Chiều cho TOÀN TRƯỜNG
+            if (schoolEmptySang && schoolEmptyChieu) {
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) overlay.style.display = 'flex';
+
+                try {
+                    let sortedPeriods = [...dbPeriods].sort((a,b) => b.startWeek - a.startWeek);
+                    let currentIndex = sortedPeriods.findIndex(p => p.id === currentPeriodId);
+                    
+                    if (currentIndex !== -1) {
+                        // Duyệt lùi về các đợt cũ hơn (do mảng đã được sort DESC)
+                        for (let i = currentIndex + 1; i < sortedPeriods.length; i++) {
+                            let pid = sortedPeriods[i].id;
+                            let snapS = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", pid)));
+                            let snapC = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", pid)));
+                            
+                            let dataS = snapS.exists() ? JSON.parse(snapS.data().excelData) : [];
+                            let dataC = snapC.exists() ? JSON.parse(snapC.data().excelData) : [];
+                            
+                            let sEmpty = isTkbEmpty(dataS);
+                            let cEmpty = isTkbEmpty(dataC);
+
+                            // Nếu tìm thấy đợt có dữ liệu, gán nó làm fallback và ngưng vòng lặp
+                            if (!sEmpty || !cEmpty) {
+                                tkbSangToUse = dataS;
+                                tkbChieuToUse = dataC;
+                                foundPeriodId = pid;
+                                usingFallback = true;
+                                schoolEmptySang = sEmpty;
+                                schoolEmptyChieu = cEmpty;
+                                break;
+                            }
                         }
                     }
-                }
+                } catch(e) { console.error(e); }
+
+                if (overlay) overlay.style.display = 'none';
             }
 
-            let hasSang = tkbSangToUse && tkbSangToUse.length > 1;
-            let hasChieu = tkbChieuToUse && tkbChieuToUse.length > 1;
+            // Kiểm tra xem BẢN THÂN GIÁO VIÊN này có tiết ở buổi đó không
+            let teacherHasSang = teacherHasClasses(tkbSangToUse, maGv);
+            let teacherHasChieu = teacherHasClasses(tkbChieuToUse, maGv);
 
+            // Xử lý hiện thanh Thông báo
             if (infoMsg) {
-                if (usingFallback && (hasSang || hasChieu)) {
-                    let pName = dbPeriods.find(p => p.id === foundPeriodId)?.name || 'Đợt cũ';
-                    infoMsg.innerHTML = `ℹ️ Đợt này chưa cập nhật TKB. Đang hiển thị thời khóa biểu của <b>${pName}</b> (đợt gần nhất).`;
+                if (usingFallback && (!schoolEmptySang || !schoolEmptyChieu)) {
+                    let pName = dbPeriods.find(p => p.id === foundPeriodId)?.name || 'Đợt trước';
+                    infoMsg.innerHTML = `ℹ️ Đợt này chưa nạp dữ liệu TKB. Đang hiển thị lịch của <b>${pName}</b> (đợt gần nhất).`;
                     infoMsg.style.display = 'block';
                 } else {
                     infoMsg.style.display = 'none';
                 }
             }
 
-            if (boxSang) boxSang.style.display = hasSang ? 'block' : 'none';
-            if (boxChieu) boxChieu.style.display = hasChieu ? 'block' : 'none';
-            if (boxEmpty) boxEmpty.style.display = (!hasSang && !hasChieu) ? 'block' : 'none';
+            // ẨN / HIỆN Bảng Sáng hoặc Chiều phụ thuộc việc GV CÓ TIẾT HAY KHÔNG
+            if (boxSang) boxSang.style.display = teacherHasSang ? 'block' : 'none';
+            if (boxChieu) boxChieu.style.display = teacherHasChieu ? 'block' : 'none';
+            
+            // Xử lý Box Trống nếu GV không có bất kỳ tiết nào
+            if (boxEmpty) {
+                if (!teacherHasSang && !teacherHasChieu) {
+                    if (usingFallback || (!schoolEmptySang || !schoolEmptyChieu)) {
+                        boxEmpty.innerHTML = `📭 Bạn chưa có lịch dạy (hoặc chưa được phân công) trong Thời khóa biểu đợt này.`;
+                    } else {
+                        boxEmpty.innerHTML = `📭 Hệ thống hiện chưa có bất kỳ dữ liệu Thời khóa biểu nào.`;
+                    }
+                    boxEmpty.style.display = 'block';
+                } else {
+                    boxEmpty.style.display = 'none';
+                }
+            }
 
-            if (!hasSang && !hasChieu) return;
+            // Dừng tại đây nếu cả 2 bảng đều không cần vẽ cho GV này
+            if (!teacherHasSang && !teacherHasChieu) return;
 
+            // Render Dữ liệu
             for (let p = 0; p < 5; p++) {
                 let trSang = document.createElement('tr');
                 let trChieu = document.createElement('tr');
@@ -1680,7 +1743,7 @@
                 trChieu.appendChild(tdTitleC);
 
                 for (let d = 0; d < 6; d++) {
-                    if (hasSang) {
+                    if (teacherHasSang) {
                         let tdS = document.createElement('td');
                         let classSang = getTeacherClassForTkb(tkbSangToUse, d, p, maGv);
                         tdS.innerText = classSang;
@@ -1688,7 +1751,7 @@
                         trSang.appendChild(tdS);
                     }
 
-                    if (hasChieu) {
+                    if (teacherHasChieu) {
                         let tdC = document.createElement('td');
                         let classChieu = getTeacherClassForTkb(tkbChieuToUse, d, p, maGv);
                         tdC.innerText = classChieu;
@@ -1697,8 +1760,8 @@
                     }
                 }
 
-                if (tbodySang && hasSang) tbodySang.appendChild(trSang);
-                if (tbodyChieu && hasChieu) tbodyChieu.appendChild(trChieu);
+                if (tbodySang && teacherHasSang) tbodySang.appendChild(trSang);
+                if (tbodyChieu && teacherHasChieu) tbodyChieu.appendChild(trChieu);
             }
         };
         // ----------------------------------------
