@@ -85,12 +85,29 @@
         /* Phân tách các Thứ trong TKB Toàn trường */
         th.day-divider, td.day-divider { border-right: 1px solid var(--primary) !important; }
         
-        /* Styling TKB Học sinh */
+        /* Styling TKB Học sinh & GV */
         .subject-name { font-weight: 700; color: var(--primary); font-size: 14px; display: block; }
+        .gv-cell-subject { font-weight: 700; color: var(--primary); display: block; font-size: 14px;}
+        .gv-cell-class { font-size: 13px; color: #c2410c; font-weight: 600; display: block; margin-top: 2px;}
         .class-header-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
         .class-title { font-size: 20px; font-weight: 700; color: var(--dark); margin: 0; display: inline-flex; align-items: center; gap: 10px; }
         .class-title::before { content: ''; display: block; width: 6px; height: 24px; background: var(--primary); border-radius: 4px; }
         
+        /* Dropdown tìm kiếm GV */
+        .search-container { position: relative; width: 100%; max-width: 400px; }
+        .search-input { width: 100%; box-sizing: border-box; }
+        .dropdown-list {
+            position: absolute; top: calc(100% + 5px); left: 0; right: 0; background: white; 
+            border: 1px solid var(--border); border-radius: 8px; max-height: 250px; overflow-y: auto; 
+            z-index: 1000; display: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .dropdown-item {
+            padding: 12px 15px; cursor: pointer; font-size: 14px; color: var(--text-main); 
+            border-bottom: 1px solid #f1f5f9; transition: background 0.2s;
+        }
+        .dropdown-item:last-child { border-bottom: none; }
+        .dropdown-item:hover { background: var(--primary-light); color: var(--primary); font-weight: 500; }
+
         .loading { display: flex; justify-content: center; align-items: center; height: 200px; font-weight: 600; color: var(--primary); }
         .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); font-weight: 500; background: var(--surface); border-radius: 12px; border: 1px dashed var(--border); }
 
@@ -113,8 +130,11 @@
             .container { padding: 15px 10px; }
             .tab-btn { padding: 8px 16px; font-size: 13px; }
             th, td { padding: 10px 5px; font-size: 12px; }
-            .subject-name { font-size: 13px; }
+            .subject-name, .gv-cell-subject { font-size: 13px; }
+            .gv-cell-class { font-size: 11px; }
             .select-box, .btn-success { width: 100%; flex: 1; justify-content: center; }
+            .class-header-info { flex-direction: column; align-items: flex-start; }
+            .search-container { max-width: 100%; }
         }
     </style>
 </head>
@@ -132,6 +152,7 @@
         </div>
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('tab-lop')">TKB Lớp Học</button>
+            <button class="tab-btn" onclick="switchTab('tab-giaovien')">TKB Giáo Viên</button>
             <button class="tab-btn" onclick="switchTab('tab-toantruong-sang')">Toàn trường (Sáng)</button>
             <button class="tab-btn" onclick="switchTab('tab-toantruong-chieu')">Toàn trường (Chiều)</button>
         </div>
@@ -147,19 +168,40 @@
                 <select id="class-selector" class="select-box" onchange="renderClassTkb()"><option value="">-- Chọn Lớp --</option></select>
             </div>
             
-            <!-- TKB Lớp Sáng -->
             <div id="class-sang-container" style="margin-bottom: 30px; display: none;">
                 <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Sáng</h3>
                 <div class="table-wrapper"><table id="table-class-sang"><thead></thead><tbody></tbody></table></div>
             </div>
 
-            <!-- TKB Lớp Chiều -->
             <div id="class-chieu-container" style="display: none;">
                 <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Chiều</h3>
                 <div class="table-wrapper"><table id="table-class-chieu"><thead></thead><tbody></tbody></table></div>
             </div>
             
             <div id="class-empty" class="empty-state">Vui lòng chọn lớp để xem Thời khóa biểu chi tiết.</div>
+        </div>
+
+        <!-- TAB 4: TKB GIÁO VIÊN -->
+        <div id="tab-giaovien" class="tab-content">
+            <div class="class-header-info">
+                <h2 class="class-title" id="gv-display-name">Vui lòng chọn giáo viên</h2>
+                <div class="search-container">
+                    <input type="text" id="search-gv" class="select-box search-input" placeholder="Tìm GV (Tên, viết tắt, không dấu)..." oninput="filterGv()" onclick="filterGv()">
+                    <div id="gv-dropdown" class="dropdown-list"></div>
+                </div>
+            </div>
+            
+            <div id="gv-sang-container" style="margin-bottom: 30px; display: none;">
+                <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Sáng</h3>
+                <div class="table-wrapper"><table id="table-gv-sang"><thead></thead><tbody></tbody></table></div>
+            </div>
+
+            <div id="gv-chieu-container" style="display: none;">
+                <h3 style="margin-top:0; margin-bottom: 15px; font-size:16px; color:var(--dark);">Ca Chiều</h3>
+                <div class="table-wrapper"><table id="table-gv-chieu"><thead></thead><tbody></tbody></table></div>
+            </div>
+            
+            <div id="gv-empty" class="empty-state">Vui lòng chọn giáo viên để xem Thời khóa biểu chi tiết.</div>
         </div>
 
         <!-- TAB 1: TKB TOÀN TRƯỜNG SÁNG -->
@@ -202,8 +244,8 @@
         let dictTcm = {};      // maGv -> Tổ Chuyên Môn
         let dictSubjects = {}; // maMon -> Ten Mon
         let listClasses = [];
+        let currentSelectedGv = ""; // Lưu trữ GV đang chọn
 
-        // Lấy UnitID từ URL nếu hệ thống đang dùng bản Sub-Admin
         const urlParams = new URLSearchParams(window.location.search);
         const currentUnitId = urlParams.get('unit') || ''; 
         const colName = currentUnitId ? "pccm_data_" + currentUnitId : "pccm_data";
@@ -236,6 +278,18 @@
             setTimeout(() => document.getElementById(tabId).classList.add('active'), 10);
         }
 
+        // Loại bỏ dấu tiếng việt để tìm kiếm thông minh
+        function removeVietnameseTones(str) {
+            str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+            str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+            str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+            str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+            str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+            str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+            str = str.replace(/đ/g, "d");
+            return str;
+        }
+
         async function init() {
             try {
                 const pSnap = await getDoc(doc(db, colName, "pccm_periods"));
@@ -249,7 +303,6 @@
                 
                 dbPeriods.sort((a,b) => a.startWeek - b.startWeek);
                 
-                // Tìm đợt CŨ NHẤT có dữ liệu
                 let checks = dbPeriods.map(async (p) => {
                     let docS = p.id === 'default' ? "tab-tkbsang" : "tab-tkbsang_" + p.id;
                     let docC = p.id === 'default' ? "tab-tkbchieu" : "tab-tkbchieu_" + p.id;
@@ -263,10 +316,7 @@
                 let results = await Promise.all(checks);
                 let targetPeriodId = dbPeriods[0].id; 
                 for (let i = 0; i < results.length; i++) {
-                    if (results[i].hasData) {
-                        targetPeriodId = results[i].id;
-                        break; 
-                    }
+                    if (results[i].hasData) { targetPeriodId = results[i].id; break; }
                 }
 
                 const selector = document.getElementById('period-selector');
@@ -297,16 +347,14 @@
                     getDoc(doc(db, colName, getDocName("tab-tkbchieu")))
                 ]);
 
-                // Khởi tạo Dictionaries
-                dictTeachers = {};
-                dictTcm = {};
+                dictTeachers = {}; dictTcm = {};
                 if(snapGv.exists()) {
                     let data = JSON.parse(snapGv.data().excelData);
                     for(let i=1; i<data.length; i++) {
                         if(data[i] && data[i][0]) {
                             let maGv = data[i][0].trim();
                             dictTeachers[maGv] = data[i][2];
-                            dictTcm[maGv] = data[i][3] || "Chưa xếp tổ"; // Mapping TCM
+                            dictTcm[maGv] = data[i][3] || "Chưa xếp tổ";
                         }
                     }
                 }
@@ -341,6 +389,8 @@
                     document.getElementById('class-empty').style.display = 'block';
                 }
 
+                if(currentSelectedGv) renderTeacherTkb(currentSelectedGv);
+
             } catch (e) {
                 console.error(e);
             } finally {
@@ -348,13 +398,153 @@
                 let activeTab = document.querySelector('.tab-btn.active');
                 if(activeTab) {
                     if(activeTab.innerText.includes('Lớp')) document.getElementById('tab-lop').style.display = 'block';
+                    else if(activeTab.innerText.includes('Giáo Viên')) document.getElementById('tab-giaovien').style.display = 'block';
                     else if(activeTab.innerText.includes('Sáng')) document.getElementById('tab-toantruong-sang').style.display = 'block';
                     else document.getElementById('tab-toantruong-chieu').style.display = 'block';
                 }
             }
         }
 
-        // --- RENDER TKB TOÀN TRƯỜNG (Có màu nền xen kẽ Trắng - Xám theo TCM) ---
+        // --- Tìm kiếm TKB Giáo Viên thông minh ---
+        window.filterGv = function() {
+            const input = document.getElementById('search-gv');
+            const dropdown = document.getElementById('gv-dropdown');
+            const q = removeVietnameseTones(input.value.toLowerCase().trim());
+            
+            dropdown.innerHTML = '';
+            let count = 0;
+            
+            for (let maGv in dictTeachers) {
+                let name = dictTeachers[maGv];
+                let normName = removeVietnameseTones(name.toLowerCase());
+                let initials = normName.split(' ').map(w => w.charAt(0)).join('');
+                
+                if (normName.includes(q) || initials.includes(q) || maGv.toLowerCase().includes(q)) {
+                    let div = document.createElement('div');
+                    div.className = 'dropdown-item';
+                    div.innerText = `${name} (${maGv})`;
+                    div.onclick = function(e) {
+                        e.stopPropagation();
+                        input.value = name;
+                        dropdown.style.display = 'none';
+                        currentSelectedGv = maGv;
+                        renderTeacherTkb(maGv);
+                    };
+                    dropdown.appendChild(div);
+                    count++;
+                }
+            }
+            
+            dropdown.style.display = count > 0 ? 'block' : 'none';
+        }
+
+        // Ẩn dropdown khi click ngoài
+        document.addEventListener('click', function(e) {
+            const searchContainer = document.querySelector('.search-container');
+            if (searchContainer && !searchContainer.contains(e.target)) {
+                document.getElementById('gv-dropdown').style.display = 'none';
+            }
+        });
+
+        // --- RENDER TKB GIÁO VIÊN ---
+        window.renderTeacherTkb = function(maGv) {
+            const containerSang = document.getElementById('gv-sang-container');
+            const containerChieu = document.getElementById('gv-chieu-container');
+            const emptyState = document.getElementById('gv-empty');
+            const title = document.getElementById('gv-display-name');
+
+            if (!maGv) {
+                containerSang.style.display = 'none'; containerChieu.style.display = 'none';
+                emptyState.style.display = 'block'; title.innerText = "Vui lòng chọn giáo viên";
+                return;
+            }
+
+            title.innerText = "TKB: " + (dictTeachers[maGv] || maGv);
+            emptyState.style.display = 'none';
+
+            let hasSang = buildSingleTeacherTable(rawTkbSang, maGv, 'table-gv-sang');
+            let hasChieu = buildSingleTeacherTable(rawTkbChieu, maGv, 'table-gv-chieu');
+
+            containerSang.style.display = hasSang ? 'block' : 'none';
+            containerChieu.style.display = hasChieu ? 'block' : 'none';
+
+            if(!hasSang && !hasChieu) {
+                emptyState.style.display = 'block';
+                emptyState.innerText = `Giáo viên ${dictTeachers[maGv] || maGv} hiện chưa có tiết dạy trong đợt này.`;
+            }
+        }
+
+        function buildSingleTeacherTable(rawTkb, searchMaGv, tableId) {
+            const table = document.getElementById(tableId);
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            thead.innerHTML = ''; tbody.innerHTML = '';
+
+            if(!rawTkb || rawTkb.length < 31) return false;
+
+            const classes = rawTkb[0];
+            let matrix = Array(6).fill(null).map(() => Array(5).fill(null));
+            let hasData = false;
+
+            for(let d = 0; d < 6; d++) {
+                for(let p = 0; p < 5; p++) {
+                    let r = 1 + d*5 + p;
+                    if(!rawTkb[r]) continue;
+                    
+                    for(let c = 1; c < classes.length; c++) {
+                        let cell = String(rawTkb[r][c] || "").trim();
+                        if(!cell) continue;
+
+                        let parts = cell.split('-');
+                        if (parts.length > 1) {
+                            let cellMaGv = parts[parts.length - 1].trim();
+                            if (cellMaGv.toLowerCase() === searchMaGv.toLowerCase()) {
+                                let maMon = parts.slice(0, parts.length-1).join('-').trim();
+                                let tenMon = dictSubjects[maMon.toLowerCase()] || maMon;
+                                let tenLop = classes[c];
+                                
+                                // Gộp lớp nếu GV dạy ghép (nhiều lớp 1 tiết)
+                                if(matrix[d][p]) matrix[d][p].lop += ", " + tenLop;
+                                else matrix[d][p] = { mon: tenMon, lop: tenLop };
+                                
+                                hasData = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!hasData) return false;
+
+            let days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+            thead.innerHTML = `<tr><th class="sticky-col" style="width: 80px;">Tiết</th><th>${days.join('</th><th>')}</th></tr>`;
+
+            for (let p = 0; p < 5; p++) {
+                let tr = document.createElement('tr');
+                let tdPeriod = document.createElement('td');
+                tdPeriod.innerText = `Tiết ${p+1}`;
+                tdPeriod.className = "sticky-col";
+                tdPeriod.style.backgroundColor = "#f8fafc";
+                tr.appendChild(tdPeriod);
+
+                for (let d = 0; d < 6; d++) {
+                    let td = document.createElement('td');
+                    let dataInfo = matrix[d][p];
+                    
+                    if (dataInfo) {
+                        td.innerHTML = `<span class="gv-cell-subject">${dataInfo.mon}</span><span class="gv-cell-class">Lớp: ${dataInfo.lop}</span>`;
+                    } else {
+                        td.innerText = "-";
+                        td.style.color = "var(--border)";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+            return true;
+        }
+
+        // --- RENDER TKB TOÀN TRƯỜNG ---
         function renderSchoolWide(rawTkb, tableId) {
             const table = document.getElementById(tableId);
             const thead = table.querySelector('thead');
@@ -400,7 +590,6 @@
                 }
             }
 
-            // Lọc danh sách GV và Sắp xếp: Ưu tiên Tổ CM -> Tên GV
             let activeTeachers = Object.keys(teacherSchedule).sort((a,b) => {
                 let tcmA = dictTcm[a] || "Z_Chưa xếp";
                 let tcmB = dictTcm[b] || "Z_Chưa xếp";
@@ -447,7 +636,6 @@
             thead.appendChild(trHeadDay);
             thead.appendChild(trHeadPeriod);
 
-            // Gán màu xen kẽ Trắng và Xám nhạt cho từng Tổ CM
             const altColors = ["#ffffff", "#f1f5f9"];
             let currentColorIdx = 0;
             let lastTcm = null;
@@ -459,9 +647,8 @@
                 let tenGvStr = dictTeachers[maGv] || maGv;
                 let tcmStr = dictTcm[maGv] || 'Chưa xếp tổ';
                 
-                // Thuật toán đảo màu xen kẽ
                 if (tcmStr !== lastTcm) {
-                    currentColorIdx = 1 - currentColorIdx; // Đảo qua lại giữa 0 và 1
+                    currentColorIdx = 1 - currentColorIdx; 
                     lastTcm = tcmStr;
                 }
                 let rowBgColor = altColors[currentColorIdx];
@@ -480,7 +667,7 @@
                         let td = document.createElement('td');
                         let lop = teacherSchedule[maGv][`${d}_${p}`] || "";
                         td.innerText = lop;
-                        td.style.backgroundColor = rowBgColor; // Áp dụng màu nền cho từng ô
+                        td.style.backgroundColor = rowBgColor;
                         if (lop) { td.style.color = "var(--dark)"; td.style.fontWeight = "700"; }
                         if(idx === periodsInDay.length - 1) td.className = "day-divider";
                         tr.appendChild(td);
@@ -490,7 +677,7 @@
             });
         }
 
-        // --- RENDER TKB LỚP (Ẩn Tên GV) ---
+        // --- RENDER TKB LỚP ---
         window.renderClassTkb = function() {
             const className = document.getElementById('class-selector').value;
             const containerSang = document.getElementById('class-sang-container');
@@ -603,6 +790,29 @@
                 if (!hasData) return showToast("Không có dữ liệu TKB để xuất!", "warning");
                 XLSX.writeFile(wb, `TKB_Lop_${className}.xlsx`);
                 showToast(`Đã tải xuống TKB Lớp ${className}!`);
+
+            } else if (tabName.includes('Giáo Viên')) {
+                if (!currentSelectedGv) return showToast("Vui lòng chọn giáo viên để xuất Excel!", "warning");
+                let tenGv = dictTeachers[currentSelectedGv] || currentSelectedGv;
+                
+                let tbSang = document.getElementById('table-gv-sang');
+                let tbChieu = document.getElementById('table-gv-chieu');
+                let hasData = false;
+
+                if (tbSang.querySelector('tbody').innerHTML !== "") {
+                    let wsS = XLSX.utils.table_to_sheet(tbSang);
+                    XLSX.utils.book_append_sheet(wb, wsS, `Sang_${currentSelectedGv}`);
+                    hasData = true;
+                }
+                if (tbChieu.querySelector('tbody').innerHTML !== "") {
+                    let wsC = XLSX.utils.table_to_sheet(tbChieu);
+                    XLSX.utils.book_append_sheet(wb, wsC, `Chieu_${currentSelectedGv}`);
+                    hasData = true;
+                }
+                
+                if (!hasData) return showToast("Không có dữ liệu TKB để xuất!", "warning");
+                XLSX.writeFile(wb, `TKB_GV_${currentSelectedGv}.xlsx`);
+                showToast(`Đã tải xuống TKB Giáo viên ${tenGv}!`);
 
             } else if (tabName.includes('Sáng')) {
                 let tbl = document.getElementById('table-tts');
