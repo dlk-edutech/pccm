@@ -767,6 +767,60 @@
         window.formatNum = function(num) {
             return Math.round(num * 100) / 100;
         };
+        
+        // HÀM TIỆN ÍCH MỚI HỖ TRỢ XỬ LÝ MÃ MÔN RỜI RẠC
+        window.getClassSubjectInfo = function(lop, maMon, _dbClasses, _dbCombos, _dbSubjects) {
+            let cl = _dbClasses.find(c => c && c[0] === lop);
+            if(!cl || !cl[1]) return { hasSubject: false, hours: 0 };
+            
+            let _getTen = (m) => {
+                for(let i=1; i<_dbSubjects.length; i++) {
+                    if(_dbSubjects[i] && _dbSubjects[i][0] && _dbSubjects[i][0].trim().toLowerCase() === m.trim().toLowerCase()) return _dbSubjects[i][1].trim();
+                }
+                return m.trim();
+            };
+            let _getBase = (m) => {
+                for(let i=1; i<_dbSubjects.length; i++) {
+                    if(_dbSubjects[i] && _dbSubjects[i][0] && _dbSubjects[i][0].trim().toLowerCase() === m.trim().toLowerCase()) return window.parseFloatSafe(_dbSubjects[i][2]) || 0;
+                }
+                return 0;
+            };
+
+            let tenMonFull = _getTen(maMon);
+            let maThStr = String(cl[1]);
+            let parts = maThStr.split(',').map(s => s.trim());
+            
+            // Ưu tiên 1: Kiểm tra mã môn rời rạc (VD: VL(2) hoặc TO(1.5))
+            for (let part of parts) {
+                let match = part.match(/^(.+?)\s*\(\s*([\d.]+)\s*\)$/);
+                if (match) {
+                    let code = match[1].trim();
+                    let hrs = parseFloat(match[2]);
+                    if (code.toLowerCase() === maMon.trim().toLowerCase()) {
+                        return { hasSubject: true, hours: hrs };
+                    }
+                }
+            }
+            
+            // Ưu tiên 2: Kiểm tra qua danh mục Tổ hợp (Mã TH)
+            for (let part of parts) {
+                let match = part.match(/^(.+?)\s*\(\s*([\d.]+)\s*\)$/);
+                if (!match) { // Nếu không phải mã rời rạc thì mới tra tổ hợp
+                    let combo = _dbCombos.find(c => c && c[0] === part);
+                    if (combo && combo.length >= 2) {
+                        let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
+                        if (subjects.includes(tenMonFull.toLowerCase())) {
+                            let cdSubjects = (combo[2] || "").split(',').map(s=>s.trim().toLowerCase());
+                            let hasCD = cdSubjects.includes(tenMonFull.toLowerCase());
+                            let base = _getBase(maMon);
+                            return { hasSubject: true, hours: base + (hasCD ? 1 : 0) };
+                        }
+                    }
+                }
+            }
+            
+            return { hasSubject: false, hours: 0 };
+        };
 
         window.onload = async function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -1832,21 +1886,16 @@
                 return; 
             }
             
-            let tenMonFull = getTenMonByMa(maMon);
             let validClasses = [];
-
             for(let i=1; i<dbClasses.length; i++) {
                 if(!dbClasses[i] || dbClasses[i].length < 2) continue;
                 let tenLop = dbClasses[i][0];
-                let maTh = dbClasses[i][1];
-                let combo = dbCombos.find(c => c && c[0] === maTh);
-                if(combo && combo.length >= 2) {
-                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
-                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
-                }
+                let info = window.getClassSubjectInfo(tenLop, maMon, dbClasses, dbCombos, dbSubjects);
+                if(info.hasSubject) validClasses.push({ lop: tenLop, hours: info.hours });
             }
 
             if(validClasses.length === 0) {
+                let tenMonFull = getTenMonByMa(maMon);
                 container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
                 updateAdminUnsavedTotal();
                 return;
@@ -1855,10 +1904,12 @@
             container.innerHTML = "";
             let baseHours = getBaseHours(maMon);
 
-            validClasses.forEach(tenLop => {
+            validClasses.forEach(cObj => {
+                let tenLop = cObj.lop;
+                let classHours = cObj.hours;
+                
                 let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
                 let isChecked = false;
-                let isDisabled = false;
                 let otherTeacherId = "";
                 let otherTeacherName = "";
                 let noteStr = "";
@@ -1879,8 +1930,7 @@
                 let isHomeroom = dbClasses.some(c => c && c[0] === tenLop && c[2] === maGv);
                 let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
 
-                let hasCD = checkChuyenDe(tenLop, tenMonFull);
-                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${window.formatNum(baseHours + 1)})</span>` : tenLop;
+                let displayLop = (classHours !== baseHours) ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${window.formatNum(classHours)})</span>` : tenLop;
 
                 container.innerHTML += `
                     <label class="class-item" style="${(otherTeacherId && !isChecked) ? 'background:#f1f5f9;' : ''}">
@@ -1927,26 +1977,24 @@
             if (maMon) {
                 let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
                 otherAssignments.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    tongTietDay += info.hours;
                 });
 
                 let currentSubBase = getBaseHours(maMon);
-                let currentTenMonF = getTenMonByMa(maMon);
                 let container = document.getElementById("admin-classes-container");
                 if(container) {
                     let checkboxes = container.querySelectorAll("input[type=checkbox]:checked");
                     checkboxes.forEach(cb => {
-                        tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
+                        let info = window.getClassSubjectInfo(cb.value, maMon, dbClasses, dbCombos, dbSubjects);
+                        tongTietDay += info.hasSubject ? info.hours : currentSubBase;
                     });
                 }
             } else {
                 let allAss = dbAssignments.filter(a => a.maGv === maGv);
                 allAss.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    tongTietDay += info.hours;
                 });
             }
 
@@ -2696,17 +2744,17 @@
                 let groupedByMon = {};
 
                 teacherAssignments.forEach(a => {
-                    let tenMonFull = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    let hasCD = checkChuyenDe(a.lop, tenMonFull);
-                    let classHours = base + (hasCD ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    let classHours = info.hours;
                     tongTietDay += classHours;
                     
+                    let tenMonFull = getTenMonByMa(a.maMon);
                     if (!groupedByMon[tenMonFull]) {
                         groupedByMon[tenMonFull] = [];
                     }
                     
-                    let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
+                    let base = getBaseHours(a.maMon);
+                    let classText = (classHours !== base) ? `${a.lop} (${window.formatNum(classHours)})` : a.lop;
                     groupedByMon[tenMonFull].push(classText);
                 });
 
@@ -2767,14 +2815,16 @@
                 let groupedByMon = {};
 
                 teacherAssignments.forEach(a => {
-                    let tenMonFull = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    let hasCD = checkChuyenDe(a.lop, tenMonFull);
-                    let classHours = base + (hasCD ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    let classHours = info.hours;
                     tongTietDay += classHours;
                     
+                    let tenMonFull = getTenMonByMa(a.maMon);
                     if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
-                    groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${classHours})` : a.lop);
+                    
+                    let base = getBaseHours(a.maMon);
+                    let classText = (classHours !== base) ? `${a.lop} (${window.formatNum(classHours)})` : a.lop;
+                    groupedByMon[tenMonFull].push(classText);
                 });
 
                 let resultStrings = [];
@@ -2848,8 +2898,8 @@
                     let td = document.createElement("td");
                     
                     let teacher = "";
-                    let hasCD = checkChuyenDe(tenLop, sub.tenMon);
-                    let hours = sub.baseHours + (hasCD ? 1 : 0);
+                    let info = window.getClassSubjectInfo(tenLop, sub.maMon, dbClasses, dbCombos, dbSubjects);
+                    let hours = info.hasSubject ? info.hours : sub.baseHours;
 
                     if (sub.maMon.toUpperCase() === 'SH' || sub.tenMon.toLowerCase().includes('sinh hoạt')) {
                         let t = dbTeachers.find(x => x && x[0] === gvcn);
@@ -3007,21 +3057,16 @@
                 return; 
             }
             
-            let tenMonFull = getTenMonByMa(maMon);
             let validClasses = [];
-
             for(let i=1; i<dbClasses.length; i++) {
                 if(!dbClasses[i] || dbClasses[i].length < 2) continue;
                 let tenLop = dbClasses[i][0];
-                let maTh = dbClasses[i][1];
-                let combo = dbCombos.find(c => c && c[0] === maTh);
-                if(combo && combo.length >= 2) {
-                    let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
-                    if(subjects.includes(tenMonFull.toLowerCase())) validClasses.push(tenLop);
-                }
+                let info = window.getClassSubjectInfo(tenLop, maMon, dbClasses, dbCombos, dbSubjects);
+                if(info.hasSubject) validClasses.push({ lop: tenLop, hours: info.hours });
             }
 
             if(validClasses.length === 0) {
+                let tenMonFull = getTenMonByMa(maMon);
                 container.innerHTML = `<span style="color:var(--danger); font-size:13px; font-weight:600;">Không có lớp nào học môn "${tenMonFull}" theo Tổ hợp phân ban.</span>`;
                 updateUnsavedTotal();
                 return;
@@ -3030,10 +3075,12 @@
             container.innerHTML = "";
             let baseHours = getBaseHours(maMon);
 
-            validClasses.forEach(tenLop => {
+            validClasses.forEach(cObj => {
+                let tenLop = cObj.lop;
+                let classHours = cObj.hours;
+                
                 let assigned = dbAssignments.find(a => a.maMon === maMon && a.lop === tenLop);
                 let isChecked = false;
-                let isDisabled = false;
                 let otherTeacherId = "";
                 let otherTeacherName = "";
                 let noteStr = "";
@@ -3054,8 +3101,7 @@
                 let isHomeroom = dbClasses.some(c => c && c[0] === tenLop && c[2] === maGv);
                 let nameStyle = isHomeroom ? 'color: var(--danger); font-weight: 700;' : 'color: var(--dark);';
 
-                let hasCD = checkChuyenDe(tenLop, tenMonFull);
-                let displayLop = hasCD ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${window.formatNum(baseHours + 1)})</span>` : tenLop;
+                let displayLop = (classHours !== baseHours) ? `${tenLop} <span style="color:var(--primary);font-size:12px;">(${window.formatNum(classHours)})</span>` : tenLop;
 
                 container.innerHTML += `
                     <label class="class-item" style="${(otherTeacherId && !isChecked) ? 'background:#f1f5f9;' : ''}">
@@ -3102,26 +3148,24 @@
             if (maMon) {
                 let otherAssignments = dbAssignments.filter(a => a.maGv === maGv && a.maMon !== maMon);
                 otherAssignments.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    tongTietDay += info.hours;
                 });
 
                 let currentSubBase = getBaseHours(maMon);
-                let currentTenMonF = getTenMonByMa(maMon);
                 let container = document.getElementById("ttcm-classes-container");
                 if(container) {
                     let checkboxes = container.querySelectorAll("input[type=checkbox]:checked");
                     checkboxes.forEach(cb => {
-                        tongTietDay += currentSubBase + (checkChuyenDe(cb.value, currentTenMonF) ? 1 : 0);
+                        let info = window.getClassSubjectInfo(cb.value, maMon, dbClasses, dbCombos, dbSubjects);
+                        tongTietDay += info.hasSubject ? info.hours : currentSubBase;
                     });
                 }
             } else {
                 let allAss = dbAssignments.filter(a => a.maGv === maGv);
                 allAss.forEach(a => {
-                    let tenMonF = getTenMonByMa(a.maMon);
-                    let base = getBaseHours(a.maMon);
-                    tongTietDay += base + (checkChuyenDe(a.lop, tenMonF) ? 1 : 0);
+                    let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                    tongTietDay += info.hours;
                 });
             }
 
@@ -3187,14 +3231,6 @@
             }
             return 0;
         }
-        function checkChuyenDe(lop, tenMonFull) {
-            let cl = dbClasses.find(c => c && c[0] === lop);
-            if(!cl) return false;
-            let combo = dbCombos.find(c => c && c[0] === cl[1]);
-            if(!combo || combo.length < 3) return false;
-            let cdSubjects = combo[2].split(',').map(s=>s.trim().toLowerCase());
-            return cdSubjects.includes(tenMonFull.toLowerCase());
-        }
 
         function renderTtcmTongHop() {
             const tbl = document.getElementById("table-ttcm-tonghop");
@@ -3222,17 +3258,17 @@
                     let groupedByMon = {};
 
                     teacherAssignments.forEach(a => {
-                        let tenMonFull = getTenMonByMa(a.maMon);
-                        let base = getBaseHours(a.maMon);
-                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
-                        let classHours = base + (hasCD ? 1 : 0);
+                        let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                        let classHours = info.hours;
                         tongTietDay += classHours;
                         
+                        let tenMonFull = getTenMonByMa(a.maMon);
                         if (!groupedByMon[tenMonFull]) {
                             groupedByMon[tenMonFull] = [];
                         }
                         
-                        let classText = hasCD ? `${a.lop} (${classHours})` : a.lop;
+                        let base = getBaseHours(a.maMon);
+                        let classText = (classHours !== base) ? `${a.lop} (${window.formatNum(classHours)})` : a.lop;
                         groupedByMon[tenMonFull].push(classText);
                     });
 
@@ -3288,14 +3324,16 @@
                     let groupedByMon = {};
 
                     teacherAssignments.forEach(a => {
-                        let tenMonFull = getTenMonByMa(a.maMon);
-                        let base = getBaseHours(a.maMon);
-                        let hasCD = checkChuyenDe(a.lop, tenMonFull);
-                        let classHours = base + (hasCD ? 1 : 0);
+                        let info = window.getClassSubjectInfo(a.lop, a.maMon, dbClasses, dbCombos, dbSubjects);
+                        let classHours = info.hours;
                         tongTietDay += classHours;
                         
+                        let tenMonFull = getTenMonByMa(a.maMon);
                         if (!groupedByMon[tenMonFull]) groupedByMon[tenMonFull] = [];
-                        groupedByMon[tenMonFull].push(hasCD ? `${a.lop} (${window.formatNum(classHours)})` : a.lop);
+                        
+                        let base = getBaseHours(a.maMon);
+                        let classText = (classHours !== base) ? `${a.lop} (${window.formatNum(classHours)})` : a.lop;
+                        groupedByMon[tenMonFull].push(classText);
                     });
 
                     let resultStrings = [];
@@ -3355,28 +3393,6 @@
                 let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
                 let periodSubjects = finalSnapMon.exists() ? JSON.parse(finalSnapMon.data().excelData) : [];
                 
-                const getPeriodBaseHours = (maMon) => {
-                    for(let k=1; k<periodSubjects.length; k++) {
-                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return window.parseFloatSafe(periodSubjects[k][2]) || 0;
-                    }
-                    return 0;
-                };
-
-                const getPeriodTenMonByMa = (maMon) => {
-                    for(let k=1; k<periodSubjects.length; k++) {
-                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return periodSubjects[k][1].trim();
-                    }
-                    return maMon.trim();
-                };
-
-                const checkCD = (lop, tenMonFull) => {
-                    let cl = lops.find(c => c && c[0] === lop);
-                    if(!cl) return false;
-                    let combo = dbCombos.find(c => c && c[0] === cl[1]);
-                    if(!combo || combo.length < 3) return false;
-                    return combo[2].split(',').map(s=>s.trim().toLowerCase()).includes(tenMonFull.toLowerCase());
-                };
-
                 for(let j=1; j<gvs.length; j++) {
                     let gv = gvs[j];
                     if(!gv || !gv[0]) continue;
@@ -3392,9 +3408,8 @@
                     let myPcs = pcs.filter(a => a.maGv === maGv);
                     let teachingHours = 0;
                     myPcs.forEach(a => {
-                        let tm = getPeriodTenMonByMa(a.maMon);
-                        let base = getPeriodBaseHours(a.maMon);
-                        teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
+                        let info = window.getClassSubjectInfo(a.lop, a.maMon, lops, dbCombos, periodSubjects);
+                        teachingHours += info.hours;
                     });
                     
                     if(!yearlyData[maGv]) {
@@ -3473,28 +3488,6 @@
                 let lops = snapLop.exists() ? JSON.parse(snapLop.data().excelData) : [];
                 let pcs = snapPc.exists() ? JSON.parse(snapPc.data().assignmentData || "[]") : [];
                 let periodSubjects = finalSnapMon.exists() ? JSON.parse(finalSnapMon.data().excelData) : [];
-                
-                const getPeriodBaseHours = (maMon) => {
-                    for(let k=1; k<periodSubjects.length; k++) {
-                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return window.parseFloatSafe(periodSubjects[k][2]) || 0;
-                    }
-                    return 0;
-                };
-
-                const getPeriodTenMonByMa = (maMon) => {
-                    for(let k=1; k<periodSubjects.length; k++) {
-                        if(periodSubjects[k] && periodSubjects[k][0] && periodSubjects[k][0].trim().toLowerCase() === maMon.trim().toLowerCase()) return periodSubjects[k][1].trim();
-                    }
-                    return maMon.trim();
-                };
-
-                const checkCD = (lop, tenMonFull) => {
-                    let cl = lops.find(c => c && c[0] === lop);
-                    if(!cl) return false;
-                    let combo = dbCombos.find(c => c && c[0] === cl[1]);
-                    if(!combo || combo.length < 3) return false;
-                    return combo[2].split(',').map(s=>s.trim().toLowerCase()).includes(tenMonFull.toLowerCase());
-                };
 
                 for(let j=1; j<gvs.length; j++) {
                     let gv = gvs[j];
@@ -3511,9 +3504,8 @@
                     let myPcs = pcs.filter(a => a.maGv === maGv);
                     let teachingHours = 0;
                     myPcs.forEach(a => {
-                        let tm = getPeriodTenMonByMa(a.maMon);
-                        let base = getPeriodBaseHours(a.maMon);
-                        teachingHours += base + (checkCD(a.lop, tm) ? 1 : 0);
+                        let info = window.getClassSubjectInfo(a.lop, a.maMon, lops, dbCombos, periodSubjects);
+                        teachingHours += info.hours;
                     });
                     
                     if(!yearlyData[maGv]) {
