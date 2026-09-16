@@ -469,7 +469,6 @@
                         </div>
                     </div>
 
-                    <!-- Chỉ hiển thị Excel Panel ở các tab cụ thể -->
                     <div class="control-panel" id="excel-panel" style="display: none;">
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -677,17 +676,22 @@
                         </div>
                     </div>
 
-                    <!-- Tab Đề xuất cá nhân cho GV -->
                     <div id="tab-gv-dexuat" class="tab-content">
                         <h3 style="margin:0 0 15px 0; font-size:20px;">Đề xuất cá nhân</h3>
                         <p style="font-size: 14px; color: var(--text-muted); margin-bottom:20px;">Gửi các đề xuất, nguyện vọng về chuyên môn lên Ban Giám Hiệu.</p>
+                        
+                        <input type="hidden" id="gv-dexuat-edit-id" value="">
                         <textarea id="gv-dexuat-text" rows="4" style="width:100%; box-sizing:border-box; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:15px; outline:none; font-family:inherit;" placeholder="Nhập nội dung đề xuất (Tối đa 500 ký tự)..."></textarea>
-                        <button class="btn btn-primary" onclick="submitGvDeXuat()">Gửi Đề Xuất</button>
+                        
+                        <div style="display:flex; gap: 10px;">
+                            <button class="btn btn-primary" id="btn-submit-dexuat" onclick="submitGvDeXuat()">Gửi Đề Xuất</button>
+                            <button class="btn btn-outline" id="btn-cancel-dexuat" onclick="cancelEditDeXuat()" style="display:none;">Hủy sửa</button>
+                        </div>
 
                         <h4 style="margin-top: 30px; margin-bottom: 15px;">Lịch sử Đề xuất của bạn</h4>
                         <div class="table-container">
                             <table id="table-gv-dexuat">
-                                <thead><tr><th style="width:150px;">Thời gian</th><th>Nội dung</th></tr></thead>
+                                <thead><tr><th style="width:150px;">Thời gian</th><th>Nội dung</th><th style="width:120px; text-align:center;">Thao tác</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -785,15 +789,15 @@
         let dbCombos = [];
         let dbAssignments = []; 
         let dbKiemNhiem = []; 
-        let dbTkbSang = []; // Biến chứa dữ liệu TKB Sáng
-        let dbTkbChieu = []; // Biến chứa dữ liệu TKB Chiều
-        let dbProposals = []; // Biến chứa dữ liệu Đề xuất GV
+        let dbTkbSang = [];
+        let dbTkbChieu = [];
+        let dbProposals = [];
         
         let currentUser = null; 
         let currentTabId = '';
         
         window.workbook = null; 
-        window.tkbWorkbook = null; // Excel file for TKB
+        window.tkbWorkbook = null;
         window.tableFilters = {};
 
         // === CÁC HÀM TIỆN ÍCH MỚI KIỂM TRA TKB ===
@@ -1257,7 +1261,6 @@
             });
         }
 
-
         window.handleExcelUpload = function(e) {
             const file = e.target.files[0];
             if (!file) {
@@ -1527,7 +1530,6 @@
             });
         }
 
-
         async function initAdminUI() {
             const userRole = document.getElementById('sidebar-user-role');
             if(userRole) userRole.innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
@@ -1671,7 +1673,6 @@
             const tab = document.getElementById(tabId);
             if(tab) tab.classList.add("active");
 
-            // Hiển thị panel Excel Upload tùy thuộc vào Tab đang kích hoạt
             const excelPanel = document.getElementById('excel-panel');
             if (excelPanel) {
                 const allowExcelTabs = ['tab-giaovien', 'tab-lop', 'tab-monhoc', 'tab-tohop', 'tab-kiemnhiem'];
@@ -1698,7 +1699,7 @@
                 } else if (tabId === 'tab-admin-phancong') {
                     initAdminPhanCong();
                 } else if (tabId === 'tab-admin-dexuat') {
-                    renderAdminDeXuat();
+                    fetchAndRenderAdminDeXuat();
                 } else if (tabId === 'tab-admin-tkb') {
                     // Do nothing specific, UI handles upload
                 } else {
@@ -1709,7 +1710,7 @@
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
                 if (tabId === 'tab-gv-tkb') await renderTeacherTkb(); 
-                if (tabId === 'tab-gv-dexuat') renderGvDeXuat();
+                if (tabId === 'tab-gv-dexuat') fetchAndRenderGvDeXuat();
             }
         };
 
@@ -1856,38 +1857,116 @@
         };
 
         // --- CÁC HÀM XỬ LÝ ĐỀ XUẤT CÁ NHÂN ---
+        window.fetchAndRenderAdminDeXuat = async function() {
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)));
+                dbProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
+                renderAdminDeXuat();
+            } catch(e) {
+                console.error(e);
+                showToast("Lỗi khi tải đề xuất: " + e.message, "error");
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
+        window.fetchAndRenderGvDeXuat = async function() {
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)));
+                dbProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
+                renderGvDeXuat();
+            } catch(e) {
+                console.error(e);
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
         window.submitGvDeXuat = async function() {
             const textEl = document.getElementById("gv-dexuat-text");
+            const editIdEl = document.getElementById("gv-dexuat-edit-id");
             if (!textEl) return;
             const text = textEl.value.trim();
             if(!text) return showToast("Vui lòng nhập nội dung đề xuất!", "warning");
 
-            const now = new Date();
-            const timeStr = now.toLocaleString('vi-VN');
-
-            const newProp = {
-                id: Date.now().toString(),
-                maGv: currentUser.maGv,
-                tenGv: currentUser.ten,
-                tcm: currentUser.tcm,
-                noiDung: text,
-                thoiGian: timeStr
-            };
-
-            dbProposals.push(newProp);
-
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
             try {
-                await setDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)), { data: JSON.stringify(dbProposals) });
-                textEl.value = "";
+                let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)));
+                let latestProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
+                
+                const now = new Date();
+                const timeStr = now.toLocaleString('vi-VN');
+                let editId = editIdEl.value;
+                
+                if (editId) {
+                    let p = latestProposals.find(x => x.id === editId);
+                    if(p && p.maGv === currentUser.maGv) {
+                        p.noiDung = text;
+                        p.thoiGian = timeStr + " (Đã sửa)";
+                    }
+                } else {
+                    const newProp = {
+                        id: Date.now().toString() + Math.floor(Math.random()*1000),
+                        maGv: currentUser.maGv,
+                        tenGv: currentUser.ten,
+                        tcm: currentUser.tcm,
+                        noiDung: text,
+                        thoiGian: timeStr
+                    };
+                    latestProposals.push(newProp);
+                }
+
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)), { data: JSON.stringify(latestProposals) });
+                
+                dbProposals = latestProposals; 
+                cancelEditDeXuat(); 
                 renderGvDeXuat();
-                showToast("Đã gửi đề xuất thành công!");
+                showToast(editId ? "Đã cập nhật đề xuất thành công!" : "Đã gửi đề xuất thành công!");
             } catch(e) {
-                dbProposals.pop(); 
                 showToast("Lỗi: " + e.message, "error");
             }
             if(overlay) overlay.style.display = 'none';
+        };
+
+        window.editDeXuat = function(id) {
+            let p = dbProposals.find(x => x.id === id);
+            if(!p) return;
+            document.getElementById("gv-dexuat-edit-id").value = id;
+            document.getElementById("gv-dexuat-text").value = p.noiDung;
+            document.getElementById("btn-submit-dexuat").innerText = "Cập nhật Đề xuất";
+            document.getElementById("btn-cancel-dexuat").style.display = "inline-block";
+            document.getElementById("gv-dexuat-text").focus();
+        };
+
+        window.cancelEditDeXuat = function() {
+            document.getElementById("gv-dexuat-edit-id").value = "";
+            document.getElementById("gv-dexuat-text").value = "";
+            document.getElementById("btn-submit-dexuat").innerText = "Gửi Đề Xuất";
+            document.getElementById("btn-cancel-dexuat").style.display = "none";
+        };
+
+        window.deleteDeXuat = async function(id) {
+            window.showConfirm("Xóa Đề xuất", "Bạn có chắc chắn muốn xóa đề xuất này?", async () => {
+                const overlay = document.getElementById('loading-overlay');
+                if(overlay) overlay.style.display = 'flex';
+                try {
+                    let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)));
+                    let latestProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
+                    
+                    latestProposals = latestProposals.filter(x => x.id !== id);
+                    
+                    await setDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)), { data: JSON.stringify(latestProposals) });
+                    dbProposals = latestProposals;
+                    renderGvDeXuat();
+                    showToast("Đã xóa đề xuất thành công!");
+                } catch(e) {
+                    showToast("Lỗi: " + e.message, "error");
+                }
+                if(overlay) overlay.style.display = 'none';
+            });
         };
 
         window.renderGvDeXuat = function() {
@@ -1897,11 +1976,18 @@
             tbody.innerHTML = "";
             let myProps = dbProposals.filter(p => p.maGv === currentUser.maGv).reverse();
             if(myProps.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Bạn chưa gửi đề xuất nào.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Bạn chưa gửi đề xuất nào.</td></tr>`;
                 return;
             }
             myProps.forEach(p => {
-                tbody.innerHTML += `<tr><td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td><td>${p.noiDung}</td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td>
+                    <td>${p.noiDung.replace(/\n/g, '<br>')}</td>
+                    <td style="text-align:center;">
+                        <button class="btn-small btn-edit" onclick="editDeXuat('${p.id}')">Sửa</button>
+                        <button class="btn-small btn-del" onclick="deleteDeXuat('${p.id}')">Xóa</button>
+                    </td>
+                </tr>`;
             });
         };
 
@@ -1920,7 +2006,7 @@
                     <td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td>
                     <td style="font-weight:600;">${p.tenGv}<br><span style="font-size:12px;color:var(--text-muted); font-weight:normal;">${p.maGv}</span></td>
                     <td style="font-weight:600; color:var(--primary);">${p.tcm}</td>
-                    <td>${p.noiDung}</td>
+                    <td>${p.noiDung.replace(/\n/g, '<br>')}</td>
                 </tr>`;
             });
         };
