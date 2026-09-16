@@ -67,7 +67,18 @@
         .sidebar-header p { margin: 8px 0 0 0; font-size: 12px; color: #94a3b8; font-weight: 500; }
         
         .menu { flex-grow: 1; overflow-y: auto; padding: 15px 0; }
-        .menu-item { padding: 14px 20px; color: #94a3b8; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; font-weight: 500; display: none; }
+        
+        /* Nhóm Menu CSS */
+        .menu-group { margin-bottom: 5px; display: none; }
+        .menu-group-title { padding: 12px 20px; color: #94a3b8; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 14px; transition: 0.2s; user-select: none; }
+        .menu-group-title:hover { color: #f8fafc; }
+        .menu-group-title span { font-size: 10px; transition: transform 0.3s; color: #64748b; }
+        .menu-group.open .menu-group-title span { transform: rotate(180deg); }
+        .menu-sub-items { display: none; flex-direction: column; background: #0b1120; }
+        .menu-group.open .menu-sub-items { display: flex; }
+        
+        .menu-item { padding: 12px 20px; color: #94a3b8; cursor: pointer; transition: all 0.2s; border-left: 3px solid transparent; font-size: 14px; font-weight: 500; display: none; }
+        .menu-sub-items .menu-item { padding-left: 40px; font-size: 13px; }
         .menu-item:hover { background: #1e293b; color: #f8fafc; }
         .menu-item.active { background: #1e293b; color: white; border-left-color: var(--primary); font-weight: 600; }
         
@@ -242,24 +253,46 @@
             <div class="menu" id="sidebar-menu">
                 <div class="menu-item master-admin-item" onclick="switchTab(this, 'tab-admin-sub')">🏢 Quản lý Đơn vị</div>
 
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tkb')">🗓️ Nạp Thời Khóa Biểu</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-tohop')">🔗 Tổ hợp Môn</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-phancong')">⚙️ Điều chỉnh Phân công</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
-                <div class="menu-item admin-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
+                <!-- Admin Groups -->
+                <div class="menu-group admin-item">
+                    <div class="menu-group-title" onclick="toggleMenuGroup(this)">Thiết lập & Dữ liệu <span>▼</span></div>
+                    <div class="menu-sub-items">
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-periods')">📅 Quản lý Đợt PCCM</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-tkb')">🗓️ Nạp Thời Khóa Biểu</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-monhoc')">📚 Danh mục Môn học</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-tohop')">🔗 Tổ hợp Môn</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-lop')">🏫 Quản lý Lớp học</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-giaovien')">👥 Quản lý Giáo viên</div>
+                    </div>
+                </div>
+
+                <div class="menu-group admin-item">
+                    <div class="menu-group-title" onclick="toggleMenuGroup(this)">Phân công & Kiêm nhiệm <span>▼</span></div>
+                    <div class="menu-sub-items">
+                        <div class="menu-item" onclick="switchTab(this, 'tab-kiemnhiem')">🎖 Quản lý Kiêm nhiệm</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-phancong')">⚙️ Điều chỉnh Phân công</div>
+                    </div>
+                </div>
+
+                <div class="menu-group admin-item">
+                    <div class="menu-group-title" onclick="toggleMenuGroup(this)">Báo cáo & Tiện ích <span>▼</span></div>
+                    <div class="menu-sub-items">
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-matrix')">🔀 Xuất Mẫu Chéo PCCM</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-tonghop')">📋 Tổng hợp Toàn trường</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-tonghop-canam')">📊 Báo cáo Cả Năm (35 tuần)</div>
+                        <div class="menu-item" onclick="switchTab(this, 'tab-admin-dexuat')">📩 Quản lý Đề xuất GV</div>
+                    </div>
+                </div>
                 
+                <!-- TTCM/GV Items -->
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-gv')">👥 Giáo viên trong Tổ</div>
                 <div class="menu-item ttcm-item" onclick="switchTab(this, 'tab-ttcm-phancong')">✍️ Phân công Giảng dạy</div>
                 
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-gv-tkb')">🗓 Tra Thời Khóa Biểu</div>
                 <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-ttcm-tonghop')">📋 Tổng hợp Tổ CM</div>
                 
-                <div class="menu-item admin-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
+                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-tonghop-canam')" style="border-top: 1px solid #1e293b; margin-top: 10px;">📊 Báo cáo Cả Năm (35 tuần)</div>
+                <div class="menu-item ttcm-item gv-item" onclick="switchTab(this, 'tab-gv-dexuat')">📩 Đề xuất Cá nhân</div>
             </div>
         </div>
 
@@ -436,7 +469,8 @@
                         </div>
                     </div>
 
-                    <div class="control-panel admin-only" id="excel-panel" style="display: none;">
+                    <!-- Chỉ hiển thị Excel Panel ở các tab cụ thể -->
+                    <div class="control-panel" id="excel-panel" style="display: none;">
                         <div style="display: flex; gap: 20px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 10px;">
                                 <label>1. Tải file Excel:</label>
@@ -546,6 +580,19 @@
                             </table>
                         </div>
                     </div>
+                    
+                    <div id="tab-admin-dexuat" class="tab-content">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                            <h3 style="margin:0; font-size:20px;">Quản lý Đề xuất từ Giáo viên</h3>
+                            <button class="btn btn-success" onclick="exportDeXuatToExcel()">📥 Xuất Excel</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="table-admin-dexuat">
+                                <thead><tr><th style="width:150px;">Thời gian</th><th style="width:150px;">Giáo viên</th><th style="width:100px;">Tổ CM</th><th>Nội dung</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
 
                     <div id="tab-ttcm-gv" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
@@ -625,6 +672,22 @@
                         <div class="table-container">
                             <table id="table-tonghop-canam">
                                 <thead><tr><th>Tổ CM</th><th>Giáo viên</th><th style="text-align:center;">Tổng Tiết Chuẩn</th><th style="text-align:center;">Tổng Tiết Dạy</th><th style="text-align:center;">Tổng Kiêm Nhiệm</th><th style="text-align:center;">Tổng Thực Tế</th><th style="text-align:center;">Thừa/Thiếu (Cả năm)</th></tr></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Tab Đề xuất cá nhân cho GV -->
+                    <div id="tab-gv-dexuat" class="tab-content">
+                        <h3 style="margin:0 0 15px 0; font-size:20px;">Đề xuất cá nhân</h3>
+                        <p style="font-size: 14px; color: var(--text-muted); margin-bottom:20px;">Gửi các đề xuất, nguyện vọng về chuyên môn lên Ban Giám Hiệu.</p>
+                        <textarea id="gv-dexuat-text" rows="4" style="width:100%; box-sizing:border-box; padding:12px; border:1px solid var(--border); border-radius:8px; font-size:14px; margin-bottom:15px; outline:none; font-family:inherit;" placeholder="Nhập nội dung đề xuất (Tối đa 500 ký tự)..."></textarea>
+                        <button class="btn btn-primary" onclick="submitGvDeXuat()">Gửi Đề Xuất</button>
+
+                        <h4 style="margin-top: 30px; margin-bottom: 15px;">Lịch sử Đề xuất của bạn</h4>
+                        <div class="table-container">
+                            <table id="table-gv-dexuat">
+                                <thead><tr><th style="width:150px;">Thời gian</th><th>Nội dung</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -724,6 +787,7 @@
         let dbKiemNhiem = []; 
         let dbTkbSang = []; // Biến chứa dữ liệu TKB Sáng
         let dbTkbChieu = []; // Biến chứa dữ liệu TKB Chiều
+        let dbProposals = []; // Biến chứa dữ liệu Đề xuất GV
         
         let currentUser = null; 
         let currentTabId = '';
@@ -733,7 +797,6 @@
         window.tableFilters = {};
 
         // === CÁC HÀM TIỆN ÍCH MỚI KIỂM TRA TKB ===
-        // 1. Kiểm tra xem file TKB có thực sự rỗng không (không có dữ liệu lớp)
         window.isTkbEmpty = function(tkbData) {
             if (!tkbData || !Array.isArray(tkbData) || tkbData.length <= 1) return true;
             for (let i = 1; i < tkbData.length; i++) {
@@ -746,9 +809,8 @@
             return true;
         };
 
-        // 2. Kiểm tra bản thân giáo viên đó có lớp trong buổi đó không
         window.teacherHasClasses = function(dbTkb, maGv) {
-            if (!dbTkb || dbTkb.length < 31) return false; // Cần đủ dòng từ Tiết 1 thứ 2 -> Tiết 5 thứ 7 (30 dòng + 1 header)
+            if (!dbTkb || dbTkb.length < 31) return false; 
             for (let d = 0; d < 6; d++) {
                 for (let p = 0; p < 5; p++) {
                     if (getTeacherClassForTkb(dbTkb, d, p, maGv) !== "") return true;
@@ -768,7 +830,6 @@
             return Math.round(num * 100) / 100;
         };
         
-        // HÀM TIỆN ÍCH MỚI HỖ TRỢ XỬ LÝ MÃ MÔN RỜI RẠC
         window.getClassSubjectInfo = function(lop, maMon, _dbClasses, _dbCombos, _dbSubjects) {
             let cl = _dbClasses.find(c => c && c[0] === lop);
             if(!cl || !cl[1]) return { hasSubject: false, hours: 0 };
@@ -790,7 +851,6 @@
             let maThStr = String(cl[1]);
             let parts = maThStr.split(',').map(s => s.trim());
             
-            // Ưu tiên 1: Kiểm tra mã môn rời rạc (VD: VL(2) hoặc TO(1.5))
             for (let part of parts) {
                 let match = part.match(/^(.+?)\s*\(\s*([\d.]+)\s*\)$/);
                 if (match) {
@@ -802,10 +862,9 @@
                 }
             }
             
-            // Ưu tiên 2: Kiểm tra qua danh mục Tổ hợp (Mã TH)
             for (let part of parts) {
                 let match = part.match(/^(.+?)\s*\(\s*([\d.]+)\s*\)$/);
-                if (!match) { // Nếu không phải mã rời rạc thì mới tra tổ hợp
+                if (!match) { 
                     let combo = _dbCombos.find(c => c && c[0] === part);
                     if (combo && combo.length >= 2) {
                         let subjects = combo[1].split(',').map(s=>s.trim().toLowerCase());
@@ -829,7 +888,6 @@
             if (unitParam) {
                 currentUnitId = unitParam;
                 
-                // Ẩn chức năng TKB vì là đơn vị khác
                 const tkbSection = document.getElementById('tkb-lookup-section');
                 if (tkbSection) tkbSection.style.display = 'none';
                 
@@ -861,7 +919,7 @@
         }
 
         function getDocName(baseName, pId) {
-            if(baseName === 'tab-tohop') return baseName; // Môn học giờ đã phân theo đợt, chỉ có tổ hợp là global
+            if(baseName === 'tab-tohop') return baseName;
             if(pId === 'default') return baseName;
             return baseName + "_" + pId;
         }
@@ -1090,6 +1148,12 @@
             }
         };
 
+        // Hàm Handle Menu Toggle
+        window.toggleMenuGroup = function(el) {
+            let group = el.closest('.menu-group');
+            group.classList.toggle('open');
+        };
+
         window.handleCheckboxChange = function(cb, tenLop, otherTeacherId, otherTeacherName, isAdmin = false) {
             if (cb.checked && otherTeacherId) {
                 cb.checked = false; 
@@ -1123,7 +1187,6 @@
             showToast("Xuất file Excel thành công!");
         };
 
-        // Hàm Handle Upload cho TKB
         window.handleTkbExcelUpload = function(e) {
             const file = e.target.files[0];
             if (!file) {
@@ -1160,7 +1223,6 @@
             reader.readAsArrayBuffer(file);
         };
 
-        // Hàm Nạp Dữ Liệu TKB
         window.loadTkbSheet = async function() {
             if (!window.tkbWorkbook) return;
             
@@ -1307,7 +1369,7 @@
         };
 
         async function reloadMemoryForCurrentPeriod() {
-            const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn, snapTkbS, snapTkbC] = await Promise.all([
+            const [snapLop, snapMon, snapToHop, snapPc, snapGv, snapKn, snapTkbS, snapTkbC, snapDeXuat] = await Promise.all([
                 getDoc(doc(db, getCollectionName(), getDocName("tab-lop", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-monhoc", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), "tab-tohop")),
@@ -1315,10 +1377,10 @@
                 getDoc(doc(db, getCollectionName(), getDocName("tab-giaovien", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-kiemnhiem", currentPeriodId))),
                 getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", currentPeriodId))),
-                getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", currentPeriodId)))
+                getDoc(doc(db, getCollectionName(), getDocName("tab-tkbchieu", currentPeriodId))),
+                getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)))
             ]);
 
-            // Xử lý Cơ chế Fallback Môn học (dành cho đơn vị cũ chưa update file môn học theo đợt)
             let finalSnapMon = snapMon;
             if (!finalSnapMon.exists() && currentPeriodId !== 'default') {
                 finalSnapMon = await getDoc(doc(db, getCollectionName(), "tab-monhoc"));
@@ -1338,9 +1400,10 @@
 
             dbTkbSang = snapTkbS.exists() ? JSON.parse(snapTkbS.data().excelData) : [];
             dbTkbChieu = snapTkbC.exists() ? JSON.parse(snapTkbC.data().excelData) : [];
+            
+            dbProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
         }
 
-        // --- HÀM QUẢN LÝ ĐỢT ---
         function renderPeriodsTable() {
             const tbl = document.getElementById("table-periods");
             if(!tbl) return;
@@ -1466,14 +1529,19 @@
 
 
         async function initAdminUI() {
-            const adminOnly = document.querySelectorAll('.admin-only');
-            adminOnly.forEach(el => el.style.display = 'flex');
-            
             const userRole = document.getElementById('sidebar-user-role');
             if(userRole) userRole.innerText = "Tài khoản: " + (currentUser.role === 'admin' ? "Master Admin" : currentUser.ten);
             
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.admin-item').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.menu-group').forEach(el => el.style.display = 'none');
+            
+            document.querySelectorAll('.admin-item').forEach(el => {
+                el.style.display = 'block';
+                if(el.classList.contains('menu-group')) {
+                    el.classList.add('open');
+                    el.querySelectorAll('.menu-item').forEach(sub => sub.style.display = 'block');
+                }
+            });
             
             if (currentUser.role === 'admin') {
                 document.querySelectorAll('.master-admin-item').forEach(el => el.style.display = 'block');
@@ -1491,15 +1559,12 @@
                 const item = document.querySelector('.master-admin-item');
                 if(item) item.click();
             } else {
-                const item = document.querySelector('.admin-item');
+                const item = document.querySelector('.menu-sub-items .menu-item');
                 if(item) item.click();
             }
         }
 
         async function initTeacherUI(role) {
-            const adminOnly = document.querySelectorAll('.admin-only');
-            adminOnly.forEach(el => el.style.display = 'none');
-            
             let roleName = role === 'ttcm' ? 'Ban Quản lý Tổ' : 'Giáo viên';
             const userRole = document.getElementById('sidebar-user-role');
             if(userRole) userRole.innerText = `${roleName} | ${currentUser.ten}`;
@@ -1507,6 +1572,7 @@
             document.querySelectorAll('.lbl-tcm').forEach(el => el.innerText = currentUser.tcm);
 
             document.querySelectorAll('.menu-item').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.menu-group').forEach(el => el.style.display = 'none');
             
             if(role === 'ttcm') {
                 document.querySelectorAll('.ttcm-item').forEach(el => el.style.display = 'block');
@@ -1605,6 +1671,17 @@
             const tab = document.getElementById(tabId);
             if(tab) tab.classList.add("active");
 
+            // Hiển thị panel Excel Upload tùy thuộc vào Tab đang kích hoạt
+            const excelPanel = document.getElementById('excel-panel');
+            if (excelPanel) {
+                const allowExcelTabs = ['tab-giaovien', 'tab-lop', 'tab-monhoc', 'tab-tohop', 'tab-kiemnhiem'];
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'sub_admin') && allowExcelTabs.includes(tabId)) {
+                    excelPanel.style.display = 'flex';
+                } else {
+                    excelPanel.style.display = 'none';
+                }
+            }
+
             if (currentUser.role === 'admin' || currentUser.role === 'sub_admin') {
                 if(tabId === 'tab-admin-matrix') {
                     renderAdminMatrix();
@@ -1620,6 +1697,8 @@
                     renderKiemNhiemTable();
                 } else if (tabId === 'tab-admin-phancong') {
                     initAdminPhanCong();
+                } else if (tabId === 'tab-admin-dexuat') {
+                    renderAdminDeXuat();
                 } else if (tabId === 'tab-admin-tkb') {
                     // Do nothing specific, UI handles upload
                 } else {
@@ -1629,7 +1708,8 @@
                 if (tabId === 'tab-ttcm-gv') renderTtcmGvTable();
                 if (tabId === 'tab-ttcm-tonghop') renderTtcmTongHop();
                 if (tabId === 'tab-tonghop-canam') renderTongHopCaNam();
-                if (tabId === 'tab-gv-tkb') await renderTeacherTkb(); // Updated to await
+                if (tabId === 'tab-gv-tkb') await renderTeacherTkb(); 
+                if (tabId === 'tab-gv-dexuat') renderGvDeXuat();
             }
         };
 
@@ -1637,7 +1717,7 @@
         // --- HÀM RENDER TRA TKB CHO GIÁO VIÊN ---
         function getTeacherClassForTkb(dbTkb, dayIndex, periodIndex, maGv) {
             if (!dbTkb || dbTkb.length < 31) return "";
-            let classes = dbTkb[0]; // Header row: ["Tiết", "10A1", "10A2", ...]
+            let classes = dbTkb[0]; 
             let rowIndex = 1 + dayIndex * 5 + periodIndex;
             let row = dbTkb[rowIndex];
             if (!row) return "";
@@ -1647,14 +1727,14 @@
                 if (!cell) continue;
 
                 if (dayIndex === 0 && periodIndex === 0 && cell.toLowerCase().includes("chào cờ")) {
-                    continue; // Skip greeting flags matching to specific subjects/teachers for simplicity
+                    continue; 
                 }
 
                 let parts = cell.split('-');
                 if (parts.length >= 2) {
                     let cellMaGv = parts[parts.length - 1].trim();
                     if (cellMaGv === maGv) {
-                        return classes[c]; // Tên lớp
+                        return classes[c]; 
                     }
                 }
             }
@@ -1675,7 +1755,6 @@
             let schoolEmptySang = isTkbEmpty(dbTkbSang);
             let schoolEmptyChieu = isTkbEmpty(dbTkbChieu);
 
-            // LOGIC TỰ ĐỘNG CHUYỂN ĐỢT GẦN NHẤT: Nếu đợt hiện tại KHÔNG có dữ liệu Sáng/Chiều
             if (schoolEmptySang && schoolEmptyChieu) {
                 const overlay = document.getElementById('loading-overlay');
                 if (overlay) overlay.style.display = 'flex';
@@ -1685,7 +1764,6 @@
                     let currentIndex = sortedPeriods.findIndex(p => p.id === currentPeriodId);
                     
                     if (currentIndex !== -1) {
-                        // Duyệt lùi về các đợt cũ hơn (do mảng đã được sort DESC)
                         for (let i = currentIndex + 1; i < sortedPeriods.length; i++) {
                             let pid = sortedPeriods[i].id;
                             let snapS = await getDoc(doc(db, getCollectionName(), getDocName("tab-tkbsang", pid)));
@@ -1697,7 +1775,6 @@
                             let sEmpty = isTkbEmpty(dataS);
                             let cEmpty = isTkbEmpty(dataC);
 
-                            // Nếu tìm thấy đợt có dữ liệu, chuyển thẳng toàn bộ tab sang đợt này
                             if (!sEmpty || !cEmpty) {
                                 let selectedPeriodName = dbPeriods.find(p => p.id === currentPeriodId)?.name || 'Đợt này';
                                 let foundPeriodName = dbPeriods.find(p => p.id === pid)?.name || 'Đợt cũ';
@@ -1706,7 +1783,7 @@
                                 showToast(`${selectedPeriodName} chưa có TKB. Tự động hiển thị ${foundPeriodName}!`, 'info');
                                 
                                 await window.changePeriod(pid);
-                                return; // changePeriod sẽ tự trigger render lại
+                                return; 
                             }
                         }
                     }
@@ -1718,15 +1795,12 @@
             if (tbodySang) tbodySang.innerHTML = "";
             if (tbodyChieu) tbodyChieu.innerHTML = "";
 
-            // Kiểm tra xem BẢN THÂN GIÁO VIÊN này có tiết ở buổi đó không
             let teacherHasSang = teacherHasClasses(dbTkbSang, maGv);
             let teacherHasChieu = teacherHasClasses(dbTkbChieu, maGv);
 
-            // ẨN / HIỆN Bảng Sáng hoặc Chiều phụ thuộc việc GV CÓ TIẾT HAY KHÔNG
             if (boxSang) boxSang.style.display = teacherHasSang ? 'block' : 'none';
             if (boxChieu) boxChieu.style.display = teacherHasChieu ? 'block' : 'none';
             
-            // Xử lý Box Trống nếu GV không có bất kỳ tiết nào
             if (boxEmpty) {
                 if (!teacherHasSang && !teacherHasChieu) {
                     if (!schoolEmptySang || !schoolEmptyChieu) {
@@ -1740,10 +1814,8 @@
                 }
             }
 
-            // Dừng tại đây nếu cả 2 bảng đều không cần vẽ cho GV này
             if (!teacherHasSang && !teacherHasChieu) return;
 
-            // Render Dữ liệu
             for (let p = 0; p < 5; p++) {
                 let trSang = document.createElement('tr');
                 let trChieu = document.createElement('tr');
@@ -1782,10 +1854,92 @@
                 if (tbodyChieu && teacherHasChieu) tbodyChieu.appendChild(trChieu);
             }
         };
+
+        // --- CÁC HÀM XỬ LÝ ĐỀ XUẤT CÁ NHÂN ---
+        window.submitGvDeXuat = async function() {
+            const textEl = document.getElementById("gv-dexuat-text");
+            if (!textEl) return;
+            const text = textEl.value.trim();
+            if(!text) return showToast("Vui lòng nhập nội dung đề xuất!", "warning");
+
+            const now = new Date();
+            const timeStr = now.toLocaleString('vi-VN');
+
+            const newProp = {
+                id: Date.now().toString(),
+                maGv: currentUser.maGv,
+                tenGv: currentUser.ten,
+                tcm: currentUser.tcm,
+                noiDung: text,
+                thoiGian: timeStr
+            };
+
+            dbProposals.push(newProp);
+
+            const overlay = document.getElementById('loading-overlay');
+            if(overlay) overlay.style.display = 'flex';
+            try {
+                await setDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)), { data: JSON.stringify(dbProposals) });
+                textEl.value = "";
+                renderGvDeXuat();
+                showToast("Đã gửi đề xuất thành công!");
+            } catch(e) {
+                dbProposals.pop(); 
+                showToast("Lỗi: " + e.message, "error");
+            }
+            if(overlay) overlay.style.display = 'none';
+        };
+
+        window.renderGvDeXuat = function() {
+            const tbl = document.getElementById("table-gv-dexuat");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            tbody.innerHTML = "";
+            let myProps = dbProposals.filter(p => p.maGv === currentUser.maGv).reverse();
+            if(myProps.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="2" style="text-align:center;">Bạn chưa gửi đề xuất nào.</td></tr>`;
+                return;
+            }
+            myProps.forEach(p => {
+                tbody.innerHTML += `<tr><td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td><td>${p.noiDung}</td></tr>`;
+            });
+        };
+
+        window.renderAdminDeXuat = function() {
+            const tbl = document.getElementById("table-admin-dexuat");
+            if(!tbl) return;
+            const tbody = tbl.querySelector("tbody");
+            tbody.innerHTML = "";
+            if(dbProposals.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Chưa có đề xuất nào từ giáo viên.</td></tr>`;
+                return;
+            }
+            let allProps = [...dbProposals].reverse();
+            allProps.forEach(p => {
+                tbody.innerHTML += `<tr>
+                    <td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td>
+                    <td style="font-weight:600;">${p.tenGv}<br><span style="font-size:12px;color:var(--text-muted); font-weight:normal;">${p.maGv}</span></td>
+                    <td style="font-weight:600; color:var(--primary);">${p.tcm}</td>
+                    <td>${p.noiDung}</td>
+                </tr>`;
+            });
+        };
+
+        window.exportDeXuatToExcel = function() {
+            let wb = XLSX.utils.book_new();
+            let wsData = [["Thời gian", "Mã GV", "Tên giáo viên", "Tổ CM", "Nội dung đề xuất"]];
+            dbProposals.forEach(p => {
+                wsData.push([p.thoiGian, p.maGv, p.tenGv, p.tcm, p.noiDung]);
+            });
+            let ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "De_Xuat_GV");
+            XLSX.writeFile(wb, `Danh_Sach_De_Xuat_Dot_${currentPeriodId}.xlsx`);
+            showToast("Xuất Excel thành công!");
+        };
         // ----------------------------------------
 
 
-        // --- HÀM ADMIN ĐIỀU CHỈNH PHÂN CÔNG (MỚI) ---
+        // --- HÀM ADMIN ĐIỀU CHỈNH PHÂN CÔNG ---
         window.initAdminPhanCong = function() {
             const selTcm = document.getElementById("admin-select-tcm");
             if(!selTcm) return;
@@ -2049,7 +2203,7 @@
         };
         // ---------------------------------------------
 
-        // --- HÀM KIÊM NHIỆM (MỚI) ---
+        // --- HÀM KIÊM NHIỆM ---
         window.renderKiemNhiemTable = function() {
             const tbl = document.getElementById("table-kiemnhiem");
             if(!tbl) return;
@@ -2332,7 +2486,7 @@
             showToast("Đã tải file mẫu Excel!");
         };
 
-        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ (MASTER ADMIN CHỈ CÓ) ---
+        // --- HÀM QUẢN LÝ TÀI KHOẢN ĐƠN VỊ ---
         window.addNewSubAdminRow = function() {
             const tbl = document.getElementById("table-admin-sub");
             if(!tbl) return;
@@ -2473,7 +2627,6 @@
                 let docRef = doc(db, getCollectionName(), getDocName(tabId, currentPeriodId));
                 let docSnap = await getDoc(docRef);
 
-                // Cơ chế fallback đặc biệt cho tab-monhoc để tương thích ngược
                 if (!docSnap.exists() && tabId === 'tab-monhoc' && currentPeriodId !== 'default') {
                     docRef = doc(db, getCollectionName(), "tab-monhoc");
                     docSnap = await getDoc(docRef);
@@ -2662,7 +2815,7 @@
             let tableId = "table-" + tabId.split('-')[1];
             
             if(!window.tableFilters) window.tableFilters = {};
-            window.tableFilters[tableId] = {}; // Reset filter state
+            window.tableFilters[tableId] = {}; 
 
             const tbl = document.getElementById(tableId);
             if(!tbl) return;
@@ -2708,7 +2861,7 @@
         window.renderAdminTongHop = function() {
             let tableId = "table-admin-tonghop";
             if(!window.tableFilters) window.tableFilters = {};
-            window.tableFilters[tableId] = {}; // Reset filter state
+            window.tableFilters[tableId] = {}; 
 
             const tbl = document.getElementById(tableId);
             if(!tbl) return;
@@ -3361,7 +3514,7 @@
         window.renderTongHopCaNam = async function() {
             let tableId = "table-tonghop-canam";
             if(!window.tableFilters) window.tableFilters = {};
-            window.tableFilters[tableId] = {}; // Reset filter state
+            window.tableFilters[tableId] = {}; 
 
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
@@ -3613,7 +3766,6 @@
 
             document.body.appendChild(popup);
             
-            // Positioning based on TH 
             const thRect = e.currentTarget.getBoundingClientRect();
             popup.style.top = (thRect.bottom + window.scrollY + 5) + 'px';
             
