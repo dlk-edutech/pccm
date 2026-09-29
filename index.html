@@ -582,7 +582,7 @@
                     
                     <div id="tab-admin-dexuat" class="tab-content">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                            <h3 style="margin:0; font-size:20px;">Quản lý Đề xuất từ Giáo viên</h3>
+                            <h3 style="margin:0; font-size:20px;">Quản lý Đề xuất từ Giáo viên (Tất cả các đợt)</h3>
                             <button class="btn btn-success" onclick="exportDeXuatToExcel()">📥 Xuất Excel</button>
                         </div>
                         <div class="table-container">
@@ -1540,7 +1540,7 @@
             document.querySelectorAll('.admin-item').forEach(el => {
                 el.style.display = 'block';
                 if(el.classList.contains('menu-group')) {
-                    el.classList.add('open');
+                    el.classList.remove('open'); // Loại bỏ class open để thu gọn mặc định
                     el.querySelectorAll('.menu-item').forEach(sub => sub.style.display = 'block');
                 }
             });
@@ -1861,8 +1861,21 @@
             const overlay = document.getElementById('loading-overlay');
             if(overlay) overlay.style.display = 'flex';
             try {
-                let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", currentPeriodId)));
-                dbProposals = snapDeXuat.exists() ? JSON.parse(snapDeXuat.data().data || "[]") : [];
+                let allProposals = [];
+                // Lấy đề xuất từ tất cả các đợt để tổng hợp cho Admin
+                for (let p of dbPeriods) {
+                    let snapDeXuat = await getDoc(doc(db, getCollectionName(), getDocName("tab-dexuat", p.id)));
+                    if (snapDeXuat.exists()) {
+                        let props = JSON.parse(snapDeXuat.data().data || "[]");
+                        props.forEach(item => {
+                            item.periodName = p.name;
+                            allProposals.push(item);
+                        });
+                    }
+                }
+                allProposals.sort((a,b) => b.id - a.id); // Sắp xếp giảm dần theo thời gian tạo
+                dbProposals = allProposals;
+                
                 renderAdminDeXuat();
             } catch(e) {
                 console.error(e);
@@ -2000,10 +2013,10 @@
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">Chưa có đề xuất nào từ giáo viên.</td></tr>`;
                 return;
             }
-            let allProps = [...dbProposals].reverse();
-            allProps.forEach(p => {
+            dbProposals.forEach(p => {
+                let periodTag = p.periodName ? `<br><span style="font-size:11px; background:var(--primary-light); color:var(--primary); padding:2px 4px; border-radius:4px;">${p.periodName}</span>` : '';
                 tbody.innerHTML += `<tr>
-                    <td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}</td>
+                    <td style="font-size:13px; color:var(--text-muted);">${p.thoiGian}${periodTag}</td>
                     <td style="font-weight:600;">${p.tenGv}<br><span style="font-size:12px;color:var(--text-muted); font-weight:normal;">${p.maGv}</span></td>
                     <td style="font-weight:600; color:var(--primary);">${p.tcm}</td>
                     <td>${p.noiDung.replace(/\n/g, '<br>')}</td>
@@ -2013,13 +2026,13 @@
 
         window.exportDeXuatToExcel = function() {
             let wb = XLSX.utils.book_new();
-            let wsData = [["Thời gian", "Mã GV", "Tên giáo viên", "Tổ CM", "Nội dung đề xuất"]];
+            let wsData = [["Đợt", "Thời gian", "Mã GV", "Tên giáo viên", "Tổ CM", "Nội dung đề xuất"]];
             dbProposals.forEach(p => {
-                wsData.push([p.thoiGian, p.maGv, p.tenGv, p.tcm, p.noiDung]);
+                wsData.push([p.periodName || "", p.thoiGian, p.maGv, p.tenGv, p.tcm, p.noiDung]);
             });
             let ws = XLSX.utils.aoa_to_sheet(wsData);
             XLSX.utils.book_append_sheet(wb, ws, "De_Xuat_GV");
-            XLSX.writeFile(wb, `Danh_Sach_De_Xuat_Dot_${currentPeriodId}.xlsx`);
+            XLSX.writeFile(wb, `Danh_Sach_De_Xuat.xlsx`);
             showToast("Xuất Excel thành công!");
         };
         // ----------------------------------------
